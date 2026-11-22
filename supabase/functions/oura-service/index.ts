@@ -15,6 +15,15 @@ async function aesKey(){ const raw=Uint8Array.from(atob(cryptoKey),x=>x.charCode
 async function enc(t){const iv=crypto.getRandomValues(new Uint8Array(12));const bytes=await crypto.subtle.encrypt({name:"AES-GCM",iv},await aesKey(),new TextEncoder().encode(t));return btoa(String.fromCharCode(...iv,...new Uint8Array(bytes)))}
 async function dec(t){const b=Uint8Array.from(atob(t),x=>x.charCodeAt(0));return new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:b.slice(0,12)},await aesKey(),b.slice(12)))}
 async function token(body){const r=await fetch("https://api.ouraring.com/oauth/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded","User-Agent":"HabitQuest/1.0"},body:new URLSearchParams({...body,client_id:cid,client_secret:secret}),signal:AbortSignal.timeout(15000)});if(!r.ok){const detail=await r.json().catch(()=>({}));const e=new Error("Oura token exchange failed ("+r.status+")");e.ouraCode=detail.error||"";e.status=r.status;throw e;}const j=await r.json();if(!j.access_token||!j.refresh_token)throw Error("Incomplete Oura token response");return j}
+async function configurationStatus(){
+ const issues=[];
+ if(!cid)issues.push("OURA_CLIENT_ID");
+ if(!secret)issues.push("OURA_CLIENT_SECRET");
+ if(!cryptoKey)issues.push("OURA_TOKEN_KEY");
+ else try{await aesKey()}catch(_){issues.push("OURA_TOKEN_KEY の形式：32バイトのBase64が必要")}
+ if(!site)issues.push("HABIT_SITE_URL");
+ return {configured:issues.length===0,issues};
+}
 async function user(req){const header=req.headers.get("authorization")||"";if(!header.startsWith("Bearer "))return null;const {data,error}=await admin.auth.getUser(header.slice(7));return error?null:data.user}
 async function connected(uid){const {data,error}=await admin.from("oura_connections").select("*").eq("user_id",uid).maybeSingle();if(error)throw error;return data}
 async function saveTokens(uid,t,scopes){const {error}=await admin.from("oura_connections").upsert({user_id:uid,access_token_encrypted:await enc(t.access_token),refresh_token_encrypted:await enc(t.refresh_token),expires_at:new Date(Date.now()+Number(t.expires_in||2592000)*1000).toISOString(),scopes,connection_state:"connected",refresh_lock_until:new Date(0).toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error)throw error}
@@ -84,9 +93,9 @@ Deno.serve(async req=>{
  }
  const u=await user(req);if(!u)return json(req,{error:"Please sign in"},401);
  try{
-  if(action==="status"){const c=await connected(u.id);return json(req,{connected:!!c&&c.connection_state==="connected",reauth_required:c?.connection_state==="reauth_required",configured:!!(cid&&secret&&cryptoKey&&site),scopes:c?.scopes||[]})}
+  if(action==="status"){const c=await connected(u.id);const cfg=await configurationStatus();return json(req,{connected:!!c&&c.connection_state==="connected",reauth_required:c?.connection_state==="reauth_required",configured:cfg.configured,setup_issues:cfg.issues,scopes:c?.scopes||[]})}
   if(action==="start"){
-   if(!cid||!secret||!cryptoKey||!site)return json(req,{error:"Oura developer credentials not configured"},503);
+   const cfg=await configurationStatus();if(!cfg.configured)return json(req,{error:"Oura configuration incomplete: "+cfg.issues.join(", ")},503);
    const random=crypto.getRandomValues(new Uint8Array(32));const state=Array.from(random).map(x=>x.toString(16).padStart(2,"0")).join("");
    const verifier=Array.from(crypto.getRandomValues(new Uint8Array(32))).map(x=>x.toString(16).padStart(2,"0")).join("");const digest=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(verifier)));const challenge=btoa(String.fromCharCode(...digest)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");const {error}=await admin.from("oura_oauth_states").insert({user_id:u.id,state_hash:await hash(state),code_verifier_encrypted:await enc(verifier),expires_at:new Date(Date.now()+10*60*1000).toISOString()});if(error)throw error;
    const auth=new URL("https://cloud.ouraring.com/oauth/authorize");auth.searchParams.set("response_type","code");auth.searchParams.set("client_id",cid);auth.searchParams.set("redirect_uri",redirect);auth.searchParams.set("scope","daily workout");auth.searchParams.set("state",state);auth.searchParams.set("code_challenge",challenge);auth.searchParams.set("code_challenge_method","S256");return json(req,{authorization_url:auth.toString()});
