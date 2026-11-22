@@ -1,0 +1,17 @@
+{
+  "name": "HABIT QUEST - 習慣を冒険に変える",
+  "short_name": "HABIT QUEST",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b0d19",
+  "theme_color": "#111325",
+  "description": "週間習慣トラッカーとドラゴン育成ゲーム",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
