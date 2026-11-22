@@ -1,19 +1,19 @@
 # HABIT QUEST 初回ログイン・Oura接続手順
 
-最終更新：2026-11-22。GitHub Pages版の初回利用向け。アプリの実ログイン/Oura認可はユーザー本人のみ操作できます。
+最終更新：2026-11-23。URL設定、本人アカウントの認証、初回クラウド保存は完了しています。Oura実認証は未完了です。
 
-## 1. Supabase AuthのURLを設定
+## 1. Supabase AuthのURL（設定済み・再設定不要）
 
 [Supabase Authentication > URL Configuration](https://supabase.com/dashboard/project/kpiqktibvzymgzwxiajv/auth/url-configuration) で：
 
 - **Site URL**: `https://syachikulifesyachipoke-dotcom.github.io/habit-quest/`
 - **Redirect URLs**: `https://syachikulifesyachipoke-dotcom.github.io/habit-quest/` を追加
 
-## 1a. メール＋パスワードでログイン（2026-11-22変更）
+## 1a. メール＋パスワードログイン（既存アカウントで成功済み）
 
 [HABIT QUEST](https://syachikulifesyachipoke-dotcom.github.io/habit-quest/) を開き、右上の「☁ ログイン」を選びます。メールアドレス・パスワードを入力して「ログイン」を押します。**メールリンクを繰り返し送信する方式は廃止しました。**
 
-既存のメールアドレスにパスワードがない場合の推奨手順：
+以下は、今後パスワードを忘れた場合だけ使用する復旧手順です。今は実施不要です：
 
 1. [Supabase > Authentication > URL Configuration](https://supabase.com/dashboard/project/kpiqktibvzymgzwxiajv/auth/url-configuration) を開いて、Site URL・Redirect URLsに `https://syachikulifesyachipoke-dotcom.github.io/habit-quest/` が設定されていることを確認
 2. HABIT QUEST の右上「☁ ログイン」で、**すでに登録済みのメールアドレス**を入力し「初回パスワード設定・再設定」を押す
@@ -85,4 +85,4 @@ $rng.Dispose()
 6. 過去6か月の履歴を取得できる（Ouraに記録がある日）
 7. トークン期限切れ後の更新処理を本番環境で検証する
 
-**現状:** 1まで到達。2〜7は本人による認証・接続の実地検証待ちです。
+**現状:** 1・2は確認済み。3はSupabaseへの初回保存（5習慣・達成チェック0件）まで確認済みで、別端末同期は未検証です。4〜7はOura実認証・実測データ取得待ちです。
