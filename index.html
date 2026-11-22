@@ -191,7 +191,7 @@ async function checkOuraConnection(){
  if(!cloud.user){$('ouraStatus').textContent='先にクラウドへログインしてください。';return}
  try{const x=await ouraCall('status');$('ouraConnect').disabled=!x.configured;$('ouraConnect').textContent=x.connected?'Ouraを再接続':'Ouraアカウント連携';$('ouraSync').disabled=!x.connected;$('ouraBackfill').disabled=!x.connected;
   $('ouraStatus').textContent=!x.configured?'Oura認証情報はまだ設定されていません。管理者によるSupabase Secrets設定が必要です。':x.connected?'Oura接続済み。睡眠・歩数・運動の記録を取得できます。':x.reauth_required?'Ouraの再認証が必要です。': 'Oura未接続。アカウント連携から承認してください。';
-  await fetchOuraMetrics();if(x.connected && !sessionStorage.getItem('habit-oura-refreshed')){sessionStorage.setItem('habit-oura-refreshed','1');syncOura(false)}
+  await fetchOuraMetrics();if(x.connected && !ouraBusy){const last=Number(localStorage.getItem('habit-oura-last-attempt')||0);if(!Number.isFinite(last)||Date.now()-last>=6*60*60*1000){localStorage.setItem('habit-oura-last-attempt',String(Date.now()));syncOura(false)}}
  }catch(e){$('ouraStatus').textContent='Oura接続状態の取得に失敗: '+e.message}
 }
 $('ouraConnect').onclick=async()=>{try{const x=await ouraCall('start');location.assign(x.authorization_url)}catch(e){toast('Oura連携に失敗: '+e.message)}};
@@ -243,7 +243,7 @@ async function saveCloud(force){if(!cloud.client||!cloud.user||cloud.saving||clo
 $('cloudUseRemote').onclick=async()=>{if(!cloud.client||!cloud.user)return;if(!confirm('この端末の現在の記録をクラウドの記録に置き換えますか？ 必要なら先に「バックアップ」を保存してください。'))return;try{cloud.remote=await cloudFetch();if(!cloud.remote)throw Error('クラウド記録が見つかりません');const safe=validateIncoming(cloud.remote.data);state={...safe,avatarImages:state.avatarImages||{},ouraData:state.ouraData||{}};localStorage.setItem(KEY,JSON.stringify(state));cloud.seq++;cloud.syncedSeq=cloud.seq;cloud.revision=Number(cloud.remote.revision);cloud.ready=true;cloud.blocked=false;choiceVisible(false);offset=0;render();cloudMessage('☁ クラウドの記録を取得しました。以降は自動同期します。','good')}catch(e){cloudMessage('取り込み失敗：'+e.message,'warning')}};
 $('cloudUseLocal').onclick=async()=>{if(!cloud.client||!cloud.user)return;const willOverwrite=!!cloud.remote;if(willOverwrite&&!confirm('⚠ クラウドの既存記録を、この端末の記録で上書きします。続けますか？（先にバックアップ推奨）'))return;cloud.revision=willOverwrite?Number(cloud.remote.revision):null;cloud.ready=true;cloud.blocked=false;choiceVisible(false);cloud.seq++;cloudMessage('クラウドへアップロードしています…');await saveCloud(true)};
 $('cloudRefresh').onclick=async()=>{if(!cloud.client||!cloud.user){cloudMessage('クラウド設定とログインを完了してください。','warning');return}if(cloud.blocked){cloud.loadPromise=null;await attachCloudUser(cloud.user);return}try{const current=await cloudFetch();if(current&&Number(current.revision)!==Number(cloud.revision)){cloud.remote=current;cloud.ready=false;cloud.blocked=true;choiceVisible(true,true);cloudMessage('⚠ 別端末の新しい記録を検出しました。クラウド版か端末版を選んでください。','warning');return}if(cloud.seq!==cloud.syncedSeq)await saveCloud(true);else cloudMessage('☁ クラウドと同期済みです（改訂 '+cloud.revision+'）','good')}catch(e){cloudMessage('クラウド状態の確認に失敗：'+e.message,'warning')}};
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&cloud.ready&&cloud.seq!==cloud.syncedSeq)saveCloud(true)});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&cloud.ready&&cloud.seq!==cloud.syncedSeq)saveCloud(true);if(document.visibilityState==='visible'&&cloud.user&&!ouraBusy)checkOuraConnection()});
 initCloud();
 
 if('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js').catch(()=>{});
