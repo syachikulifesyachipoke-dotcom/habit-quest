@@ -343,7 +343,16 @@ function readRecoveryLanding(href){
 }
 const authLanding=readRecoveryLanding(location.href);
 const sdkUrl='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js';
-function cloudMessage(message,kind=''){const el=$('cloudStatus');el.textContent=message;el.classList.toggle('good',kind==='good');el.classList.toggle('warning',kind==='warning');const b=$('cloudToggle');if(b)b.textContent=cloud.user?(kind==='warning'?'☁ 要確認':kind==='good'?'☁ 保存済':'☁ 接続中'):'☁ ログイン'}
+function cloudMessage(message,kind=''){
+ const el=$('cloudStatus');el.textContent=message;
+ el.classList.toggle('good',kind==='good');el.classList.toggle('warning',kind==='warning');
+ const b=$('cloudToggle');if(!b)return;
+ // Reflect the actual revision sync state, not whether an arbitrary message was "good".
+ b.textContent=!cloud.user?'☁ ログイン'
+   :kind==='warning'||cloud.blocked?'☁ 要確認'
+   :cloud.ready&&cloud.seq===cloud.syncedSeq?'☁ 保存済'
+   :cloud.ready?'☁ 同期待ち':'☁ 接続中';
+}
 function getCloudConfig(){let stored={};try{stored=JSON.parse(localStorage.getItem(CFG_KEY)||'{}')}catch(_){}const fixed=window.HABIT_QUEST_CLOUD||{};return{url:fixed.url||stored.url||'',anonKey:fixed.anonKey||stored.anonKey||''}}
 function isPublicKey(key){if(typeof key!=='string'||key.startsWith('sb_secret_'))return false;if(key.startsWith('sb_publishable_'))return true;try{const parts=key.split('.');if(parts.length!==3)return false;const json=JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));return json.role==='anon'}catch(e){return false}}
 let cloudSdkPromise=null;
