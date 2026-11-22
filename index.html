@@ -366,8 +366,29 @@ window.addEventListener('online',()=>{cloudPollLatest();if(cloud.user&&!ouraBusy
 setInterval(cloudPollLatest,120000);
 initCloud();
 
+function showOuraAuthResult(){
+ const params=new URLSearchParams(location.search);
+ const result=params.get('oura');
+ if(!result)return;
+ $('ouraDetail').open=true;
+ const messages={
+   connected:'Oura認証が完了しました。実データを確認します。',
+   denied:'Ouraのアクセス承認は行われませんでした。',
+   expired:'Ouraの認証手続きが期限切れです。もう一度連携してください。',
+   failed:'Ouraとの接続でエラーが発生しました。認証情報と設定を確認してください。'
+ };
+ $('ouraStatus').textContent=messages[result]||'Ouraの接続結果を確認してください。';
+ if(messages[result])toast(messages[result],result==='connected');
+ params.delete('oura');
+ const remaining=params.toString();
+ history.replaceState(history.state,'',location.pathname+(remaining?'?'+remaining:'')+location.hash);
+ // Keep the health section visible after returning from Oura.
+ setTimeout(()=>$('ouraDetail').scrollIntoView({behavior:'smooth',block:'start'}),50);
+}
+
 if('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js').catch(()=>{});
 render();
+showOuraAuthResult();
 })();
 </script>
 </body>
