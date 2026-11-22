@@ -63,7 +63,7 @@
  <div class="cloud-auth" id="cloudAuthPanel">
    <input type="email" id="cloudEmail" placeholder="メールアドレス" aria-label="メールアドレス" autocomplete="username">
    <input type="password" id="cloudPassword" placeholder="パスワード" aria-label="パスワード" autocomplete="current-password">
-   <button class="btn primary" id="cloudLogin" type="button">ログイン</button>
+   <button class="btn primary" id="cloudLogin" type="button">ログイン</button><button class="btn" id="cloudResetPassword" type="button">初回パスワード設定・再設定</button>
  </div>
  <div class="cloud-auth" id="cloudPasswordPanel" hidden>
    <input type="password" id="cloudNewPassword" placeholder="新しいパスワード（12文字以上）" aria-label="新しいパスワード" autocomplete="new-password">
@@ -71,7 +71,7 @@
    <button class="btn" id="cloudLogout" type="button">ログアウト</button>
  </div>
  <div class="cloud-choice" id="cloudChoice"><button class="btn primary" id="cloudUseLocal" type="button">この端末の記録をクラウドに保存</button><button class="btn" id="cloudUseRemote" type="button">クラウドの記録をこの端末に取得</button></div>
- <p class="cloud-note">初回ログイン時は端末とクラウドの記録を選択します。パスワードが未設定なら、ログイン済みの端末から設定するか、管理画面でパスワード付きアカウントを作成してください。</p>
+ <p class="cloud-note">すでに登録済みのメールアドレスをそのまま使えます。パスワード未設定の場合は「初回パスワード設定・再設定」でメールを受信してください。初回ログイン時は端末とクラウドの記録を選択します。</p>
  <details class="cloud-advanced"><summary>バックアップ・復元</summary><div class="cloud-backup-actions"><button class="btn ghost" id="exportBtn">↧ バックアップ</button><button class="btn ghost" id="importBtn">↥ 復元</button><input id="fileInput" type="file" accept="application/json,.json" hidden></div></details>
 </section>
 <main>
@@ -325,27 +325,45 @@ choiceVisible(true,!!cloud.remote);cloudMessage(cloud.remote?'クラウドに別
 }catch(e){cloudMessage(`クラウドの読み込みに失敗：${e.message}。SupabaseのSQL・RLS・接続設定を確認してください。`,'warning')}})();return cloud.loadPromise}
 async function initCloud(){const config=getCloudConfig();$('sbUrl').value=config.url;$('sbKey').value=config.anonKey;if(!config.url&&!config.anonKey){cloudMessage('クラウド未設定。従来どおり端末内に保存しています。SupabaseのURLと公開可能なキーを入力してください。');return}if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(config.url)||!isPublicKey(config.anonKey)){cloudMessage('URLまたはキーの形式が不正です。Supabase Project URLとPublishable key（またはanon key）だけを設定してください。','warning');return}
 try{await loadCloudSdk();cloud.client=window.supabase.createClient(config.url.replace(/\/$/,''),config.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-cloud.client.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'){cloud.user=null;cloud.ready=false;cloud.blocked=true;cloud.revision=null;cloud.loadPromise=null;choiceVisible(false);$('cloudLogout').hidden=true;$('cloudLogin').hidden=false;$('cloudAuthPanel').hidden=false;$('cloudPasswordPanel').hidden=true;$('cloudPassword').value='';$('cloudNewPassword').value='';cloudMessage('ログアウトしました。記録は端末内にも残っています。');checkOuraConnection();return}if(session?.user?.id&&cloud.user?.id!==session.user.id){setTimeout(()=>attachCloudUser(session.user),0)}});
+cloud.client.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){cloudRecovering=true;setTimeout(()=>{toggleCloudMenu(true);$('cloudAuthPanel').hidden=true;$('cloudPasswordPanel').hidden=false;$('cloudNewPassword').focus();cloudMessage('メール認証が完了しました。新しいパスワード（12文字以上）を登録してください。','good')},150)}if(event==='SIGNED_OUT'){cloud.user=null;cloud.ready=false;cloud.blocked=true;cloud.revision=null;cloud.loadPromise=null;choiceVisible(false);$('cloudLogout').hidden=true;$('cloudLogin').hidden=false;$('cloudAuthPanel').hidden=false;$('cloudPasswordPanel').hidden=true;$('cloudPassword').value='';$('cloudNewPassword').value='';cloudMessage('ログアウトしました。記録は端末内にも残っています。');checkOuraConnection();return}if(session?.user?.id&&cloud.user?.id!==session.user.id){setTimeout(()=>attachCloudUser(session.user),0)}});
 const {data,error}=await cloud.client.auth.getSession();if(error)throw error;
 if(data.session?.user)await attachCloudUser(data.session.user);else cloudMessage('ログイン準備完了。メールアドレスとパスワードを入力してください。')
 }catch(e){cloudMessage('クラウド接続に失敗：'+e.message+'。この端末への保存は継続しています。','warning')}}
 $('cloudSetup').onclick=async()=>{const url=$('sbUrl').value.trim().replace(/\/$/,''),anonKey=$('sbKey').value.trim();if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)||!isPublicKey(anonKey)){cloudMessage('Supabase URLとPublishable key（またはanon key）を入力してください。secret/service_roleキーは使用できません。','warning');return}if(!confirm('Supabase接続設定を保存してページを再読み込みしますか？ 記録は端末内に保持されます。'))return;localStorage.setItem(CFG_KEY,JSON.stringify({url,anonKey}));location.reload()};
-let lastLoginMailAttempt=0;
+let cloudRecovering=false,cloudResetSentAt=0;
+$('cloudResetPassword').onclick=async()=>{
+ if(!cloud.client){cloudMessage('Supabaseへの接続が完了していません。','warning');return}
+ const email=$('cloudEmail').value.trim();
+ if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){cloudMessage('先に既存のメールアドレスを入力してください。','warning');return}
+ if(Date.now()-cloudResetSentAt<60000){cloudMessage('連続送信を防ぐため、前回の操作から60秒以上空けてください。','warning');return}
+ const button=$('cloudResetPassword');button.disabled=true;cloudResetSentAt=Date.now();
+ try{
+   const redirectTo=new URL(location.pathname,location.origin).href;
+   const {error}=await cloud.client.auth.resetPasswordForEmail(email,{redirectTo});
+   if(error)throw error;
+   cloudMessage('パスワード設定メールを送信しました。新しく届いたメールのリンクを開くと、このアプリでパスワードを登録できます。','good');
+ }catch(e){
+   const reason=String(e?.message||e);
+   const rateLimited=/rate.limit|too.many.requests|429/i.test(reason);
+   cloudMessage(rateLimited?'メール送信上限に達しました。しばらく時間を空けてください。':'メール送信失敗：'+reason,'warning');
+ }finally{setTimeout(()=>{button.disabled=false},60000)}
+};
+
 $('cloudLogin').onclick=async()=>{
  if(!cloud.client){cloudMessage('Supabase接続設定を確認してください。','warning');return}
  const email=$('cloudEmail').value.trim(),password=$('cloudPassword').value;
  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)||!password){cloudMessage('メールアドレスとパスワードを入力してください。','warning');return}
  const btn=$('cloudLogin');btn.disabled=true;
  try{const {error}=await cloud.client.auth.signInWithPassword({email,password});if(error)throw error;$('cloudPassword').value='';cloudMessage('ログインしました。クラウドの記録を確認しています。','good')}
- catch(e){cloudMessage('ログインできません。パスワード未設定の場合はログイン済みの端末から設定するか、SupabaseのAuthentication > Usersでパスワード付きユーザーを登録してください。詳細: '+(e?.message||e),'warning')}
+ catch(e){cloudMessage('ログインできません。既存のメールアドレスで「初回パスワード設定・再設定」を押してください。詳細: '+(e?.message||e),'warning')}
  finally{btn.disabled=false}
 };
 $('cloudSetPassword').onclick=async()=>{
- if(!cloud.client||!cloud.user){cloudMessage('パスワードの設定にはログインが必要です。','warning');return}
+ if(!cloud.client||!cloud.user){cloudMessage('パスワードの設定にはメール認証またはログインが必要です。','warning');return}
  const password=$('cloudNewPassword').value;
  if(password.length<12){cloudMessage('パスワードは12文字以上にしてください。','warning');return}
  const btn=$('cloudSetPassword');btn.disabled=true;
- try{const {error}=await cloud.client.auth.updateUser({password});if(error)throw error;$('cloudNewPassword').value='';cloudMessage('パスワードを設定しました。次回からメールとパスワードでログインできます。','good')}
+ try{const {error}=await cloud.client.auth.updateUser({password});if(error)throw error;$('cloudNewPassword').value='';cloudRecovering=false;cloudMessage('パスワードを設定しました。次回からメールとパスワードでログインできます。','good')}
  catch(e){cloudMessage('パスワード設定に失敗: '+(e?.message||e),'warning')}
  finally{btn.disabled=false}
 };
