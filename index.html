@@ -101,7 +101,7 @@
  <p class="small-note spaced">画面から登録した画像はブラウザにのみ保存され、他端末には同期されません。JSONバックアップには含まれます。全端末共通で使う画像はGitHubへ配置してください。ZIP内の <code>images/characters/stage-1.png</code> ～ <code>stage-5.png</code> に画像を入れる方法も使えます。画面から登録した画像が優先されます。</p>
 </section></details>
 <details class="extra-accord" id="ouraDetail"><summary>💍 Oura Ring・健康データ</summary><section class="section-v2 panel v2-panel" id="ouraSection">
- <div class="oura-row"><div><h3>💍 Oura × HABIT QUEST</h3><p class="subheading">睡眠・コンディション・歩数を習慣記録と一緒に確認</p></div><div class="oura-btns"><select id="ouraImportType" aria-label="Oura JSONのデータ種類" style="background:#232740;border:1px solid #3f4561;color:#f4f6ff;padding:9px;border-radius:10px"><option value="auto">種類：自動判定</option><option value="daily_sleep">睡眠</option><option value="daily_readiness">コンディション</option><option value="daily_activity">歩数</option></select><button class="btn" id="ouraConnect" disabled>Ouraアカウント連携</button><button class="btn" id="ouraSync" disabled>直近7日同期</button><button class="btn" id="ouraBackfill" disabled>過去6か月取込</button><button class="btn primary" id="ouraImport">Oura JSON読込</button><input id="ouraFile" type="file" accept=".json,application/json" hidden></div></div>
+ <div class="oura-row"><div><h3>💍 Oura × HABIT QUEST</h3><p class="subheading">睡眠・コンディション・歩数を習慣記録と一緒に確認</p></div><div class="oura-btns"><select id="ouraImportType" aria-label="Oura JSONのデータ種類" style="background:#232740;border:1px solid #3f4561;color:#f4f6ff;padding:9px;border-radius:10px"><option value="auto">種類：自動判定</option><option value="daily_sleep">睡眠</option><option value="daily_readiness">コンディション</option><option value="daily_activity">歩数</option></select><button class="btn" id="ouraConnect" disabled>Ouraアカウント連携</button><button class="btn" id="ouraDisconnect" type="button" hidden>Oura連携を停止</button><button class="btn" id="ouraSync" disabled>直近7日同期</button><button class="btn" id="ouraBackfill" disabled>過去6か月取込</button><button class="btn primary" id="ouraImport">Oura JSON読込</button><input id="ouraFile" type="file" accept=".json,application/json" hidden></div></div>
  <div id="ouraStatus" class="oura-status">Ouraを接続するには、先にクラウドへログインしてください。</div><div id="ouraLastSync" class="small-note">Oura最終取得：未取得</div>
  <div class="oura-metrics"><div class="oura-metric"><strong id="ouraSleep">—</strong><small>睡眠スコア（最新）</small></div><div class="oura-metric"><strong id="ouraReadiness">—</strong><small>コンディションスコア（最新）</small></div><div class="oura-metric"><strong id="ouraSteps">—</strong><small>歩数（最新）</small></div></div>
  <div class="chart-panel spaced"><div class="chart-title">Ouraから復元できる過去の習慣候補</div><p class="small-note">Ouraの睡眠終了時刻は実際の起床時刻と異なる場合があります。筋トレもワークアウト種類を確認し、実施した日だけ「記録する」を押してください。過去のXPは本人が確認した実績だけに付与します。</p><div id="ouraCandidates" class="analysis-empty">Ouraとの接続・同期後に候補を表示します。</div></div>
@@ -190,7 +190,7 @@ async function ouraCall(action,params={}){
  if(!session?.access_token)throw Error('ログイン状態が期限切れです');
  const u=new URL(OURA_ENDPOINT);u.searchParams.set('action',action);
  for(const [k,v]of Object.entries(params))u.searchParams.set(k,v);
- const r=await fetch(u,{headers:{Authorization:`Bearer ${session.access_token}`,apikey:getCloudConfig().anonKey,Accept:'application/json'}});
+ const r=await fetch(u,{method:action==='disconnect'?'POST':'GET',headers:{Authorization:`Bearer ${session.access_token}`,apikey:getCloudConfig().anonKey,Accept:'application/json'}});
  const x=await r.json().catch(()=>({}));if(!r.ok)throw Error(x.error||`HTTP ${r.status}`);return x;
 }
 async function fetchOuraMetrics(){
@@ -258,12 +258,13 @@ $('ouraCandidates')?.addEventListener('click',e=>{if(!e.target.closest('#ouraMor
 
 $('ouraCandidates')?.addEventListener('click',async e=>{const b=e.target.closest('[data-oura-confirm]');if(!b)return;const day=b.dataset.ouraDate,id=b.dataset.ouraConfirm;if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!['wake','train'].includes(id))return;if(!confirm(day+' の「'+(id==='wake'?'早起き':'運動')+'」を実施した記録として確定しますか？'))return;state.checks[day] ||= {};state.checks[day][id]=true;store();render();await fetchOuraMetrics();toast('過去の実績に記録しました',true)});
 async function checkOuraConnection(preserveStatus=false){
- $('ouraConnect').disabled=true;$('ouraSync').disabled=true;$('ouraBackfill').disabled=true;
+ $('ouraConnect').disabled=true;$('ouraSync').disabled=true;$('ouraBackfill').disabled=true;$('ouraDisconnect').hidden=true;
  if(!cloud.user){if(!preserveStatus)$('ouraStatus').textContent='先にクラウドへログインしてください。';return}
  try{
   const x=await ouraCall('status');
   const canSync=!!x.connected&&(x.scopes||[]).includes('daily');
   $('ouraConnect').disabled=!x.configured;
+  $('ouraDisconnect').hidden=!(x.connected||x.reauth_required);
   $('ouraConnect').textContent=x.connected?'Ouraを再接続':'Ouraアカウント連携';
   $('ouraSync').disabled=!canSync;$('ouraBackfill').disabled=!canSync;
   if(!preserveStatus){
@@ -286,6 +287,19 @@ async function checkOuraConnection(preserveStatus=false){
   }
  }catch(e){if(!preserveStatus)$('ouraStatus').textContent='Oura接続状態の取得に失敗: '+e.message}
 }
+$('ouraDisconnect').onclick=async()=>{
+ if(!cloud.user)return;
+ if(!confirm('Supabaseに保存したOuraの連携トークンを削除して、データ取得を停止しますか？取得済みの睡眠・運動履歴は残ります。Oura側の連携許可はOuraアカウント設定から別途取り消してください。'))return;
+ const button=$('ouraDisconnect');button.disabled=true;
+ try{
+   const result=await ouraCall('disconnect');
+   if(!result?.disconnected)throw Error('連携解除を確認できませんでした');
+   button.hidden=true;$('ouraSync').disabled=true;$('ouraBackfill').disabled=true;
+   $('ouraStatus').textContent='Ouraの新規データ取得を停止しました。Oura側の接続済みアプリ画面でも許可を取り消してください。取得済みのデータは残っています。';
+   toast('Oura連携の保存情報を削除しました',true);
+ }catch(e){$('ouraStatus').textContent='Oura連携停止に失敗: '+e.message}
+ finally{button.disabled=false}
+};
 $('ouraConnect').onclick=async()=>{try{const x=await ouraCall('start');location.assign(x.authorization_url)}catch(e){toast('Oura連携に失敗: '+e.message)}};
 $('ouraSync').onclick=()=>syncOura(true);
 $('ouraBackfill').onclick=()=>syncOura(true,true);
