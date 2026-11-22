@@ -27,6 +27,21 @@ async function configurationStatus(){
 async function user(req){const header=req.headers.get("authorization")||"";if(!header.startsWith("Bearer "))return null;const {data,error}=await admin.auth.getUser(header.slice(7));return error?null:data.user}
 async function connected(uid){const {data,error}=await admin.from("oura_connections").select("*").eq("user_id",uid).maybeSingle();if(error)throw error;return data}
 async function saveTokens(uid,t,scopes){const {error}=await admin.from("oura_connections").upsert({user_id:uid,access_token_encrypted:await enc(t.access_token),refresh_token_encrypted:await enc(t.refresh_token),expires_at:new Date(Date.now()+Number(t.expires_in||2592000)*1000).toISOString(),scopes,connection_state:"connected",refresh_lock_until:new Date(0).toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error)throw error}
+async function saveRefreshedTokens(uid,t,scopes,lockUntil){
+ const next={
+   access_token_encrypted:await enc(t.access_token),
+   refresh_token_encrypted:await enc(t.refresh_token),
+   expires_at:new Date(Date.now()+Number(t.expires_in||2592000)*1000).toISOString(),
+   scopes,connection_state:"connected",
+   refresh_lock_until:new Date(0).toISOString(),
+   updated_at:new Date().toISOString()
+ };
+ // Never INSERT a row during token rotation: a user may have disconnected in parallel.
+ const {data,error}=await admin.from("oura_connections").update(next)
+   .eq("user_id",uid).eq("refresh_lock_until",lockUntil).select("user_id");
+ if(error)throw error;
+ if(!data?.length)throw Error("Oura token update was cancelled because the connection was removed or replaced.");
+}
 async function refresh(uid,con){
  const now=new Date(),lockUntil=new Date(Date.now()+60000).toISOString();
  const {data:lock,error}=await admin.from("oura_connections")
@@ -56,7 +71,7 @@ async function refresh(uid,con){
    // Refresh tokens are one-time-use. Retry persisting the NEW pair, never retry the exchange.
    let saveError;
    for(let attempt=0;attempt<3;attempt++){
-     try{await saveTokens(uid,t,current.scopes);saveError=null;break}
+     try{await saveRefreshedTokens(uid,t,current.scopes,lockUntil);saveError=null;break}
      catch(e){saveError=e;if(attempt<2)await new Promise(resolve=>setTimeout(resolve,300*(attempt+1)))}
    }
    if(saveError)throw Error("Oura issued new tokens, but saving failed. Reconnect Oura before syncing.");
@@ -98,6 +113,9 @@ Deno.serve(async req=>{
    if(req.method!=="POST")return json(req,{error:"POST required"},405);
    // Remove only the caller's server-side credentials. Historical metrics remain.
    // Oura-side consent must also be revoked from the Oura connected-apps page.
+   // Invalidate any pending OAuth callback as well, so it cannot reconnect after disconnect.
+   const {error:stateError}=await admin.from("oura_oauth_states").delete().eq("user_id",u.id);
+   if(stateError)throw stateError;
    const {error}=await admin.from("oura_connections").delete().eq("user_id",u.id);
    if(error)throw error;
    return json(req,{ok:true,disconnected:true,oura_side_revocation:"user_action_required"});
