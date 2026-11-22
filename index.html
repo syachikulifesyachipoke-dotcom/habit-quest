@@ -307,6 +307,15 @@ $('cloudBackdrop').onclick=()=>toggleCloudMenu(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('cloudSection').hidden)toggleCloudMenu(false)});
 $('ouraJump').onclick=()=>{$('ouraDetail').open=true;$('ouraDetail').scrollIntoView({behavior:'smooth',block:'start'})};
 
+function readRecoveryLanding(href){
+  // Read the email link *before* Supabase removes its one-use URL hash.
+  const u=new URL(href);
+  const query=new URLSearchParams(u.search);
+  const hash=new URLSearchParams(u.hash.replace(/^#/,''));
+  return {isRecovery:query.get('type')==='recovery'||hash.get('type')==='recovery',
+          error:query.get('error_code')||hash.get('error_code')||query.get('error')||hash.get('error')||null};
+}
+const authLanding=readRecoveryLanding(location.href);
 const sdkUrl='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js';
 function cloudMessage(message,kind=''){const el=$('cloudStatus');el.textContent=message;el.classList.toggle('good',kind==='good');el.classList.toggle('warning',kind==='warning');const b=$('cloudToggle');if(b)b.textContent=cloud.user?(kind==='warning'?'☁ 要確認':kind==='good'?'☁ 保存済':'☁ 接続中'):'☁ ログイン'}
 function getCloudConfig(){let stored={};try{stored=JSON.parse(localStorage.getItem(CFG_KEY)||'{}')}catch(_){}const fixed=window.HABIT_QUEST_CLOUD||{};return{url:fixed.url||stored.url||'',anonKey:fixed.anonKey||stored.anonKey||''}}
@@ -325,12 +334,26 @@ choiceVisible(true,!!cloud.remote);cloudMessage(cloud.remote?'クラウドに別
 }catch(e){cloudMessage(`クラウドの読み込みに失敗：${e.message}。SupabaseのSQL・RLS・接続設定を確認してください。`,'warning')}})();return cloud.loadPromise}
 async function initCloud(){const config=getCloudConfig();$('sbUrl').value=config.url;$('sbKey').value=config.anonKey;if(!config.url&&!config.anonKey){cloudMessage('クラウド未設定。従来どおり端末内に保存しています。SupabaseのURLと公開可能なキーを入力してください。');return}if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(config.url)||!isPublicKey(config.anonKey)){cloudMessage('URLまたはキーの形式が不正です。Supabase Project URLとPublishable key（またはanon key）だけを設定してください。','warning');return}
 try{await loadCloudSdk();cloud.client=window.supabase.createClient(config.url.replace(/\/$/,''),config.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-cloud.client.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){cloudRecovering=true;setTimeout(()=>{toggleCloudMenu(true);$('cloudAuthPanel').hidden=true;$('cloudPasswordPanel').hidden=false;$('cloudNewPassword').focus();cloudMessage('メール認証が完了しました。新しいパスワード（12文字以上）を登録してください。','good')},150)}if(event==='SIGNED_OUT'){cloud.user=null;cloud.ready=false;cloud.blocked=true;cloud.revision=null;cloud.loadPromise=null;choiceVisible(false);$('cloudLogout').hidden=true;$('cloudLogin').hidden=false;$('cloudAuthPanel').hidden=false;$('cloudPasswordPanel').hidden=true;$('cloudPassword').value='';$('cloudNewPassword').value='';cloudMessage('ログアウトしました。記録は端末内にも残っています。');checkOuraConnection();return}if(session?.user?.id&&cloud.user?.id!==session.user.id){setTimeout(()=>attachCloudUser(session.user),0)}});
+cloud.client.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){cloudRecovering=true;setTimeout(showCloudRecoveryForm,250)}if(event==='SIGNED_OUT'){cloud.user=null;cloud.ready=false;cloud.blocked=true;cloud.revision=null;cloud.loadPromise=null;choiceVisible(false);$('cloudLogout').hidden=true;$('cloudLogin').hidden=false;$('cloudAuthPanel').hidden=false;$('cloudPasswordPanel').hidden=true;$('cloudPassword').value='';$('cloudNewPassword').value='';cloudMessage('ログアウトしました。記録は端末内にも残っています。');checkOuraConnection();return}if(session?.user?.id&&cloud.user?.id!==session.user.id){setTimeout(()=>attachCloudUser(session.user),0)}});
 const {data,error}=await cloud.client.auth.getSession();if(error)throw error;
-if(data.session?.user)await attachCloudUser(data.session.user);else cloudMessage('ログイン準備完了。メールアドレスとパスワードを入力してください。')
+if(data.session?.user){
+  await attachCloudUser(data.session.user);
+  if(cloudRecovering)setTimeout(showCloudRecoveryForm,150);
+ }else if(authLanding.error){
+  toggleCloudMenu(true);
+  cloudMessage('認証リンクが無効、または期限切れです。SupabaseのURL設定を確認し、新しい再設定メールを1回だけ発行してください。','warning');
+ }else cloudMessage('ログイン準備完了。メールアドレスとパスワードを入力してください。')
 }catch(e){cloudMessage('クラウド接続に失敗：'+e.message+'。この端末への保存は継続しています。','warning')}}
 $('cloudSetup').onclick=async()=>{const url=$('sbUrl').value.trim().replace(/\/$/,''),anonKey=$('sbKey').value.trim();if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)||!isPublicKey(anonKey)){cloudMessage('Supabase URLとPublishable key（またはanon key）を入力してください。secret/service_roleキーは使用できません。','warning');return}if(!confirm('Supabase接続設定を保存してページを再読み込みしますか？ 記録は端末内に保持されます。'))return;localStorage.setItem(CFG_KEY,JSON.stringify({url,anonKey}));location.reload()};
-let cloudRecovering=false,cloudResetSentAt=0;
+let cloudRecovering=authLanding.isRecovery,cloudResetSentAt=0;
+function showCloudRecoveryForm(){
+ if(!cloud.client||!cloud.user)return;
+ toggleCloudMenu(true);
+ $('cloudAuthPanel').hidden=true;
+ $('cloudPasswordPanel').hidden=false;
+ $('cloudNewPassword').focus();
+ cloudMessage('メール認証が完了しました。12文字以上の新しいパスワードを登録してください。','good');
+}
 $('cloudResetPassword').onclick=async()=>{
  if(!cloud.client){cloudMessage('Supabaseへの接続が完了していません。','warning');return}
  const email=$('cloudEmail').value.trim();
@@ -341,7 +364,7 @@ $('cloudResetPassword').onclick=async()=>{
    const redirectTo=new URL(location.pathname,location.origin).href;
    const {error}=await cloud.client.auth.resetPasswordForEmail(email,{redirectTo});
    if(error)throw error;
-   cloudMessage('パスワード設定メールを送信しました。新しく届いたメールのリンクを開くと、このアプリでパスワードを登録できます。','good');
+   cloudMessage('パスワード設定を受け付けました。登録済みのアドレスならメールが届きます。リンクを開き、このアプリで新しいパスワードを登録してください。','good');
  }catch(e){
    const reason=String(e?.message||e);
    const rateLimited=/rate.limit|too.many.requests|429/i.test(reason);
@@ -359,7 +382,7 @@ $('cloudLogin').onclick=async()=>{
  finally{btn.disabled=false}
 };
 $('cloudSetPassword').onclick=async()=>{
- if(!cloud.client||!cloud.user){cloudMessage('パスワードの設定にはメール認証またはログインが必要です。','warning');return}
+ if(!cloud.client||!cloud.user){cloudMessage('パスワードを設定するには、再設定メールのリンクで本人認証してください。','warning');return}
  const password=$('cloudNewPassword').value;
  if(password.length<12){cloudMessage('パスワードは12文字以上にしてください。','warning');return}
  const btn=$('cloudSetPassword');btn.disabled=true;
