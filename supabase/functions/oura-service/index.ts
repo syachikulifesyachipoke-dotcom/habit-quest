@@ -5,7 +5,7 @@ const admin = createClient(base,key,{auth:{autoRefreshToken:false,persistSession
 const url = new URL(import.meta.url);
 const redirect = Deno.env.get("OURA_REDIRECT_URI") || (base+"/functions/v1/oura-service/callback");
 const site = Deno.env.get("HABIT_SITE_URL") || "https://syachikulifesyachipoke-dotcom.github.io/habit-quest/";
-const cid = Deno.env.get("OURA_CLIENT_ID") || "";
+const cid = Deno.env.get("OURA_CLIENT_ID") || "087cf695-9e9f-4747-96f0-ae3482805110";
 const secret = Deno.env.get("OURA_CLIENT_SECRET") || "";
 const cryptoKey = Deno.env.get("OURA_TOKEN_KEY") || "";
 function headers(req){ const origin=req.headers.get("origin")||""; const allowed=(site && origin===new URL(site).origin) || /^http:\/\/localhost(:[0-9]+)?$/.test(origin); return {"Content-Type":"application/json","Cache-Control":"no-store","Access-Control-Allow-Origin":allowed?origin:"null","Vary":"Origin","Access-Control-Allow-Methods":"GET,POST,OPTIONS","Access-Control-Allow-Headers":"authorization,apikey,content-type,x-client-info"}; }
