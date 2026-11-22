@@ -31,7 +31,7 @@
 - **Redirect URI**: `https://kpiqktibvzymgzwxiajv.supabase.co/functions/v1/oura-service/callback`
 - Contact Email: 本人が実際に受信できるアドレス
 
-Client IDはOAuth認証時に公開される識別子で、既にEdge Function v6に設定済みです。Client Secretは秘密情報です。今回のスクリーンショットに表示されたSecretはOura Developer Portalのアプリ詳細からReset Secret等で再発行し、新しいものだけをSupabase Secretsに入力してください。GitHub・公開HTML・チャットには載せないでください。
+Client IDはOAuth認証時に公開される識別子で、既に現在配備中のEdge Functionに設定済みです。Client Secretは秘密情報です。過去の画面共有で表示されたSecretはOura Developer PortalのReset Secretで再発行し、新しいものだけをSupabase Secretsに入力してください。また、暗号化キーも画像に写っていたため、Oura接続前なら新しいランダムな値へ入れ替えるのが安全です。GitHub・公開HTML・チャットには載せないでください。
 
 ## 3. Supabase Edge Function SecretsにOura認証情報を登録
 
@@ -39,7 +39,7 @@ Client IDはOAuth認証時に公開される識別子で、既にEdge Function v
 
 | Key | Value |
 | --- | --- |
-| `OURA_CLIENT_ID` | 任意：公開Client IDはEdge Function v6へ反映済み。将来変更する場合に設定 |
+| `OURA_CLIENT_ID` | 任意：公開Client IDは現在配備中のEdge Functionへ反映済み。将来変更する場合に設定 |
 | `OURA_CLIENT_SECRET` | Ouraで発行したClient Secret |
 | `OURA_TOKEN_KEY` | 安全な乱数32バイトをBase64化した値 |
 | `HABIT_SITE_URL` | `https://syachikulifesyachipoke-dotcom.github.io/habit-quest/` |
@@ -58,10 +58,10 @@ $rng.Dispose()
 
 ## 4. Oura接続と同期の確認
 
-- HABIT QUESTを開いてメールリンクでログイン。
-- 「Ouraアカウント連携」ボタンを押し、Oura上で権限 `daily` と `workout` を承認。
+- HABIT QUESTの右上「☁ ログイン」からメール＋パスワードでログイン。
+- 右上の「💍 Oura」でOura欄を開き、「Ouraアカウント連携」を押して権限 `daily` と `workout` を承認。
 - アプリに戻ったら「直近7日同期」で最新データを検証。
-- 「過去6か月取込」で過去の記録を取得。Oura側に記録がある期間のみ取得可能。
+- 「過去6か月取込」で過去の記録を取得。候補は40件ずつ追加表示可能。早起きは5:40以前を候補にし、昼寝を主睡眠に含めません。Oura側に記録がある期間のみ取得可能。
 - 起床の候補は睡眠終了時刻に基づく推定、筋トレは運動履歴であり、自動的に習慣の「達成」へ確定はしません。
 - 初回以降はアプリを開いたとき、また画面を再表示したときに前回試行から6時間以上なら同期を試みます。アプリを閉じている間の常時同期ではありません。
 
