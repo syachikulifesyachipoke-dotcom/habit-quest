@@ -71,7 +71,7 @@
    <button class="btn" id="cloudLogout" type="button">ログアウト</button>
  </div>
  <div class="cloud-choice" id="cloudChoice"><button class="btn primary" id="cloudUseLocal" type="button">この端末の記録をクラウドに保存</button><button class="btn" id="cloudUseRemote" type="button">クラウドの記録をこの端末に取得</button></div>
- <p class="cloud-note">すでに登録済みのメールアドレスをそのまま使えます。パスワード未設定の場合は「初回パスワード設定・再設定」でメールを受信してください。初回ログイン時は端末とクラウドの記録を選択します。</p>
+ <p class="cloud-note">既存のメールアドレスをそのまま使用できます。初回パスワード設定はメールを1通だけ申請してください。<a href="https://supabase.com/dashboard/project/kpiqktibvzymgzwxiajv/auth/url-configuration" target="_blank" rel="noopener noreferrer">Supabaseの認証URL設定</a>でSite URLとRedirect URLsがこのアプリのURLになっていることを事前に確認してください。ログイン後、端末とクラウドの記録を選択します。</p>
  <details class="cloud-advanced"><summary>バックアップ・復元</summary><div class="cloud-backup-actions"><button class="btn ghost" id="exportBtn">↧ バックアップ</button><button class="btn ghost" id="importBtn">↥ 復元</button><input id="fileInput" type="file" accept="application/json,.json" hidden></div></details>
 </section>
 <main>
