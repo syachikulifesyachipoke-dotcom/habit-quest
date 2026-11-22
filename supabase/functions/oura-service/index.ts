@@ -18,7 +18,51 @@ async function token(body){const r=await fetch("https://api.ouraring.com/oauth/t
 async function user(req){const header=req.headers.get("authorization")||"";if(!header.startsWith("Bearer "))return null;const {data,error}=await admin.auth.getUser(header.slice(7));return error?null:data.user}
 async function connected(uid){const {data,error}=await admin.from("oura_connections").select("*").eq("user_id",uid).maybeSingle();if(error)throw error;return data}
 async function saveTokens(uid,t,scopes){const {error}=await admin.from("oura_connections").upsert({user_id:uid,access_token_encrypted:await enc(t.access_token),refresh_token_encrypted:await enc(t.refresh_token),expires_at:new Date(Date.now()+Number(t.expires_in||2592000)*1000).toISOString(),scopes,connection_state:"connected",refresh_lock_until:new Date(0).toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error)throw error}
-async function refresh(uid,con){const now=new Date();const {data:lock,error}=await admin.from("oura_connections").update({refresh_lock_until:new Date(Date.now()+45000).toISOString()}).eq("user_id",uid).lt("refresh_lock_until",now.toISOString()).select("user_id");if(error)throw error;if(!lock?.length)throw Error("Token refresh is already underway; retry shortly");try{const t=await token({grant_type:"refresh_token",refresh_token:await dec(con.refresh_token_encrypted)});await saveTokens(uid,t,con.scopes);return t.access_token}catch(e){const invalidGrant=e?.ouraCode==="invalid_grant";await admin.from("oura_connections").update({connection_state:invalidGrant?"reauth_required":"connected",refresh_lock_until:new Date(0).toISOString()}).eq("user_id",uid);throw e}}
+async function refresh(uid,con){
+ const now=new Date(),lockUntil=new Date(Date.now()+60000).toISOString();
+ const {data:lock,error}=await admin.from("oura_connections")
+   .update({refresh_lock_until:lockUntil}).eq("user_id",uid)
+   .lt("refresh_lock_until",now.toISOString()).select("user_id");
+ if(error)throw error;
+ if(!lock?.length){
+   // Another device is refreshing a single-use token. Re-check before reporting an error.
+   for(let i=0;i<6;i++){
+     await new Promise(resolve=>setTimeout(resolve,500*(i+1)));
+     const latest=await connected(uid);
+     if(latest?.connection_state==="reauth_required")throw Error("Oura reconnection required");
+     if(latest&&Date.parse(latest.expires_at)-Date.now()>180000)
+       return await dec(latest.access_token_encrypted);
+   }
+   throw Error("Oura token refresh is running. Please retry shortly.");
+ }
+ try{
+   // A second device can acquire a lock after another device has already rotated the token.
+   // Always fetch the row again while holding the refresh lock.
+   const current=await connected(uid);
+   if(!current)throw Error("Oura connection missing");
+   if(current.connection_state!=="connected")throw Error("Oura reconnection required");
+   if(Date.parse(current.expires_at)-Date.now()>180000)
+     return await dec(current.access_token_encrypted);
+   const t=await token({grant_type:"refresh_token",refresh_token:await dec(current.refresh_token_encrypted)});
+   // Refresh tokens are one-time-use. Retry persisting the NEW pair, never retry the exchange.
+   let saveError;
+   for(let attempt=0;attempt<3;attempt++){
+     try{await saveTokens(uid,t,current.scopes);saveError=null;break}
+     catch(e){saveError=e;if(attempt<2)await new Promise(resolve=>setTimeout(resolve,300*(attempt+1)))}
+   }
+   if(saveError)throw Error("Oura issued new tokens, but saving failed. Reconnect Oura before syncing.");
+   return t.access_token;
+ }catch(e){
+   if(e?.ouraCode==="invalid_grant"){
+     await admin.from("oura_connections").update({connection_state:"reauth_required"})
+       .eq("user_id",uid).eq("refresh_lock_until",lockUntil);
+   }
+   throw e;
+ }finally{
+   await admin.from("oura_connections").update({refresh_lock_until:new Date(0).toISOString()})
+      .eq("user_id",uid).eq("refresh_lock_until",lockUntil);
+ }
+}
 async function getAccess(uid){let con=await connected(uid);if(!con)throw Error("Oura not connected");if(con.connection_state!=="connected")throw Error("Oura reconnection required");return {access:Date.parse(con.expires_at)-Date.now()>180000?await dec(con.access_token_encrypted):await refresh(uid,con),scopes:con.scopes}}
 function shiftedDay(day,delta){const d=new Date(day+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+delta);return d.toISOString().slice(0,10)}
 async function collect(type,start,end,access){let next=null;const rows=[];const padded=["daily_activity","sleep","workout"].includes(type);for(let i=0;i<12;i++){const u=new URL("https://api.ouraring.com/v2/usercollection/"+type);u.searchParams.set("start_date",padded?shiftedDay(start,-1):start);u.searchParams.set("end_date",padded?shiftedDay(end,1):end);if(next)u.searchParams.set("next_token",next);const r=await fetch(u,{headers:{Authorization:"Bearer "+access,"User-Agent":"HabitQuest/1.0"},signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error("Oura "+type+" API "+r.status);const j=await r.json();rows.push(...(j.data||[]).filter(x=>{const day=x.day||(type==="workout"?(x.start_datetime||x.start_time||"").slice(0,10):"");return day>=start&&day<=end}));next=j.next_token;if(!next)return rows}throw Error("Pagination limit reached")}
