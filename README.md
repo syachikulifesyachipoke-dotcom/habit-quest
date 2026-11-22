@@ -11,7 +11,7 @@
 
 ## 残りの作業
 
-- パスワード付き本人アカウントの設定・実ログイン。
+- 既存アカウントのパスワード登録・ログイン・クラウド初回保存は成功済み（2026-11-23にDBで確認）。
 - Ouraの初回認証と過去6か月のデータ取込・実測値の検証。
 - 独自ドメインへの切替（後回し可）。
 - 技術的な検証結果は[STATUS.md](./STATUS.md)を参照。
@@ -21,7 +21,7 @@
 1. GitHub Pagesは設定済み。公開URLを確認する。
 2. GitHub Pagesの仮URL `https://syachikulifesyachipoke-dotcom.github.io/habit-quest/` にアクセスし、画面が表示されるか確認する。
 3. 独自ドメイン `habit.syachiku-life.com` を利用する場合、既存のDNSレコードを壊さないように、`habit` のCNAMEのみGitHub Pagesのホストへ向け、GitHub Pages側にも独自ドメインを登録する。DNS設定前に `CNAME` ファイルは登録していません。
-4. Supabase **Authentication > URL Configuration** のSite URL/Redirect URLsを公開URLに設定し、本人のパスワード付きログインが使えることを確認する。新規登録を停止する場合は、ログインが機能することを確認してから設定する。
+4. SupabaseのSite URLとRedirect URLsは公開URLに設定済み（ユーザー提供画像で確認）。再設定不要。新規登録の無効化は別途確認する。
 5. Oura Developer Portalにアプリ名、公開されたWebサイト、プライバシーポリシー、利用規約、OAuth Redirect URIを入力する。
 6. Client IDはEdge Functionコードに設定済み。SecretはSupabaseの管理画面で確認し、必要なら再設定する。**秘密値をGitHubにコミットしないこと。**
 7. [SETUP.md](./SETUP.md) の手順でメール＋パスワードのログイン・クラウド同期・Oura最新7日と過去6か月取込・ログアウト・復元を実地検証する。
@@ -40,4 +40,4 @@ OuraのRedirect URI: `https://kpiqktibvzymgzwxiajv.supabase.co/functions/v1/oura
 
 個人の習慣記録・Ouraデータ・暗号化トークンはSupabaseに保存し、GitHubの公開リポジトリには置きません。ブラウザに置けるのはSupabaseの公開可能なキーだけです。Supabase Freeプランを維持し、有料プランへ変更しない限り、無料枠超過による自動従量課金は発生しません。ただし無料サービスの利用制限や休止は起こり得ます。JSONバックアップを定期的に取得してください。
 
-**現時点は公開済みの試験版です。** Ouraとの実接続・自動更新・スマホ同期が合格するまでは完成判定しません。
+**認証とクラウド初回保存は実動作確認済み。** Oura実接続・自動更新・PC↔スマホ同期は実地検証待ちです。
