@@ -94,6 +94,14 @@ Deno.serve(async req=>{
  const u=await user(req);if(!u)return json(req,{error:"Please sign in"},401);
  try{
   if(action==="status"){const c=await connected(u.id);const cfg=await configurationStatus();return json(req,{connected:!!c&&c.connection_state==="connected",reauth_required:c?.connection_state==="reauth_required",configured:cfg.configured,setup_issues:cfg.issues,scopes:c?.scopes||[]})}
+  if(action==="disconnect"){
+   if(req.method!=="POST")return json(req,{error:"POST required"},405);
+   // Remove only the caller's server-side credentials. Historical metrics remain.
+   // Oura-side consent must also be revoked from the Oura connected-apps page.
+   const {error}=await admin.from("oura_connections").delete().eq("user_id",u.id);
+   if(error)throw error;
+   return json(req,{ok:true,disconnected:true,oura_side_revocation:"user_action_required"});
+  }
   if(action==="start"){
    const cfg=await configurationStatus();if(!cfg.configured)return json(req,{error:"Oura configuration incomplete: "+cfg.issues.join(", ")},503);
    const random=crypto.getRandomValues(new Uint8Array(32));const state=Array.from(random).map(x=>x.toString(16).padStart(2,"0")).join("");
