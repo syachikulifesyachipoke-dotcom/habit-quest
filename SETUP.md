@@ -23,7 +23,7 @@
 - **Redirect URI**: `https://kpiqktibvzymgzwxiajv.supabase.co/functions/v1/oura-service/callback`
 - Contact Email: 本人が実際に受信できるアドレス
 
-Client ID / Client Secretは**GitHub・公開HTML・チャットへ貼り付けない**こと。SupabaseのSecretsにのみ保存します。
+Client IDはOAuth認証時に公開される識別子で、既にEdge Function v6に設定済みです。Client Secretは秘密情報です。今回のスクリーンショットに表示されたSecretはOura Developer Portalのアプリ詳細からReset Secret等で再発行し、新しいものだけをSupabase Secretsに入力してください。GitHub・公開HTML・チャットには載せないでください。
 
 ## 3. Supabase Edge Function SecretsにOura認証情報を登録
 
@@ -31,7 +31,7 @@ Client ID / Client Secretは**GitHub・公開HTML・チャットへ貼り付け�
 
 | Key | Value |
 | --- | --- |
-| `OURA_CLIENT_ID` | Ouraで発行したClient ID |
+| `OURA_CLIENT_ID` | 任意：公開Client IDはEdge Function v6へ反映済み。将来変更する場合に設定 |
 | `OURA_CLIENT_SECRET` | Ouraで発行したClient Secret |
 | `OURA_TOKEN_KEY` | 安全な乱数32バイトをBase64化した値 |
 | `HABIT_SITE_URL` | `https://syachikulifesyachipoke-dotcom.github.io/habit-quest/` |
