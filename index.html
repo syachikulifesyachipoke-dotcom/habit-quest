@@ -267,7 +267,7 @@ async function syncOura(notify,history=false){
  if(ouraBusy)return;
  ouraBusy=true;$('ouraSync').disabled=true;$('ouraBackfill').disabled=true;
  // Manual sync should suppress a duplicate automatic sync immediately afterward.
- localStorage.setItem('habit-oura-last-attempt',String(Date.now()));
+ try{localStorage.setItem('habit-oura-last-attempt',String(Date.now()))}catch(_){}
  let total=0,completedDays=0,currentStart='';
  try{
    const today=atMidday(new Date());
@@ -286,6 +286,8 @@ async function syncOura(notify,history=false){
    $('ouraStatus').textContent=`Oura同期完了：${total}日分を更新。未記録日は空欄のままです。`;
    if(notify)toast(`Ouraの記録を${total}日分同期しました`,true);
  }catch(e){
+   // A temporary error should retry automatically after roughly 15 minutes, not six hours.
+   try{localStorage.setItem('habit-oura-last-attempt',String(Date.now()-(6*60-15)*60*1000))}catch(_){}
    $('ouraStatus').textContent=`Oura同期が中断しました（${currentStart||'開始前'}）。取得済み ${total}日分は保持されます。再実行できます。詳細：${e.message}`;
    if(notify)toast('Oura同期に失敗しました。記録は保持されます');
  }finally{
