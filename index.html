@@ -200,18 +200,45 @@ async function fetchOuraMetrics(){
  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){}renderOura();await renderOuraCandidates(all);return all.length;
 }
 
+function dateInTokyo(timestamp){
+ const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(timestamp));
+ const get=type=>parts.find(p=>p.type===type)?.value||'';
+ return get('year')+'-'+get('month')+'-'+get('day');
+}
 async function renderOuraCandidates(daily){
  const area=$('ouraCandidates');if(!area)return;
  let workouts=[];
- try{const {data,error}=await cloud.client.from('oura_workouts').select('start_time,activity').eq('user_id',cloud.user.id).order('start_time',{ascending:false}).limit(300);if(!error)workouts=data||[]}catch(_){}
- const map=new Map();for(const w of workouts){if(!w.start_time)continue;const date=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(w.start_time));if(!map.has(date))map.set(date,[]);map.get(date).push(w.activity||'運動')}
+ try{
+   const {data,error}=await cloud.client.from('oura_workouts').select('start_time,activity').eq('user_id',cloud.user.id).order('start_time',{ascending:false}).limit(1000);
+   if(!error)workouts=data||[];
+ }catch(_){}
+ const byDay=new Map();
+ for(const w of workouts){
+   if(!w.start_time)continue;
+   const day=dateInTokyo(w.start_time);
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(day))continue;
+   if(!byDay.has(day))byDay.set(day,[]);
+   const activity=String(w.activity||'種類不明').replace(/[_-]+/g,' ').slice(0,55);
+   if(!byDay.get(day).includes(activity))byDay.get(day).push(activity);
+ }
  const choices=[];
- for(const row of daily){const a=[];
- if(row.wake_time){const wake=new Date(row.wake_time);const hhmm=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(wake);if(hhmm<='06:00'&&!state.checks[row.day]?.wake)a.push({type:'wake',label:'起床 '+hhmm+'（推定）'})}
- if(map.has(row.day)&&!state.checks[row.day]?.train)a.push({type:'train',label:'運動記録 '+map.get(row.day).join('・').slice(0,80)})
- for(const x of a)choices.push({date:row.day,...x})}
+ const days=new Map(daily.map(x=>[x.day,x]));
+ // Workouts may exist on days without a daily sleep/activity score.
+ for(const d of byDay.keys())if(!days.has(d))days.set(d,{day:d,wake_time:null});
+ for(const row of days.values()){
+   if(row.wake_time){
+     const wake=new Date(row.wake_time);
+     if(!Number.isNaN(wake.getTime())){
+       const hhmm=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(wake);
+       if(hhmm<='05:40'&&!state.checks[row.day]?.wake&&state.habits.some(h=>h.id==='wake'))
+         choices.push({date:row.day,type:'wake',label:'起床 '+hhmm+'（睡眠終了時刻から推定）'});
+     }
+   }
+   if(byDay.has(row.day)&&!state.checks[row.day]?.train&&state.habits.some(h=>h.id==='train'))
+     choices.push({date:row.day,type:'train',label:'運動: '+byDay.get(row.day).join('・').slice(0,88)+'（実施内容を要確認）'});
+ }
  choices.sort((a,b)=>b.date.localeCompare(a.date));
- area.innerHTML=choices.length?'<div class="small-note">候補 '+choices.length+'件（最新40件を表示）。Ouraの測定を本人確認で確定します。</div><div class="habit-ranking-wrap"><table class="habit-ranking"><thead><tr><th>日付</th><th>Ouraの候補</th><th>操作</th></tr></thead><tbody>'+choices.slice(0,40).map(c=>'<tr><td>'+esc(c.date)+'</td><td>'+esc(c.label)+'</td><td><button class="btn ghost" type="button" data-oura-confirm="'+c.type+'" data-oura-date="'+c.date+'">記録する</button></td></tr>').join('')+'</tbody></table></div>':'過去の早起き・運動について、新しい候補はありません。';
+ area.innerHTML=choices.length?'<div class="small-note">候補 '+choices.length+'件（最新40件を表示）。早起きは5:40以前、運動はOuraの活動種類を確認してから本人が確定します。</div><div class="habit-ranking-wrap"><table class="habit-ranking"><thead><tr><th>日付</th><th>Ouraの候補</th><th>操作</th></tr></thead><tbody>'+choices.slice(0,40).map(c=>'<tr><td>'+esc(c.date)+'</td><td>'+esc(c.label)+'</td><td><button class="btn ghost" type="button" data-oura-confirm="'+c.type+'" data-oura-date="'+c.date+'">記録する</button></td></tr>').join('')+'</tbody></table></div>':'過去の早起き・運動について、新しい候補はありません。';
 }
 $('ouraCandidates')?.addEventListener('click',async e=>{const b=e.target.closest('[data-oura-confirm]');if(!b)return;const day=b.dataset.ouraDate,id=b.dataset.ouraConfirm;if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!['wake','train'].includes(id))return;if(!confirm(day+' の「'+(id==='wake'?'早起き':'運動')+'」を実施した記録として確定しますか？'))return;state.checks[day] ||= {};state.checks[day][id]=true;store();render();await fetchOuraMetrics();toast('過去の実績に記録しました',true)});
 async function checkOuraConnection(){
