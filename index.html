@@ -252,11 +252,11 @@ function drawOuraCandidateList(){
 $('ouraCandidates')?.addEventListener('click',e=>{if(!e.target.closest('#ouraMore'))return;ouraCandidateShown+=40;drawOuraCandidateList()});
 
 $('ouraCandidates')?.addEventListener('click',async e=>{const b=e.target.closest('[data-oura-confirm]');if(!b)return;const day=b.dataset.ouraDate,id=b.dataset.ouraConfirm;if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!['wake','train'].includes(id))return;if(!confirm(day+' の「'+(id==='wake'?'早起き':'運動')+'」を実施した記録として確定しますか？'))return;state.checks[day] ||= {};state.checks[day][id]=true;store();render();await fetchOuraMetrics();toast('過去の実績に記録しました',true)});
-async function checkOuraConnection(){
+async function checkOuraConnection(preserveStatus=false){
  $('ouraConnect').disabled=true;$('ouraSync').disabled=true;$('ouraBackfill').disabled=true;
  if(!cloud.user){$('ouraStatus').textContent='先にクラウドへログインしてください。';return}
  try{const x=await ouraCall('status');$('ouraConnect').disabled=!x.configured;$('ouraConnect').textContent=x.connected?'Ouraを再接続':'Ouraアカウント連携';$('ouraSync').disabled=!x.connected;$('ouraBackfill').disabled=!x.connected;
-  $('ouraStatus').textContent=!x.configured?'Oura認証情報はまだ設定されていません。管理者によるSupabase Secrets設定が必要です。':x.connected?'Oura接続済み。睡眠・歩数・運動の記録を取得できます。':x.reauth_required?'Ouraの再認証が必要です。': 'Oura未接続。アカウント連携から承認してください。';
+  if(!preserveStatus)$('ouraStatus').textContent=!x.configured?'Oura認証情報はまだ設定されていません。管理者によるSupabase Secrets設定が必要です。':x.connected?'Oura接続済み。睡眠・歩数・運動の記録を取得できます。':x.reauth_required?'Ouraの再認証が必要です。': 'Oura未接続。アカウント連携から承認してください。';
   await fetchOuraMetrics();if(x.connected && !ouraBusy){const last=Number(localStorage.getItem('habit-oura-last-attempt')||0);if(!Number.isFinite(last)||Date.now()-last>=6*60*60*1000){localStorage.setItem('habit-oura-last-attempt',String(Date.now()));syncOura(false)}}
  }catch(e){$('ouraStatus').textContent='Oura接続状態の取得に失敗: '+e.message}
 }
@@ -264,15 +264,34 @@ $('ouraConnect').onclick=async()=>{try{const x=await ouraCall('start');location.
 $('ouraSync').onclick=()=>syncOura(true);
 $('ouraBackfill').onclick=()=>syncOura(true,true);
 async function syncOura(notify,history=false){
- if(ouraBusy)return;ouraBusy=true;$('ouraSync').disabled=true;$('ouraBackfill').disabled=true;
+ if(ouraBusy)return;
+ ouraBusy=true;$('ouraSync').disabled=true;$('ouraBackfill').disabled=true;
+ // Manual sync should suppress a duplicate automatic sync immediately afterward.
+ localStorage.setItem('habit-oura-last-attempt',String(Date.now()));
+ let total=0,completedDays=0,currentStart='';
  try{
-  const today=atMidday(new Date()),to=dayKey(today);
-  const days=history?184:8,first=addDay(today,-days+1);let start=atMidday(first),total=0;
-  while(start<=today){const stop=addDay(start,Math.min(29,Math.round((today-start)/86400000)));const res=await ouraCall('sync',{start:dayKey(start),end:dayKey(stop)});total+=res.days||0;start=addDay(stop,1)}
-  await fetchOuraMetrics();$('ouraStatus').textContent=`Oura同期完了：${total}日分を処理（未記録日は空欄のままです）`;
-  if(notify)toast(`Ouraの記録を${total}日分同期しました`,true)
- }catch(e){$('ouraStatus').textContent='Oura同期エラー：'+e.message;if(notify)toast('Oura同期エラー: '+e.message)}
- finally{ouraBusy=false;checkOuraConnection()}
+   const today=atMidday(new Date());
+   const days=history?184:7,first=addDay(today,-days+1);
+   let start=atMidday(first);
+   while(start<=today){
+     const stop=addDay(start,Math.min(29,Math.round((today-start)/86400000)));
+     currentStart=dayKey(start);
+     $('ouraStatus').textContent=`Oura同期中：${Math.min(days,completedDays+1)}〜${Math.min(days,completedDays+30)}日目 / ${days}日（処理済み ${total}件）`;
+     const res=await ouraCall('sync',{start:dayKey(start),end:dayKey(stop)});
+     total+=res.days||0;
+     completedDays+=Math.round((stop-start)/86400000)+1;
+     start=addDay(stop,1);
+   }
+   await fetchOuraMetrics();
+   $('ouraStatus').textContent=`Oura同期完了：${total}日分を更新。未記録日は空欄のままです。`;
+   if(notify)toast(`Ouraの記録を${total}日分同期しました`,true);
+ }catch(e){
+   $('ouraStatus').textContent=`Oura同期が中断しました（${currentStart||'開始前'}）。取得済み ${total}日分は保持されます。再実行できます。詳細：${e.message}`;
+   if(notify)toast('Oura同期に失敗しました。記録は保持されます');
+ }finally{
+   ouraBusy=false;
+   await checkOuraConnection(true);
+ }
 }
 
 
