@@ -241,7 +241,7 @@ $('cloudLogin').onclick=async()=>{
  if(!cloud.client){cloudMessage('先にSupabaseへの接続を設定してください。','warning');return}
  if(location.protocol==='file:'){cloudMessage('メールログインはHTTPSの公開URL、またはlocalhostで起動した画面から使用してください。','warning');return}
  const email=$('cloudEmail').value.trim();
- if(!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email)){cloudMessage('メールアドレスを確認してください。','warning');return}
+ if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){cloudMessage('メールアドレスを確認してください。','warning');return}
  if(Date.now()-lastLoginMailAttempt<60000){cloudMessage('メールの連続送信を防ぐため、前回の操作から60秒以上空けてください。','warning');return}
  lastLoginMailAttempt=Date.now();
  const btn=$('cloudLogin');btn.disabled=true;
