@@ -236,7 +236,27 @@ const {data,error}=await cloud.client.auth.getSession();if(error)throw error;
 if(data.session?.user)await attachCloudUser(data.session.user);else cloudMessage('Supabase接続準備完了。メールアドレスを入力し、ログイン用リンクを送信してください。')
 }catch(e){cloudMessage('クラウド接続に失敗：'+e.message+'。この端末への保存は継続しています。','warning')}}
 $('cloudSetup').onclick=async()=>{const url=$('sbUrl').value.trim().replace(/\/$/,''),anonKey=$('sbKey').value.trim();if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)||!isPublicKey(anonKey)){cloudMessage('Supabase URLとPublishable key（またはanon key）を入力してください。secret/service_roleキーは使用できません。','warning');return}if(!confirm('Supabase接続設定を保存してページを再読み込みしますか？ 記録は端末内に保持されます。'))return;localStorage.setItem(CFG_KEY,JSON.stringify({url,anonKey}));location.reload()};
-$('cloudLogin').onclick=async()=>{if(!cloud.client){cloudMessage('先にSupabaseへの接続を設定してください。','warning');return}if(location.protocol==='file:'){cloudMessage('メールログインはHTTPSの公開URL、またはlocalhostで起動した画面から使用してください。','warning');return}const email=$('cloudEmail').value.trim();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){cloudMessage('メールアドレスを確認してください。','warning');return}try{const url=new URL(location.pathname,location.origin).href;const {error}=await cloud.client.auth.signInWithOtp({email,options:{emailRedirectTo:url}});if(error)throw error;cloudMessage(`${email} にログイン用リンクを送信しました。受信メールのリンクをこのサイトで開いてください。`,'good')}catch(e){cloudMessage('メール送信に失敗：'+e.message,'warning')}};
+let lastLoginMailAttempt=0;
+$('cloudLogin').onclick=async()=>{
+ if(!cloud.client){cloudMessage('先にSupabaseへの接続を設定してください。','warning');return}
+ if(location.protocol==='file:'){cloudMessage('メールログインはHTTPSの公開URL、またはlocalhostで起動した画面から使用してください。','warning');return}
+ const email=$('cloudEmail').value.trim();
+ if(!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email)){cloudMessage('メールアドレスを確認してください。','warning');return}
+ if(Date.now()-lastLoginMailAttempt<60000){cloudMessage('メールの連続送信を防ぐため、前回の操作から60秒以上空けてください。','warning');return}
+ lastLoginMailAttempt=Date.now();
+ const btn=$('cloudLogin');btn.disabled=true;
+ try{
+   const url=new URL(location.pathname,location.origin).href;
+   const {error}=await cloud.client.auth.signInWithOtp({email,options:{emailRedirectTo:url}});
+   if(error)throw error;
+   cloudMessage(`${email} にログイン用リンクを送信しました。新しく届いたメールを開いてください。`,'good');
+ }catch(e){
+   const message=String(e?.message||e);
+   if(/email.rate.limit.exceeded|over_email_send_rate_limit|rate.limit|too.many.requests|429/i.test(message)){
+      cloudMessage('Supabase標準メールの送信上限（プロジェクト全体で1時間2通）に達しています。連続送信せず、送信枠の回復後に再試行してください。認証の戻り先URLもSupabaseで設定が必要です。','warning');
+   }else cloudMessage('ログインメール送信に失敗：'+message,'warning');
+ }finally{setTimeout(()=>{btn.disabled=false},60000)}
+};
 $('cloudLogout').onclick=async()=>{if(!cloud.client)return;if(!confirm('クラウドからログアウトしますか？ この端末の記録は残ります。'))return;const {error}=await cloud.client.auth.signOut();if(error)cloudMessage('ログアウト失敗：'+error.message,'warning')};
 function scheduleCloudSave(){clearTimeout(cloud.timer);cloud.timer=setTimeout(()=>saveCloud(false),550)}
 async function saveCloud(force){if(!cloud.client||!cloud.user||cloud.saving||cloud.blocked)return;if(!force&&cloud.seq===cloud.syncedSeq)return;cloud.saving=true;const capturedSeq=cloud.seq,snapshot=cloudSnapshot(state);try{const {data,error}=await cloud.client.rpc('save_habit_state',{p_data:snapshot,p_expected_revision:cloud.revision});if(error)throw error;const row=Array.isArray(data)?data[0]:data;if(!row||row.is_conflict){cloud.ready=false;cloud.blocked=true;cloud.remote=await cloudFetch();choiceVisible(true,!!cloud.remote);cloudMessage('⚠ 他の端末でデータが更新されました。クラウド版か端末版を選んでください。自動上書きは停止しています。','warning');return}cloud.revision=Number(row.new_revision);cloud.syncedSeq=capturedSeq;cloudMessage(`☁ 保存完了：${new Date().toLocaleTimeString('ja-JP')}（改訂 ${cloud.revision}）`,'good');if(cloud.seq!==capturedSeq)scheduleCloudSave()}catch(e){cloudMessage('⚠ 同期できません：'+e.message+'。記録は端末内に保存されています。「今すぐ同期」で再試行できます。','warning')}finally{cloud.saving=false}}
