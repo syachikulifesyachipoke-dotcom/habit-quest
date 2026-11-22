@@ -102,7 +102,7 @@
 </section></details>
 <details class="extra-accord" id="ouraDetail"><summary>💍 Oura Ring・健康データ</summary><section class="section-v2 panel v2-panel" id="ouraSection">
  <div class="oura-row"><div><h3>💍 Oura × HABIT QUEST</h3><p class="subheading">睡眠・コンディション・歩数を習慣記録と一緒に確認</p></div><div class="oura-btns"><select id="ouraImportType" aria-label="Oura JSONのデータ種類" style="background:#232740;border:1px solid #3f4561;color:#f4f6ff;padding:9px;border-radius:10px"><option value="auto">種類：自動判定</option><option value="daily_sleep">睡眠</option><option value="daily_readiness">コンディション</option><option value="daily_activity">歩数</option></select><button class="btn" id="ouraConnect" disabled>Ouraアカウント連携</button><button class="btn" id="ouraSync" disabled>直近7日同期</button><button class="btn" id="ouraBackfill" disabled>過去6か月取込</button><button class="btn primary" id="ouraImport">Oura JSON読込</button><input id="ouraFile" type="file" accept=".json,application/json" hidden></div></div>
- <div id="ouraStatus" class="oura-status">Ouraを接続するには、先にクラウドへログインしてください。</div>
+ <div id="ouraStatus" class="oura-status">Ouraを接続するには、先にクラウドへログインしてください。</div><div id="ouraLastSync" class="small-note">Oura最終取得：未取得</div>
  <div class="oura-metrics"><div class="oura-metric"><strong id="ouraSleep">—</strong><small>睡眠スコア（最新）</small></div><div class="oura-metric"><strong id="ouraReadiness">—</strong><small>コンディションスコア（最新）</small></div><div class="oura-metric"><strong id="ouraSteps">—</strong><small>歩数（最新）</small></div></div>
  <div class="chart-panel spaced"><div class="chart-title">Ouraから復元できる過去の習慣候補</div><p class="small-note">Ouraの睡眠終了時刻は実際の起床時刻と異なる場合があります。筋トレもワークアウト種類を確認し、実施した日だけ「記録する」を押してください。過去のXPは本人が確認した実績だけに付与します。</p><div id="ouraCandidates" class="analysis-empty">Ouraとの接続・同期後に候補を表示します。</div></div>
  <div id="ouraInsight" class="pill-note">睡眠・コンディション・歩数のデータを取り込むと、習慣の記録と同じ画面で見られます。現時点ではOuraへの認証前です。</div>
@@ -195,8 +195,13 @@ async function ouraCall(action,params={}){
 }
 async function fetchOuraMetrics(){
  if(!cloud.client||!cloud.user)return;
- const all=[];let from=0;while(true){const {data,error}=await cloud.client.from('oura_daily_metrics').select('day,sleep_score,readiness_score,steps,wake_time').eq('user_id',cloud.user.id).order('day',{ascending:true}).range(from,from+499);if(error)throw error;all.push(...data);if(data.length<500)break;from+=500;}
+ const all=[];let from=0;while(true){const {data,error}=await cloud.client.from('oura_daily_metrics').select('day,sleep_score,readiness_score,steps,wake_time,synced_at').eq('user_id',cloud.user.id).order('day',{ascending:true}).range(from,from+499);if(error)throw error;all.push(...data);if(data.length<500)break;from+=500;}
  for(const r of all){const prev=state.ouraData[r.day]||{};state.ouraData[r.day]={...prev,...(r.sleep_score===null?{}:{sleep:r.sleep_score}),...(r.readiness_score===null?{}:{readiness:r.readiness_score}),...(r.steps===null?{}:{steps:r.steps})};}
+ const timestamps=all.map(x=>Date.parse(x.synced_at||'')).filter(Number.isFinite);
+ const latest=timestamps.length?Math.max(...timestamps):null;
+ $('ouraLastSync').textContent=latest
+   ?'Oura最終取得：'+new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(latest))+'（日本時間）'
+   :'Oura最終取得：未取得';
  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){}renderOura();await renderOuraCandidates(all);return all.length;
 }
 
