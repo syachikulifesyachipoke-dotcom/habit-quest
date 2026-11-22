@@ -74,13 +74,13 @@ Deno.serve(async req=>{
   const dest=(site||"https://example.invalid/").replace(/\/$/,"")+"/";
   if(!state||(!code&&!params.get("error")))return new Response("Invalid OAuth callback",{status:400});
   try{
-   const h=await hash(state);const {data,error}=await admin.from("oura_oauth_states").delete().eq("state_hash",h).gt("expires_at",new Date().toISOString()).select("user_id,code_verifier_encrypted");if(error||data?.length!==1)return new Response("Invalid or expired OAuth state",{status:400});
+   const h=await hash(state);const {data,error}=await admin.from("oura_oauth_states").delete().eq("state_hash",h).gt("expires_at",new Date().toISOString()).select("user_id,code_verifier_encrypted");if(error||data?.length!==1)return Response.redirect(dest+"?oura=expired",302);
    if(params.get("error"))return Response.redirect(dest+"?oura=denied",302);
    if(!cid||!secret||!cryptoKey||!site)throw Error("Not configured");
    const t=await token({grant_type:"authorization_code",code,redirect_uri:redirect,code_verifier:await dec(data[0].code_verifier_encrypted)});
    await saveTokens(data[0].user_id,t,(params.get("scope")||"daily workout").split(" "));
    return Response.redirect(dest+"?oura=connected",302);
-  }catch(_e){return new Response("Oura connection failed. Return to Habit Quest.",{status:502})}
+  }catch(_e){return Response.redirect(dest+"?oura=failed",302)}
  }
  const u=await user(req);if(!u)return json(req,{error:"Please sign in"},401);
  try{
