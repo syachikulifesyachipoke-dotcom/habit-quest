@@ -333,8 +333,37 @@ function scheduleCloudSave(){clearTimeout(cloud.timer);cloud.timer=setTimeout(()
 async function saveCloud(force){if(!cloud.client||!cloud.user||cloud.saving||cloud.blocked)return;if(!force&&cloud.seq===cloud.syncedSeq)return;cloud.saving=true;const capturedSeq=cloud.seq,snapshot=cloudSnapshot(state);try{const {data,error}=await cloud.client.rpc('save_habit_state',{p_data:snapshot,p_expected_revision:cloud.revision});if(error)throw error;const row=Array.isArray(data)?data[0]:data;if(!row||row.is_conflict){cloud.ready=false;cloud.blocked=true;cloud.remote=await cloudFetch();choiceVisible(true,!!cloud.remote);cloudMessage('⚠ 他の端末でデータが更新されました。クラウド版か端末版を選んでください。自動上書きは停止しています。','warning');return}cloud.revision=Number(row.new_revision);cloud.syncedSeq=capturedSeq;cloudMessage(`☁ 保存完了：${new Date().toLocaleTimeString('ja-JP')}（改訂 ${cloud.revision}）`,'good');if(cloud.seq!==capturedSeq)scheduleCloudSave()}catch(e){cloudMessage('⚠ 同期できません：'+e.message+'。記録は端末内に保存されています。「今すぐ同期」で再試行できます。','warning')}finally{cloud.saving=false}}
 $('cloudUseRemote').onclick=async()=>{if(!cloud.client||!cloud.user)return;if(!confirm('この端末の現在の記録をクラウドの記録に置き換えますか？ 必要なら先に「バックアップ」を保存してください。'))return;try{cloud.remote=await cloudFetch();if(!cloud.remote)throw Error('クラウド記録が見つかりません');const safe=validateIncoming(cloud.remote.data);state={...safe,avatarImages:state.avatarImages||{},ouraData:state.ouraData||{}};localStorage.setItem(KEY,JSON.stringify(state));cloud.seq++;cloud.syncedSeq=cloud.seq;cloud.revision=Number(cloud.remote.revision);cloud.ready=true;cloud.blocked=false;choiceVisible(false);offset=0;render();cloudMessage('☁ クラウドの記録を取得しました。以降は自動同期します。','good')}catch(e){cloudMessage('取り込み失敗：'+e.message,'warning')}};
 $('cloudUseLocal').onclick=async()=>{if(!cloud.client||!cloud.user)return;const willOverwrite=!!cloud.remote;if(willOverwrite&&!confirm('⚠ クラウドの既存記録を、この端末の記録で上書きします。続けますか？（先にバックアップ推奨）'))return;cloud.revision=willOverwrite?Number(cloud.remote.revision):null;cloud.ready=true;cloud.blocked=false;choiceVisible(false);cloud.seq++;cloudMessage('クラウドへアップロードしています…');await saveCloud(true)};
+async function cloudPollLatest(){
+ if(cloud.polling||!cloud.client||!cloud.user||!cloud.ready||cloud.blocked||cloud.saving||document.visibilityState!=='visible')return;
+ cloud.polling=true;
+ try{
+   // Never replace local changes that have not reached the cloud.
+   if(cloud.seq!==cloud.syncedSeq){await saveCloud(true);return}
+   const latest=await cloudFetch();
+   if(!latest||Number(latest.revision)===Number(cloud.revision))return;
+   if(cloud.seq!==cloud.syncedSeq||cloud.saving){
+     cloud.remote=latest;cloud.blocked=true;cloud.ready=false;choiceVisible(true,true);
+     cloudMessage('⚠ 別端末からの更新を検出。どちらの記録を使うか選んでください。','warning');
+     return;
+   }
+   const incoming=validateIncoming(latest.data);
+   // Images belong to this device; Oura health data is stored in a separate Supabase table.
+   state={...incoming,avatarImages:state.avatarImages||{},ouraData:state.ouraData||{}};
+   try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){cloudMessage('端末内への同期保存に失敗しました。','warning');return}
+   cloud.revision=Number(latest.revision);
+   cloud.syncedSeq=cloud.seq;
+   cloud.remote=latest;
+   offset=0;render();
+   cloudMessage('☁ 他端末の更新を自動反映しました（改訂 '+cloud.revision+'）','good');
+ }catch(e){
+   // Keep the last known state visible. Network downtime must never clear local records.
+   if(!cloud.saving&&cloud.ready)cloudMessage('☁ オフラインの可能性があります。記録は端末内に保持します。','warning');
+ }finally{cloud.polling=false}
+}
 $('cloudRefresh').onclick=async()=>{if(!cloud.client||!cloud.user){cloudMessage('クラウド設定とログインを完了してください。','warning');return}if(cloud.blocked){cloud.loadPromise=null;await attachCloudUser(cloud.user);return}try{const current=await cloudFetch();if(current&&Number(current.revision)!==Number(cloud.revision)){cloud.remote=current;cloud.ready=false;cloud.blocked=true;choiceVisible(true,true);cloudMessage('⚠ 別端末の新しい記録を検出しました。クラウド版か端末版を選んでください。','warning');return}if(cloud.seq!==cloud.syncedSeq)await saveCloud(true);else cloudMessage('☁ クラウドと同期済みです（改訂 '+cloud.revision+'）','good')}catch(e){cloudMessage('クラウド状態の確認に失敗：'+e.message,'warning')}};
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&cloud.ready&&cloud.seq!==cloud.syncedSeq)saveCloud(true);if(document.visibilityState==='visible'&&cloud.user&&!ouraBusy)checkOuraConnection()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&cloud.ready&&cloud.seq!==cloud.syncedSeq)saveCloud(true);if(document.visibilityState==='visible'){cloudPollLatest();if(cloud.user&&!ouraBusy)checkOuraConnection()}});
+window.addEventListener('online',()=>{cloudPollLatest();if(cloud.user&&!ouraBusy)checkOuraConnection()});
+setInterval(cloudPollLatest,120000);
 initCloud();
 
 if('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js').catch(()=>{});
