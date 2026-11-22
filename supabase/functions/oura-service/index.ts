@@ -57,7 +57,22 @@ Deno.serve(async req=>{
    for(const x of re)if(x.day)row(x.day).readiness_score=x.score??null;
    for(const x of ac)if(x.day)row(x.day).steps=x.steps??null;
    // Detailed sleep periods carry bedtime_end, which is a proxy for waking time.
-   try{const periods=await collect("sleep",start,end,access);for(const x of periods)if(x.day&&x.bedtime_end){const r=row(x.day);if(!r.wake_time||x.bedtime_end>r.wake_time)r.wake_time=x.bedtime_end;if(x.total_sleep_duration)r.sleep_duration_seconds=x.total_sleep_duration}}catch(_e){/* detailed sleep is optional */}
+   try{
+     const periods=await collect("sleep",start,end,access);
+     const primarySleep=new Map();
+     for(const x of periods){
+       // A sleep day may include naps; select the primary (long_sleep) period.
+       if(!x.day||!x.bedtime_end)continue;
+       if(x.type && x.type!=="long_sleep")continue;
+       const duration=Number(x.total_sleep_duration||0);
+       if(!Number.isFinite(duration)||duration<3*3600)continue;
+       const previous=primarySleep.get(x.day);
+       if(!previous||duration>Number(previous.total_sleep_duration||0))primarySleep.set(x.day,x);
+     }
+     for(const [day,x] of primarySleep){
+       const r=row(day);r.wake_time=x.bedtime_end;r.sleep_duration_seconds=Number(x.total_sleep_duration);
+     }
+   }catch(_e){/* detailed sleep is optional */}
    let values=[...days.values()].map(x=>({...x,synced_at:new Date().toISOString()}));
    if(values.length){
      const {data:previous,error:readError}=await admin.from("oura_daily_metrics").select("day,sleep_score,readiness_score,steps,sleep_duration_seconds,wake_time,raw_source").eq("user_id",u.id).gte("day",start).lte("day",end);
