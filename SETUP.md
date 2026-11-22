@@ -13,11 +13,17 @@
 
 [HABIT QUEST](https://syachikulifesyachipoke-dotcom.github.io/habit-quest/) を開き、右上の「☁ ログイン」を選びます。メールアドレス・パスワードを入力して「ログイン」を押します。**メールリンクを繰り返し送信する方式は廃止しました。**
 
-既存のメールリンク認証で作成されたアカウントにパスワードがない場合、ログイン済みの端末があれば、右上の「☁」→「パスワード設定・変更」で12文字以上の新パスワードを設定できます。
+既存のメールアドレスにパスワードがない場合の推奨手順：
 
-ログイン済みの端末がなく、メール送信の制限で再ログインできないときは、[Supabase > Authentication > Users](https://supabase.com/dashboard/project/kpiqktibvzymgzwxiajv/auth/users) から **Add user → Create new user** で別のメールアドレスのパスワード付きアカウントを作成してください。Gmailの別名（`yourname+habit@gmail.com`）も利用できます。**Auto Confirm User** が表示される場合はONにして作成します。既存メールを使ったアカウントは残しておき、削除しないでください。現在クラウド保存済みの習慣記録は0件なので、新アカウントに移る際のクラウドデータ移行は不要です。端末上にある習慣記録は初回ログイン後に「この端末の記録をクラウドに保存」で移行します。
+1. [Supabase > Authentication > URL Configuration](https://supabase.com/dashboard/project/kpiqktibvzymgzwxiajv/auth/url-configuration) を開いて、Site URL・Redirect URLsに `https://syachikulifesyachipoke-dotcom.github.io/habit-quest/` が設定されていることを確認
+2. HABIT QUEST の右上「☁ ログイン」で、**すでに登録済みのメールアドレス**を入力し「初回パスワード設定・再設定」を押す
+3. 新しく届いたメールのリンクを開く。認証後、パスワード入力画面が自動で開く
+4. **12文字以上の新しいパスワード**を設定し、そのまま利用する
 
-誤上書き前に、右上の「☁」→「バックアップ・復元」でJSONバックアップを取ってください。
+すでにログイン中の端末がある場合、メールは不要で右上「☁」→「パスワード設定・変更」から直接設定できます。
+
+**既存メールアドレス用の二つ目のアカウントは作らないでください。** メール送信枠を超えた場合は少し時間を空けてください。パスワードはChatGPTやGitHubに送らず、アプリのフォームへ直接入力してください。
+
 
 ## 2. Oura Developer Portalでアプリ作成
 
