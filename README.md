@@ -6,17 +6,24 @@
 
 - アプリ本体はGitHub Pagesで公開済み。独自ドメイン接続は未実施。
 - Supabaseプロジェクト `habit-quest` (東京): [管理画面](https://supabase.com/dashboard/project/kpiqktibvzymgzwxiajv)。Freeプラン。
-- DB・RLS・Oura OAuth用Edge Functionは作成済み。ただし、Oura実アカウント連携は **未検証**。
+- DB・RLS・Oura OAuth用Edge Functionは稼働中。Oura実アカウント連携・トークン自動更新は **未検証**。
 - 現在のOura Edge Functionソースは `supabase/functions/oura-service/index.ts` に保存しています。変更後はSupabase側への再デプロイが必要です。
+
+## 残りの作業
+
+- パスワード付き本人アカウントの設定・実ログイン。
+- Ouraの初回認証と過去6か月のデータ取込・実測値の検証。
+- 独自ドメインへの切替（後回し可）。
+- 技術的な検証結果は[STATUS.md](./STATUS.md)を参照。
 
 ## 公開手順
 
-1. GitHub **Settings > Pages** を開き、**Build and deployment** を `Deploy from a branch`、`main` と `/ (root)` に設定して保存する。
+1. GitHub Pagesは設定済み。公開URLを確認する。
 2. GitHub Pagesの仮URL `https://syachikulifesyachipoke-dotcom.github.io/habit-quest/` にアクセスし、画面が表示されるか確認する。
 3. 独自ドメイン `habit.syachiku-life.com` を利用する場合、既存のDNSレコードを壊さないように、`habit` のCNAMEのみGitHub Pagesのホストへ向け、GitHub Pages側にも独自ドメインを登録する。DNS設定前に `CNAME` ファイルは登録していません。
 4. Supabase **Authentication > URL Configuration** のSite URL/Redirect URLsを公開URLに設定し、本人のパスワード付きログインが使えることを確認する。新規登録を停止する場合は、ログインが機能することを確認してから設定する。
 5. Oura Developer Portalにアプリ名、公開されたWebサイト、プライバシーポリシー、利用規約、OAuth Redirect URIを入力する。
-6. Supabase **Edge Function Secrets** に `OURA_CLIENT_ID`, `OURA_CLIENT_SECRET`, `OURA_TOKEN_KEY` (ランダム32バイトをBase64化), `HABIT_SITE_URL` を設定する。**秘密値をGitHubにコミットしないこと。**
+6. Client IDはEdge Functionコードに設定済み。SecretはSupabaseの管理画面で確認し、必要なら再設定する。**秘密値をGitHubにコミットしないこと。**
 7. [SETUP.md](./SETUP.md) の手順でメール＋パスワードのログイン・クラウド同期・Oura最新7日と過去6か月取込・ログアウト・復元を実地検証する。
 
 OuraのRedirect URI: `https://kpiqktibvzymgzwxiajv.supabase.co/functions/v1/oura-service/callback`
