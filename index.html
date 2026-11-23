@@ -545,7 +545,7 @@ $('dailyQuestJump').onclick=()=>{
  }
  offset=0;render();
  let target=null;
- if(adventureFocusId)target=document.querySelector('#tracker [data-habit="'+adventureFocusId+'"][data-day="'+isoToday()+'"]');
+ if(adventureFocusId)target=[...document.querySelectorAll('#tracker [data-habit][data-day]')].find(b=>b.dataset.habit===adventureFocusId&&b.dataset.day===isoToday())||null;
  if(!target)target=$('tracker');
  target.scrollIntoView({behavior:'smooth',block:'center'});
  if(target!==$('tracker'))target.focus({preventScroll:true});
