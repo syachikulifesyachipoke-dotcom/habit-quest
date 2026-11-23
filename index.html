@@ -314,7 +314,7 @@
    <div class="world-progress-track" aria-label="次のエリアへの進捗"><div class="world-progress-bar" id="worldPeekProgress"></div></div>
    <p class="world-today" id="worldTodayText">今日の習慣を達成すると新しい出会いが待っています。</p>
  </div></div>
- <div class="companion-card"><div class="companion-top"><span class="tag" id="evoTag">✦ 進化のたまご</span><div class="level" id="levelLabel">Lv. 1</div></div><div class="avatar-box" id="avatar"></div><div class="companion-bottom"><div><div class="companion-title" id="stageName">星のたまご</div><div class="companion-next" id="nextEvolution">Lv.3で次の姿に進化</div></div><div><div class="xp-val" id="xpLabel">0 / 40 XP</div><div class="xp-start-line" id="xpStartLine">XP開始日：ログイン時に確定</div></div></div><div class="progress"><i id="xpBar"></i></div></div>
+ <div class="companion-card"><div class="companion-top"><span class="tag" id="evoTag">✦ 進化のたまご</span><div class="level" id="levelLabel">Lv. 1</div></div><div class="avatar-box" id="avatar"></div><span class="companion-mood-chip" id="homeCompanionMood" aria-hidden="true">🙂</span><div class="companion-bottom"><div><div class="companion-title" id="stageName">星のたまご</div><div class="companion-next" id="nextEvolution">Lv.3で次の姿に進化</div></div><div><div class="xp-val" id="xpLabel">0 / 40 XP</div><div class="xp-start-line" id="xpStartLine">XP開始日：ログイン時に確定</div></div></div><div class="progress"><i id="xpBar"></i></div></div>
 </section>
 <section class="content">
  <div class="panel"><div class="panel-heading"><div><h3 class="hq-section-heading"><span data-hq-icon="calendar"></span>週間トラッカー</h3><div class="subheading">今日からの達成に +20 XP <span class="mobile-grid-hint">・スマホは1行で7日をチェック</span></div></div><div class="week-nav"><span class="week-range" id="weekRange"></span><button class="btn icon-btn" id="prevWeek" aria-label="前の週">‹</button><button class="btn" id="thisWeek">今週</button><button class="btn icon-btn" id="nextWeek" aria-label="次の週">›</button></div></div><div id="tracker" class="tracker"></div><div class="tracker-footer"><div class="legend"><span><i class="dot dot-manual"></i>手動チェック</span><span><i class="dot dot-oura"></i>Oura自動</span><span><i class="dot empty"></i>未チェック</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" id="archiveJump">休止中の習慣 <span id="archiveCount">0</span></button><button class="btn primary" id="addHabit">＋ 習慣を追加</button></div></div></div>
@@ -355,7 +355,7 @@
  <div class="char-layout">
   <section class="char-stage">
    <div class="char-name" id="characterName">星のたまご</div><div class="char-level" id="characterLevel">Lv.1</div>
-   <div class="char-avatar" id="characterPortrait" aria-label="現在の相棒の姿"></div>
+   <div class="char-avatar" id="characterPortrait" aria-label="現在の相棒の姿"></div><span class="char-mood-face" id="characterMoodFace" aria-hidden="true">🙂</span>
    <div class="char-reaction" id="characterReaction" role="status"><strong>相棒の気持ち</strong><span id="characterReactionText">一緒に冒険を始めよう！</span></div>
    <div class="char-actions">
     <button type="button" class="char-action primary" id="characterPat">相棒をなでる</button>
@@ -709,6 +709,9 @@ function renderGamePanels(){
  $('characterStage').textContent=String(stageNo+1)+' / '+EVO.length;
  $('characterNextStage').textContent=next?'次の進化「'+next.name+'」はLv.'+next.lv:'最高進化「'+stage.name+'」に到達';
  $('characterReactionText').textContent=shell.reaction;
+ const faces={ready:'🙂',happy:'😄',celebrate:'🥳',rest:'😴'};
+ $('homeCompanionMood').textContent=faces[shell.mood]||'🙂';
+ $('characterMoodFace').textContent=faces[shell.mood]||'🙂';
  const portrait=$('characterPortrait');
  const custom=state.avatarImages?.[stageNo];
  if(custom)portrait.innerHTML='<img alt="'+esc(stage.name)+'" src="'+custom+'">';
@@ -773,7 +776,9 @@ function initGameShell(){
   button.addEventListener('click',()=>setGameScreen(button.dataset.gameTab)));
  $('characterPat').onclick=()=>{
   $('characterReactionText').textContent='なでてくれてありがとう！ 今日も一緒に冒険しよう！';
+  $('characterMoodFace').textContent='🥰';$('homeCompanionMood').textContent='🥰';
   cheerCompanion();
+  setTimeout(()=>{if(activeGameScreen==='character')renderGamePanels()},2200);
  };
  $('characterGoHome').onclick=()=>setGameScreen('home');
  $('eventGoHome').onclick=()=>{setGameScreen('home');$('dailyQuestJump').click()};
