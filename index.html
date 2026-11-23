@@ -43,6 +43,10 @@
 .site-links{text-align:center;font-size:11px;margin:0 0 20px;color:#8892b2}
 .site-links a{color:#8892b2;text-decoration:none}.bottom-foot{font-size:11px!important;opacity:.7}
 @media(max-width:760px){.cloud-overlay{top:8px;right:8px;max-height:calc(100dvh - 16px);width:calc(100vw - 16px);padding:17px}.cloud-auth{flex-direction:column;align-items:stretch}.cloud-auth input{width:100%;flex:auto}.cloud-overlay .cloud-head{align-items:start}.top-actions #cloudToggle,.top-actions #ouraJump{font-size:11px;padding:8px!important}.extra-accord>summary{padding:13px 16px}}
+.oura-auto-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0 15px}
+.oura-auto-row .small-note{flex:1;min-width:220px}
+.check[data-oura-auto="true"]{border-color:#8f82e9}
+@media(max-width:760px){.oura-auto-row{align-items:stretch;flex-direction:column}.oura-auto-row .small-note{min-width:0}}
 </style>
 </head>
 <body>
@@ -102,7 +106,8 @@
 </section></details>
 <details class="extra-accord" id="ouraDetail"><summary>💍 Oura Ring・健康データ</summary><section class="section-v2 panel v2-panel" id="ouraSection">
  <div class="oura-row"><div><h3>💍 Oura × HABIT QUEST</h3><p class="subheading">睡眠・コンディション・歩数を習慣記録と一緒に確認</p></div><div class="oura-btns"><select id="ouraImportType" aria-label="Oura JSONのデータ種類" style="background:#232740;border:1px solid #3f4561;color:#f4f6ff;padding:9px;border-radius:10px"><option value="auto">種類：自動判定</option><option value="daily_sleep">睡眠</option><option value="daily_readiness">コンディション</option><option value="daily_activity">歩数</option></select><button class="btn" id="ouraConnect" disabled>Ouraアカウント連携</button><button class="btn" id="ouraDisconnect" type="button" hidden>Oura連携を停止</button><button class="btn" id="ouraSync" disabled>直近7日同期</button><button class="btn" id="ouraBackfill" disabled>過去6か月取込</button><button class="btn primary" id="ouraImport">Oura JSON読込</button><input id="ouraFile" type="file" accept=".json,application/json" hidden></div></div>
- <div id="ouraStatus" class="oura-status">Ouraを接続するには、先にクラウドへログインしてください。</div><div id="ouraLastSync" class="small-note">Oura最終取得：未取得</div>
+ <div id="ouraStatus" class="oura-status">Ouraを接続するには、先にクラウドへログインしてください。</div>
+ <div class="oura-auto-row"><button class="btn" id="ouraAutoToggle" type="button" aria-pressed="false">Ouraの運動を習慣に自動反映</button><span class="small-note" id="ouraAutoInfo">筋トレ・自転車・ランニングなど、10分以上の運動を対象にします。歩行と早起きは本人確認式です。</span></div><div id="ouraLastSync" class="small-note">Oura最終取得：未取得</div>
  <div class="oura-metrics"><div class="oura-metric"><strong id="ouraSleep">—</strong><small>睡眠スコア（最新）</small></div><div class="oura-metric"><strong id="ouraReadiness">—</strong><small>コンディションスコア（最新）</small></div><div class="oura-metric"><strong id="ouraSteps">—</strong><small>歩数（最新）</small></div></div>
  <div class="chart-panel spaced"><div class="chart-title">Ouraから復元できる過去の習慣候補</div><p class="small-note">Ouraの睡眠終了時刻は実際の起床時刻と異なる場合があります。筋トレもワークアウト種類を確認し、実施した日だけ「記録する」を押してください。過去のXPは本人が確認した実績だけに付与します。</p><div id="ouraCandidates" class="analysis-empty">Ouraとの接続・同期後に候補を表示します。</div></div>
  <div id="ouraInsight" class="pill-note">睡眠・コンディション・歩数のデータを取り込むと、習慣の記録と同じ画面で見られます。現時点ではOuraへの認証前です。</div>
@@ -205,6 +210,55 @@ async function fetchOuraMetrics(){
    :'Oura最終取得：未取得';
  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){}renderOura();await renderOuraCandidates(all);return all.length;
 }
+
+const OURA_AUTO_SPORTS=new Set(['strengthtraining','cycling','running','swimming','pilates','dance','yoga','rowing','elliptical','hiking']);
+function qualifiesOuraWorkout(w){
+ if(!w?.start_time||!w?.end_time)return false;
+ const kind=String(w.activity||'').toLowerCase().replace(/[^a-z]/g,'');
+ const minutes=(Date.parse(w.end_time)-Date.parse(w.start_time))/60000;
+ return OURA_AUTO_SPORTS.has(kind)&&Number.isFinite(minutes)&&minutes>=10&&minutes<=24*60;
+}
+function updateOuraAutoStatus(){
+ const button=$('ouraAutoToggle'),info=$('ouraAutoInfo');if(!button||!info)return;
+ const enabled=state.ouraAutoEnabled===true;
+ button.textContent=enabled?'運動の自動反映：ON（停止）':'Ouraの運動を習慣に自動反映';
+ button.setAttribute('aria-pressed',String(enabled));
+ info.textContent=enabled?'筋トレ・自転車・ランニングなど（10分以上）を自動記録中。💍印はOura由来。歩行と早起きは本人確認式です。':'筋トレ・自転車・ランニングなど（10分以上）を自動記録。歩行と早起きは確認式。過去の記録も一括反映できます。';
+}
+function applyOuraWorkoutsToHabits(workouts){
+ if(!state.ouraAutoEnabled||!cloud.ready||cloud.blocked||!state.habits.some(h=>h.id==='train'))return 0;
+ const excluded=new Set(state.ouraAutoSuppressed||[]);
+ const dates=new Set();
+ for(const w of workouts){
+   if(!qualifiesOuraWorkout(w))continue;
+   const day=dateInTokyo(w.start_time);
+   if(day>isoToday()||!/^\d{4}-\d{2}-\d{2}$/.test(day))continue;
+   dates.add(day);
+ }
+ let added=0;
+ for(const day of dates){
+   if(excluded.has(day)||state.checks[day]?.train)continue;
+   state.checks[day] ||= {};
+   state.checks[day].train=true;
+   state.ouraAutoDays ||= [];
+   if(!state.ouraAutoDays.includes(day))state.ouraAutoDays.push(day);
+   added++;
+ }
+ if(added){store();render();toast('Ouraの運動実績 '+added+'日分をゲームに反映しました',true)}
+ return added;
+}
+$('ouraAutoToggle').onclick=async()=>{
+ if(!cloud.client||!cloud.user||!cloud.ready||cloud.blocked){
+   toast('先に右上のクラウドメニューで記録の同期を完了してください');return;
+ }
+ const enable=!state.ouraAutoEnabled;
+ if(enable&&!confirm('Ouraの運動記録のうち、筋トレ・自転車・ランニングなどの10分以上のものを習慣「筋トレ・運動」の達成に自動反映します。過去の記録にも適用します。歩行・家事・起床時刻は自動で達成扱いしません。続けますか？'))return;
+ state.ouraAutoEnabled=enable;
+ store();updateOuraAutoStatus();
+ if(enable){
+   try{await fetchOuraMetrics()}catch(e){$('ouraStatus').textContent='自動反映は有効ですが、Oura記録の取得に失敗しました: '+e.message}
+ }else toast('Ouraの運動自動反映を停止しました。既存の達成記録は残ります。');
+};
 
 let ouraCandidateShown=40, ouraCandidateCache=[];
 function dateInTokyo(timestamp){
