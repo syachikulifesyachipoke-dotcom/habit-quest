@@ -39,7 +39,7 @@ test('weekly matrix and all automatic habit rows remain accessible', () => {
 
 test('today counts every registered habit, but streak is explicitly manual', () => {
   assert.match(html, /displayHabits\(\)\.filter\(h=>checked\(t,h\.id\)\)\.length/);
-  assert.match(html, /連続記録日数（週ミッション対象1項目以上）/);
+  assert.match(html, /連続記録日数（手動1項目以上）/);
   assert.match(html, /週間ミッションONの習慣の目標合計/);
 });
 
@@ -104,4 +104,9 @@ test('phase A-2 lifecycle module is loaded and cached offline',()=>{
  assert.match(sw, /\.\/habit-lifecycle\.js/);
  assert.match(html, /id="archiveJump"/);
  assert.match(html, /id="archiveCount"/);
+});
+
+test('streak remains a manual-habit metric even when mission setting changes',()=>{
+ assert.match(html,/const anyDone=k=>state\.habits\.some\(h=>\{const day=dayKey\(k\);return !isOuraAutoHabit\(h\)&&eligibleHabitDay\(h,day\)/);
+ assert.match(html,/手動習慣を1項目以上達成した連続日数/);
 });
