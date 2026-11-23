@@ -270,6 +270,7 @@
 @media(prefers-reduced-motion:reduce){.world-progress-bar{transition:none}.world-map-dialog::backdrop{backdrop-filter:none}}
 </style>
 <link rel="stylesheet" href="./game-shell.css">
+<link rel="stylesheet" href="./coin-shop.css">
 </head>
 <body>
 <div class="wrap">
@@ -691,6 +692,7 @@ function setGameScreen(screen){
   else button.removeAttribute('aria-current');
  });
  window.scrollTo({top:0,behavior:'auto'});
+ if(screen==='shop'&&cloud.user&&cloud.ready&&!cloud.blocked)void gameWalletAction('refresh');
 }
 function gameProgress(){
  const daily=window.HabitQuestDailyAdventure.describe({
@@ -715,6 +717,98 @@ function setCosmetic(id){
  renderGamePanels();
  toast('✨ 相棒の装飾を変更しました',true);
 }
+/* G4 coin economy: server-authoritative wallet, non-currency XP is unchanged. */
+let coinWallet=null,coinBusy=false,coinLastAttempt=0;
+function coinNotice(message,kind=''){
+ const n=$('coinShopNotice');if(n){n.textContent=message;n.dataset.kind=kind}
+}
+function renderCoinShop(){
+ const game=window.HabitQuestCoinShop,logged=!!cloud.client&&!!cloud.user&&cloud.ready&&!cloud.blocked;
+ const w=coinWallet,owned=new Set(w?.items||[]);
+ $('coinBalance').textContent=w?w.coins.toLocaleString('ja-JP'):'—';
+ $('coinDailyStatus').textContent=w?'今日のログインボーナス：10 C （受取済）':logged?'コインを読み込んでいます…':'ログイン・同期完了後にコインを受取';
+ $('coinYesterdayStatus').textContent=w?
+  '前日 '+w.yesterday+'：'+w.yesterdayChecks+'件・'+w.yesterdayCoins+' C':'前日のチェック分を翌朝5:40以降に反映';
+ $('coinFreeGacha').disabled=!logged||coinBusy||!w||w.gachaUsed;
+ $('coinFreeGacha').textContent=coinBusy?'処理中…':w?.gachaUsed?'本日は受取済み':'1日1回 無料で引く';
+ $('coinGachaHint').textContent=w?.gachaUsed?'次の無料ガチャは翌朝5:40から':
+  logged?'5種類から1つ獲得。重複した場合は15Cに交換':'クラウドにログインすると利用できます';
+ $('coinShopItems').innerHTML=game.ITEMS.map(item=>{
+  const has=owned.has(item.id),equipped=w?.equipped===item.id;
+  const label=equipped?'装備中':has?'装備する':'購入する';
+  const disabled=!logged||coinBusy||!w||equipped||(!has&&w.coins<item.price);
+  return '<article class="coin-item'+(has?' is-owned':'')+(equipped?' is-equipped':'')+'" data-rarity="'+esc(item.rarity)+'">'+
+   '<span class="coin-item-icon" aria-hidden="true">'+item.icon+'</span><span class="coin-item-rarity">'+esc(item.rarity)+'</span>'+
+   '<strong>'+esc(item.name)+'</strong><p>'+esc(item.description)+'</p>'+
+   '<div class="coin-price"><span>✦</span><span>'+item.price+' C</span></div>'+
+   '<button type="button" data-coin-item="'+item.id+'" data-coin-action="'+(has?'equip':'buy')+'"'+(disabled?' disabled':'')+'>'+(!has&&w&&w.coins<item.price?'コイン不足':label)+'</button>'+
+   '</article>';
+ }).join('');
+ const gear=game.itemById(w?.equipped);
+ const portrait=$('characterPortrait'),companion=document.querySelector('.companion-card');
+ if(portrait)portrait.dataset.gear=gear?.id||'';
+ if(companion)companion.dataset.gear=gear?.id||'';
+ for(const id of ['coinGearOnCharacter','coinGearOnHome']){
+  const badge=$(id);if(!badge)continue;
+  badge.hidden=!gear;
+  if(gear){badge.textContent=gear.icon;badge.title='装備中：'+gear.name;}
+ }
+}
+function showCoinGachaResult(event){
+ const item=window.HabitQuestCoinShop.itemById(event?.itemId);if(!item)return;
+ $('coinResultIcon').textContent=item.icon;
+ $('coinResultTitle').textContent=event.duplicate?'すでに持っているアイテム！':'新しいアイテムをGET！';
+ $('coinResultText').textContent=event.duplicate?
+  '「'+item.name+'」が出ました。重複したため15コインを受け取りました。':
+  '「'+item.name+'」を獲得！ ショップで「装備する」を選ぶと相棒を飾れます。';
+ const dialog=$('coinResultDialog');if(!dialog.open)dialog.showModal();
+}
+async function gameWalletAction(action='refresh',itemId=null){
+ const user=cloud.user?.id;
+ if(!cloud.client||!user||!cloud.ready||cloud.blocked){
+  renderCoinShop();
+  coinNotice('ログインとクラウド同期を完了すると、コインを受け取れます。');return null;
+ }
+ if(coinBusy)return null;
+ coinBusy=true;coinLastAttempt=Date.now();renderCoinShop();
+ try{
+  if(cloud.seq!==cloud.syncedSeq){
+   await saveCloud(true);
+   if(cloud.seq!==cloud.syncedSeq)throw Error('習慣の同期が完了していません。先に同期を確認してください。');
+  }
+  const {data,error}=await cloud.client.rpc('hq_game_action',{p_action:action,p_item_id:itemId});
+  if(error)throw error;
+  const incoming=window.HabitQuestCoinShop.normalize(data);
+  if(!incoming)throw Error('コインの読込結果が不正です');
+  if(cloud.user?.id!==user)return null;
+  coinWallet=incoming;renderCoinShop();
+  if(action==='draw'){showCoinGachaResult(incoming.event);coinNotice('無料ガチャの結果を保存しました。','success')}
+  else if(action==='buy'){const item=window.HabitQuestCoinShop.itemById(itemId);
+   coinNotice('「'+(item?.name||'アイテム')+'」を購入しました。キャラ画面で使えます。','success')}
+  else if(action==='equip'){coinNotice('相棒の装備を変更しました。','success')}
+  else if(incoming.earnedNow>0){coinNotice('🪙 本日の報酬 '+incoming.earnedNow+' C を受け取りました！','success')}
+  else coinNotice('クラウドの最新残高を確認しました。');
+  return incoming;
+ }catch(e){
+  if(cloud.user?.id!==user)return null;
+  const msg=String(e?.message||'');
+  let text='通信に失敗しました。時間を置いて「残高を更新」をお試しください。';
+  if(/already owned/i.test(msg))text='このアイテムはすでに所持しています。';
+  else if(/not enough coins/i.test(msg))text='コインが不足しています。習慣を積み重ねましょう。';
+  else if(/already used/i.test(msg))text='無料ガチャは本日分を利用済みです。翌朝5:40以降に再挑戦できます。';
+  else if(/not owned/i.test(msg))text='購入したアイテムのみ装備できます。';
+  else if(/同期/.test(msg))text=msg;
+  else if(/function.*hq_game_action|404|PGRST202/i.test(msg))text='ゲーム内ショップのクラウド設定を確認しています。';
+  coinNotice(text,'error');
+  return null;
+ }finally{
+  coinBusy=false;renderCoinShop();
+ }
+}
+function resetCoinWallet(){
+ coinWallet=null;coinBusy=false;renderCoinShop();coinNotice('クラウドにログインするとコインを利用できます。');
+}
+
 function cheerCompanion(){
  for(const node of [$('characterPortrait'),document.querySelector('.companion-card')]){
   if(!node)continue;
@@ -780,6 +874,7 @@ function renderGamePanels(){
   '<div class="shop-relic'+(area.unlocked?'':' is-locked')+'" title="'+(area.unlocked?esc(area.relic):'未発見')+'">'+
   '<span aria-hidden="true">'+(area.unlocked?area.relicIcon:'🔒')+'</span>'+(area.unlocked?esc(area.relic):'未発見')+'</div>'
  ).join('');
+ renderCoinShop();
 }
 function showGameUnlock(region){
  const dialog=$('gameUnlockDialog');
@@ -818,6 +913,16 @@ function initGameShell(){
   const button=e.target.closest('[data-shop-frame]');if(!button||button.disabled)return;
   setCosmetic(button.dataset.shopFrame);
  });
+ $('coinRefresh').onclick=()=>{if(!cloud.user){toggleCloudMenu(true);return}void gameWalletAction('refresh')};
+ $('coinFreeGacha').onclick=()=>{if(!cloud.user){toggleCloudMenu(true);return}void gameWalletAction('draw')};
+ $('coinShopItems').addEventListener('click',e=>{
+  const button=e.target.closest('[data-coin-item]');if(!button||button.disabled)return;
+  const item=window.HabitQuestCoinShop.itemById(button.dataset.coinItem);
+  if(!item)return;
+  if(button.dataset.coinAction==='buy'&&!confirm('「'+item.name+'」を '+item.price+' コインで購入しますか？（XPは消費しません）'))return;
+  void gameWalletAction(button.dataset.coinAction,item.id);
+ });
+ $('coinResultClose').onclick=()=>$('coinResultDialog').close();
  $('optionsCloudOpen').onclick=()=>toggleCloudMenu(true);
  $('optionsExportBtn').onclick=()=>$('exportBtn').click();
  $('optionsImportBtn').onclick=()=>$('importBtn').click();
@@ -1406,10 +1511,10 @@ if(cloud.remote&&cloud.baseSnapshot){
  if(reconcileIndependentChecks(cloud.remote))return;
 }
 choiceVisible(true,!!cloud.remote);cloudMessage(cloud.remote?'クラウドに別の記録があります。どちらを使用するか選んでください（自動上書きはしません）。':'クラウドに記録がありません。この端末の記録をアップロードしてください。','warning')
-}catch(e){cloudMessage(`クラウドの読み込みに失敗：${e.message}。SupabaseのSQL・RLS・接続設定を確認してください。`,'warning')}})();return cloud.loadPromise}
+}catch(e){cloudMessage(`クラウドの読み込みに失敗：${e.message}。SupabaseのSQL・RLS・接続設定を確認してください。`,'warning')}finally{if(cloud.user?.id===user.id&&cloud.ready&&!cloud.blocked)void gameWalletAction('refresh')}})();return cloud.loadPromise}
 async function initCloud(){const config=getCloudConfig();$('sbUrl').value=config.url;$('sbKey').value=config.anonKey;if(!config.url&&!config.anonKey){cloudMessage('クラウド未設定。従来どおり端末内に保存しています。SupabaseのURLと公開可能なキーを入力してください。');return}if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(config.url)||!isPublicKey(config.anonKey)){cloudMessage('URLまたはキーの形式が不正です。Supabase Project URLとPublishable key（またはanon key）だけを設定してください。','warning');return}
 try{await loadCloudSdk();cloud.client=window.supabase.createClient(config.url.replace(/\/$/,''),config.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-cloud.client.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){cloudRecovering=true;setTimeout(showCloudRecoveryForm,250)}if(event==='SIGNED_OUT'){cloud.user=null;cloud.ready=false;cloud.blocked=true;cloud.revision=null;cloud.loadPromise=null;cloud.baseSnapshot=null;cloud.baseRevision=null;choiceVisible(false);$('cloudLogout').hidden=true;$('cloudLogin').hidden=false;$('cloudAuthPanel').hidden=false;$('cloudPasswordPanel').hidden=true;$('cloudPassword').value='';$('cloudNewPassword').value='';cloudMessage('ログアウトしました。記録は端末内にも残っています。');checkOuraConnection();return}if(session?.user?.id&&cloud.user?.id!==session.user.id){setTimeout(()=>attachCloudUser(session.user),0)}});
+cloud.client.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){cloudRecovering=true;setTimeout(showCloudRecoveryForm,250)}if(event==='SIGNED_OUT'){cloud.user=null;resetCoinWallet();cloud.ready=false;cloud.blocked=true;cloud.revision=null;cloud.loadPromise=null;cloud.baseSnapshot=null;cloud.baseRevision=null;choiceVisible(false);$('cloudLogout').hidden=true;$('cloudLogin').hidden=false;$('cloudAuthPanel').hidden=false;$('cloudPasswordPanel').hidden=true;$('cloudPassword').value='';$('cloudNewPassword').value='';cloudMessage('ログアウトしました。記録は端末内にも残っています。');checkOuraConnection();return}if(session?.user?.id&&cloud.user?.id!==session.user.id){setTimeout(()=>attachCloudUser(session.user),0)}});
 const {data,error}=await cloud.client.auth.getSession();if(error)throw error;
 if(data.session?.user){
   await attachCloudUser(data.session.user);
@@ -1528,9 +1633,10 @@ async function cloudPollLatest(){
  }finally{cloud.polling=false}
 }
 $('cloudRefresh').onclick=async()=>{if(!cloud.client||!cloud.user){cloudMessage('クラウド設定とログインを完了してください。','warning');return}if(cloud.blocked){cloud.loadPromise=null;await attachCloudUser(cloud.user);return}try{const current=await cloudFetch();if(cloud.seq!==cloud.syncedSeq)await saveCloud(true);else if(current&&Number(current.revision)!==Number(cloud.revision))await cloudPollLatest();else cloudMessage('☁ クラウドと同期済みです（改訂 '+cloud.revision+'）','good')}catch(e){cloudMessage('クラウド状態の確認に失敗：'+e.message,'warning')}};
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&cloud.ready&&cloud.seq!==cloud.syncedSeq)saveCloud(true);if(document.visibilityState==='visible'){cloudPollLatest();if(cloud.user&&!ouraBusy)checkOuraConnection()}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&cloud.ready&&cloud.seq!==cloud.syncedSeq)saveCloud(true);if(document.visibilityState==='visible'){cloudPollLatest();if(cloud.user&&!ouraBusy)checkOuraConnection();if(cloud.user&&cloud.ready&&!cloud.blocked)void gameWalletAction('refresh')}});
 window.addEventListener('online',()=>{cloudPollLatest();if(cloud.user&&!ouraBusy)checkOuraConnection()});
 setInterval(cloudPollLatest,120000);
+setInterval(()=>{if(cloud.user&&cloud.ready&&!cloud.blocked&&!coinBusy&&Date.now()-coinLastAttempt>60000&&coinWallet?.gameDay!==window.HabitQuestCoinShop.gameDayUTC(Date.now()))void gameWalletAction('refresh')},15000);
 initGameShell();
 paintSectionIcons();
 initCloud();
