@@ -40,7 +40,7 @@ test('one valid check per each group per day means three independent streaks',()
  const data=groups.streak({habits:h,checks,today:'2026-11-23',start:'2026-11-20',activeOn:()=>true});
  assert.equal(data.investment.days,4);
  assert.equal(data.wellbeing.days,1);
- assert.equal(data.exercise.days,0); // today and yesterday have no exercise check
+ assert.equal(data.exercise.days,1); // yesterday has exercise; today is still eligible grace day
 });
 test('today uncompleted uses yesterday as grace day for each group only',()=>{
  const data=groups.streak({habits:[{id:'study'}],checks:{
