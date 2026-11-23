@@ -140,7 +140,10 @@ const injection=`<script>
  const fileInput=document.getElementById('fileInput');
  fileInput.files=dt.files;
  fileInput.dispatchEvent(new Event('change',{bubbles:true}));
- await new Promise(resolve=>setTimeout(resolve,90));
+ // File.text() and the import change listener are async: wait for the actual
+ // restored check, not a brittle fixed 90ms on virtual-time Chrome.
+ for(let i=0;i<30&&state().checks[day]?.[h.id]!==true;i++)
+  await new Promise(resolve=>setTimeout(resolve,50));
  const reimported=state().habits.find(x=>x.id===h.id);
  requireOk(state().checks[day]?.[h.id]===true,'JSON import failed to restore check');
  requireOk(reimported.targetHistory?.length>0&&reimported.activeIntervals?.length>0,'JSON import lost lifecycle');
@@ -211,7 +214,7 @@ test('headless Chrome: lifecycle and JSON backup/import preserve checks and XP',
      const args=['--headless=new','--disable-gpu','--no-sandbox','--disable-dev-shm-usage',
        '--disable-background-networking','--no-first-run','--disable-extensions',
        '--window-size='+scenario.size,'--user-data-dir='+profile,
-       '--virtual-time-budget=2500','--dump-dom',target];
+       '--virtual-time-budget=6500','--dump-dom',target];
      const p=spawn(executable,args,{stdio:['ignore','pipe','pipe']});
      p.stdout.on('data',d=>stdout+=d.toString());
      p.stderr.on('data',d=>stderr+=d.toString());
