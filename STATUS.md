@@ -93,3 +93,12 @@
 - 開発ブランチのGitHub Actions run #29：55件成功・失敗0・スキップ0（Chrome UI含む）。
 - ソースと緊急時の関数復元手順を `ops/` に記録。
 - **未確認**：mainへのコード統合、GitHub Pages反映後の画面、実際のPC⇄スマホ/Oura端末連携。確認まで公開成果を完全受入としない。
+
+## 最新状態：Phase A-1/A-2をmainへ統合（2026-11-23）
+
+- GitHub PR #2をmainへ統合：**merge commit `3179f4e3cff25379b0590931be862c20b0a17443`**。変更ファイル（`index.html`, `goal-metrics.js`, `habit-lifecycle.js`, `sync-guard.js`, `sw.js`, tests, docs）をmainで確認。
+- GitHub Actions run #31：**55件成功、0件失敗、0件スキップ**。
+- Supabase `save_habit_state` v2ガード適用済み、7つのSQLテスト成功、事前バックアップとライブ記録の一致確認済み。
+- 「mainへのマージ保留」という旧記録は当時のもの。現在はマージ済み。
+- **未検証**：公開GitHub Pages URLへの外部HTTPアクセス（この実行環境ではネットワーク取得不能）、本人のPC⇄スマホログイン同期、iOS/Androidの実機UI、Oura再同期、別ブラウザJSON復元。
+- 実アカウントでの記録を自動テストにより上書き・削除することはしていない。
