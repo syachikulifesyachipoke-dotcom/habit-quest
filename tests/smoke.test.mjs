@@ -166,3 +166,14 @@ test('five fixed navigation buttons link to live character/event/shop/options pa
  assert.match(sw,/\.\/game-shell\.js/);
  assert.match(sw,/\.\/game-shell\.css/);
 });
+
+test('game expressions and direct options backup controls remain integrated',()=>{
+ assert.match(html,/id="homeCompanionMood"/);
+ assert.match(html,/id="characterMoodFace"/);
+ assert.match(html,/id="optionsExportBtn"/);
+ assert.match(html,/id="optionsImportBtn"/);
+ assert.match(html,/id="appUpdateBanner"/);
+ assert.match(html,/id="syncBanner"/);
+ assert.match(html,/previousController/);
+ assert.match(html,/screen-options/);
+});
