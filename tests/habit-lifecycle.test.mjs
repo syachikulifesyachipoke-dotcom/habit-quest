@@ -1,81 +1,117 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import vm from 'node:vm';
 import fs from 'node:fs';
+import vm from 'node:vm';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import {fileURLToPath} from 'node:url';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const js = html.split('<script>')[1].split('</script>')[0];
-function extract(pattern) {
-  const match = js.match(pattern);
-  assert.ok(match, 'missing function matching '+pattern);
-  return match[0];
-}
-const fns = [
-  extract(/function validXpStartDate\(day\)\{[\s\S]*?\n\}/),
-  extract(/function habitCreatedOn\(h\)\{[^\n]+\}/),
-  extract(/function eligibleHabitDay\(h,key\)\{[^\n]+\}/),
-  extract(/function weeklyFor\(start\)\{[\s\S]*?\n\}/)
-].join('\n');
-const checks = {};
-const state = {habits:[]};
-const key = d => [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
-const context = {
-  state,
-  dayKey:key,
-  weekDays:d=>Array.from({length:7},(_,i)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+i,12)),
-  xpStartDate:()=> '2026-11-23',
-  checked:(d,id)=>Boolean(checks[key(d)]?.[id])
-};
-vm.runInNewContext(fns+'\nthis.testApi={eligibleHabitDay,weeklyFor};',context);
-const api=context.testApi;
-const monday = new Date(2026,10,23,12);
-
-test('new habit only enters denominators from its createdOn date',()=>{
-  assert.equal(api.eligibleHabitDay({createdOn:'2026-11-26'},'2026-11-25'),false);
-  assert.equal(api.eligibleHabitDay({createdOn:'2026-11-26'},'2026-11-26'),true);
-  assert.equal(api.eligibleHabitDay({createdOn:null},'2025-11-26'),true);
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const source=html.split('<script>')[1].split('</script>')[0];
+const sandbox={window:{}};
+vm.runInNewContext(fs.readFileSync(path.join(root,'habit-lifecycle.js'),'utf8'),sandbox);
+const L=sandbox.window.HabitQuestLifecycle;
+const week=(monday)=>Array.from({length:7},(_,i)=>{
+ const d=new Date(monday+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+i);return d.toISOString().slice(0,10);
 });
 
-test('adding a habit midweek does not retroactively require seven earlier checks',()=>{
-  state.habits=[{id:'old',target:3,ouraTrackingOnly:false},{id:'new',target:7,createdOn:'2026-11-26',ouraTrackingOnly:false}];
-  for(const date of Object.keys(checks))delete checks[date];
-  for(const day of ['2026-11-23','2026-11-24','2026-11-25'])checks[day]={old:true};
-  for(const day of ['2026-11-26','2026-11-27','2026-11-28','2026-11-29'])checks[day]={...checks[day],new:true};
-  const result=api.weeklyFor(monday);
-  assert.equal(result.target,7); // 3 old + 4 days of new
-  assert.equal(result.done,7);
-  assert.equal(result.complete,true);
-  delete checks['2026-11-29'].new;
-  const short=api.weeklyFor(monday);
-  assert.equal(short.done,6);
-  assert.equal(short.complete,false);
+test('existing habits without lifecycle fields keep historical eligibility',()=>{
+ const h=L.normalize({id:'legacy',name:'読書',target:5,ouraTrackingOnly:false});
+ assert.equal(h.createdOn,null);
+ assert.equal(L.activeOn(h,'2024-02-01'),true);
+ assert.equal(L.archived(h),false);
+ assert.equal(L.configOn(h,'2026-11-22').target,5);
 });
 
-test('first login date is an independent cut-off even for legacy habits',()=>{
-  state.habits=[{id:'old',target:7,ouraTrackingOnly:false}];
-  const week=new Date(2026,10,16,12);
-  const result=api.weeklyFor(week);
-  assert.equal(result.target,0);
-  assert.equal(result.complete,false);
+test('new habit starts exactly on creation day and is never an obligation before that',()=>{
+ const h=L.create({id:'new',name:'読書',target:7,ouraTrackingOnly:false},'2026-11-26');
+ assert.equal(L.activeOn(h,'2026-11-25'),false);
+ assert.equal(L.activeOn(h,'2026-11-26'),true);
+ assert.equal(h.targetHistory[0].effectiveOn,'2026-11-26');
+ assert.equal(L.weekProgress(h,week('2026-11-23'),()=>true,'2026-11-23').target,4);
 });
 
-test('habit creation date travels through the existing cloud JSON payload',()=>{
-  assert.match(js,/createdOn:isoToday\(\)/);
-  assert.match(js,/createdOn:validXpStartDate\(h\.createdOn\)/);
-  assert.match(js,/habits:s\.habits/);
-  assert.match(js,/eligibleHabitDay\(h,dayKey\(d\)\)/);
+test('archives pause future observations without deleting the definition or historical days',()=>{
+ const h=L.create({id:'habit-id',name:'勉強',target:5,ouraTrackingOnly:false},'2026-11-20');
+ const a=L.archive(h,'2026-11-21');
+ assert.equal(a.id,h.id);
+ assert.equal(L.archived(a),true);
+ assert.equal(L.activeOn(a,'2026-11-20'),true);
+ assert.equal(L.activeOn(a,'2026-11-21'),false);
+ const restored=L.restore(a,'2026-11-23');
+ assert.equal(restored.id,h.id);
+ assert.equal(L.archived(restored),false);
+ assert.equal(L.activeOn(restored,'2026-11-22'),false);
+ assert.equal(L.activeOn(restored,'2026-11-23'),true);
+ assert.equal(restored.activeIntervals.length,2);
 });
 
-test('manual edit explicitly controls weekly mission membership',()=>{
-  assert.match(html,/id="habitWeeklyMission"/);
-  assert.match(js,/ouraTrackingOnly=!\$\('habitWeeklyMission'\)\.checked/);
-  assert.match(js,/\$\('habitWeeklyMission'\)\.checked=h\?!h\.ouraTrackingOnly:true/);
+test('same-day completion survives archive and same-day restore',()=>{
+ const h=L.create({id:'trained',target:3,ouraTrackingOnly:true},'2026-11-22');
+ const archived=L.archive(h,'2026-11-23',true);
+ assert.equal(L.activeOn(archived,'2026-11-23'),true);
+ assert.equal(L.activeOn(archived,'2026-11-24'),false);
+ const restored=L.restore(archived,'2026-11-23');
+ assert.equal(L.archived(restored),false);
+ assert.equal(L.activeOn(restored,'2026-11-23'),true);
 });
 
-test('existing habit deletion retains check history and XP',()=>{
-  assert.match(js,/state\.habits=state\.habits\.filter\(x=>x\.id!==editing\)/);
-  assert.match(js,/過去のチェック記録と獲得したXPは残ります/);
+test('editing a target preserves prior effective-day target',()=>{
+ const original=L.normalize({id:'read',target:3,ouraTrackingOnly:false});
+ const edited=L.edit(original,'2026-11-23',5,true);
+ assert.equal(L.configOn(edited,'2026-11-22').target,3);
+ assert.equal(L.configOn(edited,'2026-11-23').target,5);
+ assert.equal(edited.targetHistory.length,2);
+});
+
+test('mission toggle changes future days only, including Oura automatic item',()=>{
+ const original=L.normalize({id:'oura_cycling',target:2,ouraTrackingOnly:true});
+ const edited=L.edit(original,'2026-11-23',2,true);
+ assert.equal(L.configOn(edited,'2026-11-22').mission,false);
+ assert.equal(L.configOn(edited,'2026-11-23').mission,true);
+ assert.equal(edited.ouraTrackingOnly,false);
+ const again=L.edit(edited,'2026-11-23',3,false);
+ assert.equal(again.targetHistory.length,2);
+ assert.equal(L.configOn(again,'2026-11-22').mission,false);
+ assert.equal(L.configOn(again,'2026-11-23').target,3);
+ assert.equal(L.configOn(again,'2026-11-23').mission,false);
+});
+
+test('week mission uses the historical target for a completed week',()=>{
+ const original=L.normalize({id:'read',target:3,ouraTrackingOnly:false});
+ const edited=L.edit(original,'2026-11-23',5,true);
+ const days=week('2026-11-16');
+ let calls=0;
+ const r=L.weekProgress(edited,days,(day)=>{calls++;return ['2026-11-16','2026-11-17','2026-11-18'].includes(day);});
+ assert.equal(r.target,3);
+ assert.equal(r.done,3);
+ assert.equal(r.complete,true);
+ assert.equal(calls,7);
+});
+
+test('archived Oura habit refuses records on paused days',()=>{
+ const h=L.create({id:'oura_running',target:1,ouraTrackingOnly:true},'2026-11-20');
+ const a=L.archive(h,'2026-11-23');
+ assert.equal(L.activeOn(a,'2026-11-22'),true);
+ assert.equal(L.activeOn(a,'2026-11-23'),false);
+ const r=L.restore(a,'2026-11-25');
+ assert.equal(L.activeOn(r,'2026-11-24'),false);
+ assert.equal(L.activeOn(r,'2026-11-25'),true);
+});
+
+test('new fields survive cloud normalization and archive controls exist',()=>{
+ assert.match(source,/targetHistory:h\.targetHistory,activeIntervals:h\.activeIntervals/);
+ assert.match(source,/habits:s\.habits/);
+ assert.match(source,/HabitQuestLifecycle\.normalize/);
+ assert.match(source,/HabitQuestLifecycle\.archive\(h,today,preserveToday\)/);
+ assert.match(source,/HabitQuestLifecycle\.restore\(h,isoToday\(\)\)/);
+ assert.match(source,/HabitQuestLifecycle\.activeOn\(activeIds\.get\(record\.id\),record\.day\)/);
+ assert.match(html,/id="archiveSection"/);
+ assert.match(html,/id="archivedHabitList"/);
+});
+
+test('archive does not remove checks or award data and backend schema is unchanged',()=>{
+ const block=source.match(/\$\('deleteHabit'\)\.onclick=\(\)=>\{[\s\S]*?\n\};/);
+ assert.ok(block,'archive click handler exists');
+ assert.doesNotMatch(block[0],/state\.habits=state\.habits\.filter|delete state\.checks|ouraIgnoredTypes/);
 });
