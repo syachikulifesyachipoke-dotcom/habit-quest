@@ -109,7 +109,7 @@ test('phase A-2 lifecycle module is loaded and cached offline',()=>{
 
 test('streak remains a manual-habit metric even when mission setting changes',()=>{
  assert.match(html,/const anyDone=k=>state\.habits\.some\(h=>\{const day=dayKey\(k\);return !isOuraAutoHabit\(h\)&&eligibleHabitDay\(h,day\)/);
- assert.match(html,/手動習慣を1項目以上達成した連続日数/);
+ assert.match(html,/グループ別連続記録/);
 });
 
 test('sync safety guard is loaded and refuses downgrades before auto-replacement',()=>{
