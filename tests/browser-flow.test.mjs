@@ -179,6 +179,8 @@ test('headless Chrome: lifecycle and JSON backup/import preserve checks and XP',
    ['/adventure-world.js',fs.readFileSync(path.join(root,'adventure-world.js'),'utf8')],
    ['/cloud-onboarding.js',fs.readFileSync(path.join(root,'cloud-onboarding.js'),'utf8')],
    ['/game-shell.js',fs.readFileSync(path.join(root,'game-shell.js'),'utf8')],
+   ['/coin-shop.js',fs.readFileSync(path.join(root,'coin-shop.js'),'utf8')],
+   ['/coin-shop.css',fs.readFileSync(path.join(root,'coin-shop.css'),'utf8')],
    ['/game-shell.css',fs.readFileSync(path.join(root,'game-shell.css'),'utf8')],
    ['/cloud-config.js','window.HABIT_QUEST_CLOUD={url:"",anonKey:""};']
  ]);
