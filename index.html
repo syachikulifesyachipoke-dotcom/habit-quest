@@ -120,6 +120,7 @@
 .evo-level.locked{opacity:.50}
 .evo-level.milestone{border-color:#514977;background:#2a2948}
 .evo-level.current{background:#3d3262;border-color:#a58be8;color:#fff}
+.xp-start-line{font-size:10px;color:#95a4ca;text-align:right;margin-top:3px;line-height:1.5}@media(max-width:760px){.xp-start-line{font-size:9px;max-width:145px}}
 </style>
 </head>
 <body>
@@ -153,8 +154,8 @@
 </section>
 <main>
 <section class="intro">
- <div class="hero"><div class="eyebrow">YOUR DAILY ADVENTURE</div><h2>今日の一歩で、<br><em>未来の自分を進化させる。</em></h2><p class="hero-sub">小さな習慣が経験値になる。1日ずつ積み重ねて、<br>あなただけの相棒を育てていこう。</p><div class="hero-counters"><div class="counter"><strong id="todayDone">0/0</strong><label>今日の目標達成</label></div><div class="counter"><strong id="streak">0<span style="font-size:14px"> 日</span></strong><label>連続達成日数</label></div><div class="counter"><strong id="totalXp">0</strong><label>累計 XP</label></div></div></div>
- <div class="companion-card"><div class="companion-top"><span class="tag" id="evoTag">✦ 進化のたまご</span><div class="level" id="levelLabel">Lv. 1</div></div><div class="avatar-box" id="avatar"></div><div class="companion-bottom"><div><div class="companion-title" id="stageName">星のたまご</div><div class="companion-next" id="nextEvolution">Lv.3で次の姿に進化</div></div><div class="xp-val" id="xpLabel">0 / 40 XP</div></div><div class="progress"><i id="xpBar"></i></div></div>
+ <div class="hero"><div class="eyebrow">YOUR DAILY ADVENTURE</div><h2>今日の一歩で、<br><em>未来の自分を進化させる。</em></h2><p class="hero-sub">小さな習慣が経験値になる。1日ずつ積み重ねて、<br>あなただけの相棒を育てていこう。</p><div class="hero-counters"><div class="counter"><strong id="todayDone">0/0</strong><label>今日の目標達成</label></div><div class="counter"><strong id="streak">0<span style="font-size:14px"> 日</span></strong><label>連続達成日数</label></div><div class="counter"><strong id="totalXp">0</strong><label>開始日以降の XP</label></div></div></div>
+ <div class="companion-card"><div class="companion-top"><span class="tag" id="evoTag">✦ 進化のたまご</span><div class="level" id="levelLabel">Lv. 1</div></div><div class="avatar-box" id="avatar"></div><div class="companion-bottom"><div><div class="companion-title" id="stageName">星のたまご</div><div class="companion-next" id="nextEvolution">Lv.3で次の姿に進化</div></div><div><div class="xp-val" id="xpLabel">0 / 40 XP</div><div class="xp-start-line" id="xpStartLine">XP開始日：ログイン時に確定</div></div></div><div class="progress"><i id="xpBar"></i></div></div>
 </section>
 <section class="content">
  <div class="panel"><div class="panel-heading"><div><h3 class="hq-section-heading"><span data-hq-icon="calendar"></span>週間トラッカー</h3><div class="subheading">チェックを入れるたびに +20 XP</div></div><div class="week-nav"><span class="week-range" id="weekRange"></span><button class="btn icon-btn" id="prevWeek" aria-label="前の週">‹</button><button class="btn" id="thisWeek">今週</button><button class="btn icon-btn" id="nextWeek" aria-label="次の週">›</button></div></div><div id="tracker" class="tracker"></div><div class="tracker-footer"><div class="legend"><span><i class="dot dot-manual"></i>手動チェック</span><span><i class="dot dot-oura"></i>Oura自動</span><span><i class="dot empty"></i>未チェック</span></div><button class="btn primary" id="addHabit">＋ 習慣を追加</button></div></div>
@@ -270,8 +271,21 @@ const AUTO_CORE_HABITS=[
  {id:'oura_strengthtraining',name:'筋トレ',icon:'dumbbell',target:3,ouraTrackingOnly:true},
  {id:'oura_cycling',name:'サイクリング',icon:'bike',target:2,ouraTrackingOnly:true}
 ];
+function validXpStartDate(day){
+ if(typeof day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(day))return null;
+ const dt=new Date(day+'T12:00:00Z');
+ return Number.isFinite(dt.getTime())&&dt.toISOString().slice(0,10)===day?day:null;
+}
+function xpStartDate(){return validXpStartDate(state.xpStartDate)||isoToday()}
+function weekIsXpEligible(start){return dayKey(addDay(start,6))>=xpStartDate()&&!!validXpStartDate(state.xpStartDate)}
+function markFirstLoginDate(user){
+ // Successful authenticated login is the start line; never infer it from old Oura history.
+ if(state.xpStartDate)return;
+ state.xpStartDate=isoToday();
+ try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){}
+}
 function normalizeHabitState(input){
- const s={...input,habits:(input.habits||[]).map(h=>({...h})),checks:Object.fromEntries(Object.entries(input.checks||{}).map(([day,v])=>[day,{...v}]))};
+ const s={...input,xpStartDate:validXpStartDate(input.xpStartDate),habits:(input.habits||[]).map(h=>({...h})),checks:Object.fromEntries(Object.entries(input.checks||{}).map(([day,v])=>[day,{...v}]))};
  if(Number(input.ouraTrackingVersion||0)<3){
    // Legacy version marked multiple exercise types together as "train".
    // Remove only those 8-style Oura-sourced checks; keep any manual exercise checks.
@@ -308,7 +322,7 @@ function safeOuraAutoKeys(v){return Array.isArray(v)?[...new Set(v.filter(x=>typ
 
 let state=load(),offset=0,editing=null,artStage=0;
 const cloud={client:null,user:null,ready:false,blocked:true,remote:null,revision:null,seq:0,syncedSeq:0,saving:false,timer:null,loadPromise:null};
-function load(){try{const a=JSON.parse(localStorage.getItem(KEY)||'null');if(a&&Array.isArray(a.habits)&&a.checks&&typeof a.checks==='object'){return normalizeHabitState({habits:a.habits.filter(validHabit),checks:a.checks,rewardedWeeks:Array.isArray(a.rewardedWeeks)?a.rewardedWeeks.filter(k=>typeof k==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(k)):[],avatarImages:validAvatarImages(a.avatarImages),ouraData:validOuraData(a.ouraData),ouraAutoEnabled:a.ouraAutoEnabled===true,ouraAutoDays:safeOuraDates(a.ouraAutoDays),ouraAutoSuppressed:safeOuraDates(a.ouraAutoSuppressed),ouraTrackingVersion:a.ouraTrackingVersion,ouraAutoKeys:a.ouraAutoKeys,ouraSuppressedKeys:a.ouraSuppressedKeys,ouraIgnoredTypes:a.ouraIgnoredTypes})}}catch(e){}return normalizeHabitState({habits:defaultHabits.map(x=>({...x})),checks:{},rewardedWeeks:[],avatarImages:{},ouraData:{},ouraTrackingVersion:3,ouraAutoEnabled:true,ouraAutoKeys:[],ouraSuppressedKeys:[]})}
+function load(){try{const a=JSON.parse(localStorage.getItem(KEY)||'null');if(a&&Array.isArray(a.habits)&&a.checks&&typeof a.checks==='object'){return normalizeHabitState({habits:a.habits.filter(validHabit),checks:a.checks,rewardedWeeks:Array.isArray(a.rewardedWeeks)?a.rewardedWeeks.filter(k=>typeof k==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(k)):[],avatarImages:validAvatarImages(a.avatarImages),ouraData:validOuraData(a.ouraData),ouraAutoEnabled:a.ouraAutoEnabled===true,ouraAutoDays:safeOuraDates(a.ouraAutoDays),ouraAutoSuppressed:safeOuraDates(a.ouraAutoSuppressed),xpStartDate:a.xpStartDate,ouraTrackingVersion:a.ouraTrackingVersion,ouraAutoKeys:a.ouraAutoKeys,ouraSuppressedKeys:a.ouraSuppressedKeys,ouraIgnoredTypes:a.ouraIgnoredTypes})}}catch(e){}return normalizeHabitState({habits:defaultHabits.map(x=>({...x})),checks:{},rewardedWeeks:[],avatarImages:{},ouraData:{},ouraTrackingVersion:3,ouraAutoEnabled:true,ouraAutoKeys:[],ouraSuppressedKeys:[]})}
 function validAvatarImages(a){const o={};if(a&&typeof a==='object')for(const [k,v] of Object.entries(a))if(/^(?:[0-9]|10)$/.test(k)&&typeof v==='string'&&/^data:image\/(webp|png|jpeg);base64,/.test(v)&&v.length<1200000)o[k]=v;return o}
 function validOuraData(a){const o={};if(a&&typeof a==='object')for(const [day,row] of Object.entries(a)){if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!row||typeof row!=='object')continue;const safe={};for(const k of ['sleep','readiness','steps'])if(row[k]!==null&&Number.isFinite(Number(row[k])))safe[k]=Math.round(Number(row[k]));if(Object.keys(safe).length)o[day]=safe}return o}
 function safeOuraDates(raw){return Array.isArray(raw)?[...new Set(raw.filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)))].slice(-1000):[]}
@@ -326,13 +340,41 @@ function levelFromXp(x){let level=1;while(level<MAX_LEVEL&&x>=threshold(level+1)
 function isoToday(){return dateInTokyo(new Date())}
 function dayCount(){return Object.keys(state.checks).filter(k=>state.habits.some(h=>state.checks[k]&&state.checks[k][h.id])).length}
 function checked(d,id){return !!state.checks[dayKey(d)]?.[id]}
-function weeklyFor(start){let done=0,target=0;const planned=state.habits.filter(h=>!h.ouraTrackingOnly);let all=planned.length>0;const days=weekDays(start);for(const h of planned){const count=days.filter(d=>checked(d,h.id)).length;done+=Math.min(count,h.target);target+=h.target;if(count<h.target)all=false}return{done,target,complete:all}}
+function weeklyFor(start){
+ let done=0,target=0;
+ const planned=state.habits.filter(h=>!h.ouraTrackingOnly);
+ const days=weekDays(start).filter(d=>dayKey(d)>=xpStartDate());
+ let all=planned.length>0&&days.length>0;
+ for(const h of planned){
+   // First login can be midweek: prorate the possible weekly target, never use earlier check marks.
+   const available=Math.min(h.target,days.length);
+   const count=days.filter(d=>checked(d,h.id)).length;
+   done+=Math.min(count,available);target+=available;
+   if(count<available)all=false;
+ }
+ return{done,target,complete:all};
+}
 function weekKeysWithData(){const set=new Set();for(const [key,checks] of Object.entries(state.checks)){if(Object.values(checks).some(Boolean)&&/^\d{4}-\d{2}-\d{2}$/.test(key)){const d=parseDay(key);if(!isNaN(d))set.add(dayKey(weekStart(d)))}}return [...set]}
-function stats(){let checks=0;for(const val of Object.values(state.checks))for(const ok of Object.values(val))if(ok===true)checks++;const completedWeeks=state.rewardedWeeks.length;const xp=checks*XP_CHECK+completedWeeks*XP_WEEK;const level=levelFromXp(xp);let streak=0;let d=parseDay(isoToday());const anyDone=k=>state.habits.some(h=>!h.ouraTrackingOnly&&state.checks[dayKey(k)]?.[h.id]===true);if(!anyDone(d))d=addDay(d,-1);while(anyDone(d)){streak++;d=addDay(d,-1);if(streak>20000)break}return{checks,completedWeeks,xp,level,streak}}
+function stats(){
+ let checks=0,xpChecks=0;
+ const begin=validXpStartDate(state.xpStartDate);
+ for(const [day,values] of Object.entries(state.checks)){
+   for(const ok of Object.values(values))if(ok===true){
+     checks++;if(begin&&day>=begin)xpChecks++;
+   }
+ }
+ const completedWeeks=begin?state.rewardedWeeks.filter(key=>validXpStartDate(key)&&dayKey(addDay(parseDay(key),6))>=begin).length:0;
+ const xp=xpChecks*XP_CHECK+completedWeeks*XP_WEEK,level=levelFromXp(xp);
+ let streak=0,d=parseDay(isoToday());
+ const anyDone=k=>state.habits.some(h=>!h.ouraTrackingOnly&&state.checks[dayKey(k)]?.[h.id]===true);
+ if(!anyDone(d))d=addDay(d,-1);
+ while(begin&&dayKey(d)>=begin&&anyDone(d)){streak++;d=addDay(d,-1);if(streak>20000)break}
+ return{checks,xpChecks,completedWeeks,xp,level,streak};
+}
 function esc(str){return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function avatarSvg(stage){const palette=[['#c5a0ff','#6b4ac9'],['#7aead6','#28ae9f'],['#87bbff','#4b65c9'],['#ffba87','#f07969'],['#ecc7ff','#9e6fef']][stage];if(stage===0)return `<svg class="avatar-svg" viewBox="0 0 300 240" role="img" aria-label="星のたまご"><defs><radialGradient id="eg" cx="35%" cy="25%"><stop stop-color="#fff4ff"/><stop offset=".54" stop-color="#c2a5ff"/><stop offset="1" stop-color="#7163c8"/></radialGradient></defs><g opacity=".6" fill="#d6c6ff"><path d="M63 62l4 10 10 4-10 4-4 10-4-10-10-4 10-4z"/><path d="M238 50l4 9 9 4-9 4-4 9-4-9-9-4 9-4z"/><circle cx="55" cy="147" r="3"/><circle cx="249" cy="155" r="3"/></g><ellipse cx="150" cy="218" rx="74" ry="13" fill="#7663bd" opacity=".18"/><path d="M150 24C105 24 73 91 73 145c0 49 36 78 77 78s77-29 77-78c0-54-32-121-77-121Z" fill="url(#eg)" stroke="#e0d2ff" stroke-width="4"/><ellipse cx="120" cy="83" rx="20" ry="42" fill="white" opacity=".23" transform="rotate(28 120 83)"/><path d="M137 119l13 9-10 13 17 10-12 16" fill="none" stroke="#f3e8ff" stroke-width="5" stroke-linecap="round"/><circle cx="104" cy="157" r="6" fill="#9b80ee" opacity=".65"/><circle cx="190" cy="118" r="8" fill="#f1ddff" opacity=".8"/><circle cx="181" cy="181" r="5" fill="#9477d9" opacity=".65"/></svg>`;
 const [light,dark]=palette[stage%palette.length], wings=stage>=2, fire=stage>=3, star=stage>=4;return `<svg class="avatar-svg" viewBox="0 0 300 250" role="img" aria-label="${EVO[stage].name}"><defs><linearGradient id="bodyG" x1="0" x2="1" y1="0" y2="1"><stop stop-color="${light}"/><stop offset="1" stop-color="${dark}"/></linearGradient><linearGradient id="wingG" x1="0" x2="0" y1="0" y2="1"><stop stop-color="${light}"/><stop offset="1" stop-color="${dark}"/></linearGradient></defs><g opacity=".9" fill="#f4d9ff"><path d="M47 45l4 9 9 4-9 4-4 9-4-9-9-4 9-4z"/><path d="M249 30l5 12 12 5-12 5-5 12-5-12-12-5 12-5z"/></g>${wings?`<path d="M118 125C72 103 67 54 34 76c6 22-4 45-15 63 30-8 65 4 98 35Z" fill="url(#wingG)" stroke="${dark}" stroke-width="5"/><path d="M181 125c47-22 52-71 84-49-5 22 5 45 16 63-30-8-65 4-98 35Z" fill="url(#wingG)" stroke="${dark}" stroke-width="5"/><path d="M37 78l45 57M264 78l-45 57" fill="none" stroke="#fff" opacity=".36" stroke-width="3"/>`:''}<path d="M184 173c54-31 75-15 78 13-23-11-43 36-90 13" fill="${dark}" stroke="#34335c" stroke-width="4"/><ellipse cx="148" cy="168" rx="64" ry="64" fill="url(#bodyG)" stroke="#2b365a" stroke-width="5"/><ellipse cx="149" cy="181" rx="42" ry="43" fill="#fff2dc" opacity=".84"/><path d="M109 210c-28-3-35 24-7 27h28l4-25M171 212l4 25h28c27-2 21-30-7-27" fill="${dark}" stroke="#364164" stroke-width="4" stroke-linejoin="round"/><path d="M90 91 70 46q37 6 53 44M176 88l40-43q-6 42-23 62" fill="${dark}" stroke="#2c3559" stroke-width="5"/><ellipse cx="150" cy="114" rx="71" ry="59" fill="url(#bodyG)" stroke="#2b365a" stroke-width="5"/><ellipse cx="150" cy="139" rx="46" ry="25" fill="${light}" opacity=".85"/><ellipse cx="122" cy="112" rx="14" ry="17" fill="#fff"/><ellipse cx="177" cy="112" rx="14" ry="17" fill="#fff"/><ellipse cx="126" cy="114" rx="6" ry="9" fill="#222b4b"/><ellipse cx="174" cy="114" rx="6" ry="9" fill="#222b4b"/><circle cx="129" cy="110" r="2.5" fill="#fff"/><circle cx="176" cy="110" r="2.5" fill="#fff"/><ellipse cx="105" cy="139" rx="12" ry="7" fill="#e87593" opacity=".43"/><ellipse cx="195" cy="139" rx="12" ry="7" fill="#e87593" opacity=".43"/><path d="M139 150q11 11 22 0" fill="none" stroke="#323656" stroke-width="3" stroke-linecap="round"/><circle cx="138" cy="135" r="3" fill="#59556f"/><circle cx="163" cy="135" r="3" fill="#59556f"/>${fire?`<path d="M232 143c20-25 3-37 15-59 23 29 34 44 19 64 15-5 19-13 22-22 18 34-14 58-43 47 20-13 9-25 4-31-1 17-9 17-17 1" fill="#ffae65" stroke="#ff7568" stroke-width="4"/>`:''}${star?`<path d="M149 13l9 23 23 2-19 15 6 22-19-14-20 14 6-22-18-15 23-2Z" fill="#ffe6a7" stroke="#f3b6ff" stroke-width="4"/>`:''}</svg>`}
-function render(){const t=parseDay(isoToday()),start=addDay(weekStart(t),offset*7),days=weekDays(start),w=weeklyFor(start),s=stats(),today=isoToday();$('nowDate').textContent=t.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});$('todayDone').textContent=`${state.habits.filter(h=>!h.ouraTrackingOnly&&checked(t,h.id)).length}/${state.habits.filter(h=>!h.ouraTrackingOnly).length}`;$('streak').innerHTML=`${s.streak}<span style="font-size:14px"> 日</span>`;$('totalXp').textContent=s.xp.toLocaleString();$('totalChecks').textContent=s.checks.toLocaleString();$('clearWeeks').textContent=s.completedWeeks;$('levelLabel').textContent=`Lv. ${s.level}`;const stage=[...EVO].reverse().find(e=>s.level>=e.lv);const stageNo=EVO.indexOf(stage),next=EVO[stageNo+1];$('evoTag').textContent=`✦ ${stage.tag}`;$('stageName').textContent=stage.name;$('nextEvolution').textContent=next?`Lv.${next.lv}で${next.name}に進化`:'最高段階に到達！';renderAvatar(stageNo);const maxed=s.level>=MAX_LEVEL;
+function render(){const t=parseDay(isoToday()),start=addDay(weekStart(t),offset*7),days=weekDays(start),w=weeklyFor(start),s=stats(),today=isoToday();$('nowDate').textContent=t.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});$('todayDone').textContent=`${state.habits.filter(h=>!h.ouraTrackingOnly&&checked(t,h.id)).length}/${state.habits.filter(h=>!h.ouraTrackingOnly).length}`;$('streak').innerHTML=`${s.streak}<span style="font-size:14px"> 日</span>`;$('totalXp').textContent=s.xp.toLocaleString();$('xpStartLine').textContent='XP開始 '+(validXpStartDate(state.xpStartDate)||'ログイン時に設定')+'（過去の履歴はXPに含めない）';$('totalChecks').textContent=s.checks.toLocaleString();$('clearWeeks').textContent=s.completedWeeks;$('levelLabel').textContent=`Lv. ${s.level}`;const stage=[...EVO].reverse().find(e=>s.level>=e.lv);const stageNo=EVO.indexOf(stage),next=EVO[stageNo+1];$('evoTag').textContent=`✦ ${stage.tag}`;$('stageName').textContent=stage.name;$('nextEvolution').textContent=next?`Lv.${next.lv}で${next.name}に進化`:'最高段階に到達！';renderAvatar(stageNo);const maxed=s.level>=MAX_LEVEL;
 const into=maxed?threshold(MAX_LEVEL):s.xp-threshold(s.level),needed=maxed?threshold(MAX_LEVEL):threshold(s.level+1)-threshold(s.level);
 $('xpLabel').textContent=maxed?'MAX Lv.50':`${into} / ${needed} XP`;
 $('xpBar').style.width=maxed?'100%':`${Math.max(0,Math.min(100,100*into/needed))}%`;$('weekRange').textContent=`${start.getMonth()+1}/${start.getDate()} – ${days[6].getMonth()+1}/${days[6].getDate()}`;
@@ -361,7 +403,7 @@ $('tracker').addEventListener('click',event=>{const edit=event.target.closest('[
    state.ouraAutoKeys=(state.ouraAutoKeys||[]).filter(k=>k!==marker);
    state.ouraSuppressedKeys=(state.ouraSuppressedKeys||[]).filter(k=>k!==marker);
    if(was)state.ouraSuppressedKeys.push(marker); // User's cancellation takes precedence over automatic tracking.
- }if(!Object.keys(state.checks[date]).length)delete state.checks[date];if(!was){const wk=weekStart(parseDay(date)),key=dayKey(wk);if(weeklyFor(wk).complete&&!state.rewardedWeeks.includes(key))state.rewardedWeeks.push(key)}store();render();const now=stats();if(!was){particles(b);if(now.level>prev.level)toast(`🎉 LEVEL UP! Lv.${now.level}`,true);else if(now.completedWeeks>prev.completedWeeks)toast('🏆 週間宝箱を開放！ +100 XP',true);else toast('✨ +20 XP  習慣クリア！',true)}else toast('チェックを取り消しました')});
+ }if(!Object.keys(state.checks[date]).length)delete state.checks[date];if(!was){const wk=weekStart(parseDay(date)),key=dayKey(wk);if(date>=xpStartDate()&&weekIsXpEligible(wk)&&weeklyFor(wk).complete&&!state.rewardedWeeks.includes(key))state.rewardedWeeks.push(key)}store();render();const now=stats();if(!was){particles(b);if(now.level>prev.level)toast(`🎉 LEVEL UP! Lv.${now.level}`,true);else if(now.completedWeeks>prev.completedWeeks)toast('🏆 週間宝箱を開放！ +100 XP',true);else if(date>=xpStartDate()&&validXpStartDate(state.xpStartDate))toast('✨ +20 XP  習慣クリア！',true);else toast('過去の実績を記録しました（XP対象外）',true)}else toast('チェックを取り消しました')});
 function openModal(id){editing=id||null;const h=state.habits.find(x=>x.id===id);$('modalTitle').textContent=h?'習慣を編集':'新しい習慣';$('habitName').value=h?.name||'';$('habitIcon').value=normalizedHabitIcon(h?.icon||'sunrise');$('habitIconPreview').innerHTML=habitIconSvg($('habitIcon').value);$('habitTarget').value=h?String(h.target):'5';$('deleteHabit').hidden=!h;$('saveHabit').textContent=h?'保存する':'追加する';$('modalBackdrop').classList.add('show');setTimeout(()=>$('habitName').focus(),70)}
 function closeModal(){$('modalBackdrop').classList.remove('show');editing=null}
 $('addHabit').onclick=()=>openModal();$('cancelModal').onclick=closeModal;$('modalBackdrop').addEventListener('click',e=>{if(e.target===$('modalBackdrop'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
@@ -502,7 +544,7 @@ function awardCompletedOuraWeeks(days){
  const weeks=new Set(days.map(day=>dayKey(weekStart(parseDay(day)))));
  let bonus=false;
  for(const week of weeks){
-   if(weeklyFor(parseDay(week)).complete&&!state.rewardedWeeks.includes(week)){
+   if(weekIsXpEligible(parseDay(week))&&weeklyFor(parseDay(week)).complete&&!state.rewardedWeeks.includes(week)){
      state.rewardedWeeks.push(week);bonus=true;
    }
  }
@@ -695,8 +737,8 @@ let cloudSdkPromise=null;
 function loadCloudSdk(){if(window.supabase?.createClient)return Promise.resolve();if(cloudSdkPromise)return cloudSdkPromise;cloudSdkPromise=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=sdkUrl;s.onload=()=>window.supabase?.createClient?resolve():reject(Error('SDKの読み込みに失敗'));s.onerror=()=>reject(Error('CDNに接続できません'));document.head.append(s)});return cloudSdkPromise}
 function stableStringify(x){if(Array.isArray(x))return '['+x.map(stableStringify).join(',')+']';if(x&&typeof x==='object')return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+stableStringify(x[k])).join(',')+'}';return JSON.stringify(x)}
 function validateIncoming(raw){if(!raw||!Array.isArray(raw.habits)||raw.habits.some(x=>!validHabit(x))||!raw.checks||Array.isArray(raw.checks)||typeof raw.checks!=='object')throw Error('不正なクラウドデータ');const checks={};for(const[day,values]of Object.entries(raw.checks)){if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!values||typeof values!=='object'||Array.isArray(values))continue;checks[day]={};for(const [id,yes] of Object.entries(values))if(yes===true&&id.length<=80)checks[day][id]=true;if(!Object.keys(checks[day]).length)delete checks[day]}
-return normalizeHabitState({habits:raw.habits.map(h=>({id:h.id.slice(0,80),name:h.name.slice(0,28),icon:h.icon.slice(0,24),target:Number(h.target),ouraTrackingOnly:h.ouraTrackingOnly===true})),checks,rewardedWeeks:Array.isArray(raw.rewardedWeeks)?[...new Set(raw.rewardedWeeks.filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)))]:[],avatarImages:validAvatarImages(raw.avatarImages),ouraData:validOuraData(raw.ouraData),ouraAutoEnabled:raw.ouraAutoEnabled===true,ouraAutoDays:safeOuraDates(raw.ouraAutoDays),ouraAutoSuppressed:safeOuraDates(raw.ouraAutoSuppressed),ouraTrackingVersion:raw.ouraTrackingVersion,ouraAutoKeys:raw.ouraAutoKeys,ouraSuppressedKeys:raw.ouraSuppressedKeys,ouraIgnoredTypes:raw.ouraIgnoredTypes})}
-function cloudSnapshot(s){return {habits:s.habits,checks:s.checks,rewardedWeeks:s.rewardedWeeks,ouraAutoEnabled:true,ouraTrackingVersion:3,ouraAutoKeys:safeOuraAutoKeys(s.ouraAutoKeys),ouraSuppressedKeys:safeOuraAutoKeys(s.ouraSuppressedKeys),ouraIgnoredTypes:safeOuraIgnoredTypes(s.ouraIgnoredTypes),avatarImages:{},ouraData:{}}}
+return normalizeHabitState({habits:raw.habits.map(h=>({id:h.id.slice(0,80),name:h.name.slice(0,28),icon:h.icon.slice(0,24),target:Number(h.target),ouraTrackingOnly:h.ouraTrackingOnly===true})),checks,rewardedWeeks:Array.isArray(raw.rewardedWeeks)?[...new Set(raw.rewardedWeeks.filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)))]:[],avatarImages:validAvatarImages(raw.avatarImages),ouraData:validOuraData(raw.ouraData),ouraAutoEnabled:raw.ouraAutoEnabled===true,ouraAutoDays:safeOuraDates(raw.ouraAutoDays),ouraAutoSuppressed:safeOuraDates(raw.ouraAutoSuppressed),xpStartDate:raw.xpStartDate,ouraTrackingVersion:raw.ouraTrackingVersion,ouraAutoKeys:raw.ouraAutoKeys,ouraSuppressedKeys:raw.ouraSuppressedKeys,ouraIgnoredTypes:raw.ouraIgnoredTypes})}
+function cloudSnapshot(s){return {xpStartDate:validXpStartDate(s.xpStartDate),habits:s.habits,checks:s.checks,rewardedWeeks:s.rewardedWeeks,ouraAutoEnabled:true,ouraTrackingVersion:3,ouraAutoKeys:safeOuraAutoKeys(s.ouraAutoKeys),ouraSuppressedKeys:safeOuraAutoKeys(s.ouraSuppressedKeys),ouraIgnoredTypes:safeOuraIgnoredTypes(s.ouraIgnoredTypes),avatarImages:{},ouraData:{}}}
 function choiceVisible(on,hasRemote=true){$('cloudChoice').classList.toggle('show',on);$('cloudUseRemote').hidden=!hasRemote}
 async function cloudFetch(){const {data,error}=await cloud.client.from('habit_states').select('data,revision,updated_at').eq('user_id',cloud.user.id).maybeSingle();if(error)throw error;return data}
 async function attachCloudUser(user){if(!cloud.client||cloud.user?.id===user.id&&cloud.loadPromise)return cloud.loadPromise;cloud.user=user;cloud.ready=false;cloud.blocked=true;$('cloudLogout').hidden=false;$('cloudEmail').value=user.email||'';$('cloudLogin').hidden=true;$('cloudAuthPanel').hidden=true;$('cloudPasswordPanel').hidden=false;cloudMessage(`${user.email} でログイン済み。クラウドの記録を確認しています…`);
