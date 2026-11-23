@@ -51,3 +51,29 @@ test('invalid weekly goals are not treated as success or failure',()=>{
 test('incorrect data cannot exceed observed days',()=>{
  assert.equal(calculate(8,7,3).goalRate,null);
 });
+
+test('rolling metric respects historical target changes by day',()=>{
+ const days=[
+   ...Array.from({length:7},(_,i)=>({observed:true,done:i<3,target:3,mission:true})),
+   ...Array.from({length:7},(_,i)=>({observed:true,done:i<5,target:5,mission:true}))
+ ];
+ const r=sandbox.window.HabitQuestGoalMetrics.computeForDays(days);
+ assert.equal(r.goalCount,8);
+ assert.equal(r.goalDone,8);
+ assert.equal(r.goalRate,100);
+});
+test('mission-off days and Oura missing days do not inflate the goal denominator',()=>{
+ const days=[
+   ...Array.from({length:7},()=>({observed:true,done:true,target:7,mission:false})),
+   ...Array.from({length:7},(_,i)=>({observed:i<5,done:i<2,target:3,mission:true}))
+ ];
+ const r=sandbox.window.HabitQuestGoalMetrics.computeForDays(days);
+ assert.equal(r.goalCount,3);
+ assert.equal(r.goalObserved,5);
+ assert.equal(r.goalDone,2);
+ assert.equal(r.goalRate,67);
+});
+test('no active mission day is ungraded',()=>{
+ const r=sandbox.window.HabitQuestGoalMetrics.computeForDays([{observed:true,done:true,target:4,mission:false}]);
+ assert.equal(r.goalRate,null);
+});
