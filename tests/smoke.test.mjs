@@ -37,9 +37,9 @@ test('weekly matrix and all automatic habit rows remain accessible', () => {
   assert.match(html, /const group=isOuraAutoHabit\(h\)\?'auto':'manual'/);
 });
 
-test('today counts every registered habit, but streak is explicitly manual', () => {
+test('today counts every registered habit and three streak categories replace old single display', () => {
   assert.match(html, /displayHabits\(\)\.filter\(h=>checked\(t,h\.id\)\)\.length/);
-  assert.match(html, /連続記録日数（手動1項目以上）/);
+  assert.match(html,/id="groupStreaks"/);for(const k of ['streakInvestment','streakWellbeing','streakExercise'])assert.match(html,new RegExp('id="'+k+'"'));
   assert.match(html, /週間ミッションONの習慣の目標合計/);
 });
 
@@ -94,14 +94,14 @@ test('PWA manifest is valid JSON', () => {
 });
 
 test('goal metric module is loaded before app and in offline cache', () => {
-  assert.match(html, /<script src="\.\/goal-metrics\.js"><\/script>\s*<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script src="\.\/sync-guard\.js"><\/script>\s*<script src="\.\/sync-merge\.js"><\/script>\s*<script src="\.\/daily-adventure\.js"><\/script>\s*<script src="\.\/adventure-world\.js"><\/script>\s*<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script src="\.\/coin-shop\.js"><\/script>\s*<script>/);
+  assert.match(html, /<script src="\.\/goal-metrics\.js"><\/script>\s*<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script src="\.\/sync-guard\.js"><\/script>\s*<script src="\.\/sync-merge\.js"><\/script>\s*<script src="\.\/daily-adventure\.js"><\/script>\s*<script src="\.\/adventure-world\.js"><\/script>\s*<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script src="\.\/coin-shop\.js"><\/script>\s*<script src="\.\/habit-groups\.js"><\/script>\s*<script src="\.\/weekly-boss\.js"><\/script>\s*<script src="\.\/oura-steps\.js"><\/script>\s*<script src="\.\/reminder-calendar\.js"><\/script>\s*<script>/);
   assert.match(html, /id="metricGoal"/);
   assert.match(html, /window\.HabitQuestGoalMetrics\.compute/);
   assert.match(sw, /\.\/goal-metrics\.js/);
 });
 
 test('phase A-2 lifecycle module is loaded and cached offline',()=>{
- assert.match(html, /<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script src="\.\/sync-guard\.js"><\/script>\s*<script src="\.\/sync-merge\.js"><\/script>\s*<script src="\.\/daily-adventure\.js"><\/script>\s*<script src="\.\/adventure-world\.js"><\/script>\s*<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script src="\.\/coin-shop\.js"><\/script>\s*<script>/);
+ assert.match(html, /<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script src="\.\/sync-guard\.js"><\/script>\s*<script src="\.\/sync-merge\.js"><\/script>\s*<script src="\.\/daily-adventure\.js"><\/script>\s*<script src="\.\/adventure-world\.js"><\/script>\s*<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script src="\.\/coin-shop\.js"><\/script>\s*<script src="\.\/habit-groups\.js"><\/script>\s*<script src="\.\/weekly-boss\.js"><\/script>\s*<script src="\.\/oura-steps\.js"><\/script>\s*<script src="\.\/reminder-calendar\.js"><\/script>\s*<script>/);
  assert.match(sw, /\.\/habit-lifecycle\.js/);
  assert.match(html, /id="archiveJump"/);
  assert.match(html, /id="archiveCount"/);
@@ -120,7 +120,7 @@ test('sync safety guard is loaded and refuses downgrades before auto-replacement
 });
 
 test('Phase A-3 strict sync merge is loaded for browser and PWA offline',()=>{
- assert.match(html, /<script src="\.\/sync-merge\.js"><\/script>\s*<script src="\.\/daily-adventure\.js"><\/script>\s*<script src="\.\/adventure-world\.js"><\/script>\s*<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script src="\.\/coin-shop\.js"><\/script>\s*<script>/);
+ assert.match(html, /<script src="\.\/sync-merge\.js"><\/script>\s*<script src="\.\/daily-adventure\.js"><\/script>\s*<script src="\.\/adventure-world\.js"><\/script>\s*<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script src="\.\/coin-shop\.js"><\/script>\s*<script src="\.\/habit-groups\.js"><\/script>\s*<script src="\.\/weekly-boss\.js"><\/script>\s*<script src="\.\/oura-steps\.js"><\/script>\s*<script src="\.\/reminder-calendar\.js"><\/script>\s*<script>/);
  assert.match(sw, /\.\/sync-merge\.js/);
  assert.match(html, /reconcileIndependentChecks\(latest\)/);
 });
@@ -145,7 +145,7 @@ test('exploration world is loaded and cached with accessible map and diary',()=>
 });
 
 test('pristine-device cloud auto-adoption helper is cached and loaded',()=>{
- assert.match(html, /<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script src="\.\/coin-shop\.js"><\/script>\s*<script>/);
+ assert.match(html, /<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script src="\.\/coin-shop\.js"><\/script>\s*<script src="\.\/habit-groups\.js"><\/script>\s*<script src="\.\/weekly-boss\.js"><\/script>\s*<script src="\.\/oura-steps\.js"><\/script>\s*<script src="\.\/reminder-calendar\.js"><\/script>\s*<script>/);
  assert.match(sw, /\.\/cloud-onboarding\.js/);
  assert.match(html, /HabitQuestCloudOnboard\.canAdopt/);
 });
@@ -181,7 +181,7 @@ test('game expressions and direct options backup controls remain integrated',()=
 });
 
 test('G4 server coin shop and dark navigation assets are loaded and precached',()=>{
- assert.match(html, /<script src="\.\/coin-shop\.js"><\/script>\s*<script>/);
+ assert.match(html, /<script src="\.\/coin-shop\.js"><\/script>\s*<script src="\.\/habit-groups\.js"><\/script>\s*<script src="\.\/weekly-boss\.js"><\/script>\s*<script src="\.\/oura-steps\.js"><\/script>\s*<script src="\.\/reminder-calendar\.js"><\/script>\s*<script>/);
  assert.match(html, /<link rel="stylesheet" href="\.\/coin-shop\.css">/);
  assert.match(sw, /\.\/coin-shop\.js/);
  assert.match(sw, /\.\/coin-shop\.css/);
@@ -210,4 +210,23 @@ test('header has only persistent XP and cloud coin counters, while account contr
  assert.doesNotMatch(read('game-shell.css'),/companion-mood-chip|char-mood-face/);
  assert.match(html, /<link rel="stylesheet" href="\.\/resource-hud\.css">/);
  assert.match(sw, /\.\/resource-hud\.css/);
+});
+
+test('G6: category streaks, walking threshold, weekly boss, history and calendar reminders integrate',()=>{
+ for(const id of ['weeklyBoss','bossHp','bossHomeOpen','homeStepsValue','stepsHistoryList','reminderExport','habitGroup']){
+  assert.match(html,new RegExp('id="'+id+'"'));
+ }
+ assert.match(html,/HabitQuestGroups\.groupHabits/);
+ assert.match(html,/HabitQuestGroups\.streak/);
+ assert.match(html,/HabitQuestWeeklyBoss\.describe/);
+ assert.match(html,/HabitQuestOuraSteps\.qualifiedRecords/);
+ assert.match(html,/HabitQuestReminder\.calendarFile/);
+ assert.match(html,/data-group=/);
+ assert.match(html,/ウォーキングはOuraの日別歩数8,001歩以上/);
+ for(const js of ['habit-groups.js','weekly-boss.js','oura-steps.js','reminder-calendar.js']){
+   assert.match(html,new RegExp('<script src="\\.\\/'+js.replace('.','\\.')+'">'));
+   assert.ok(sw.includes('./'+js),'PWA cache missing '+js);
+ }
+ assert.match(html, /href="\.\/g6-gameplay\.css"/);
+ assert.match(sw, /g6-gameplay\.css/);
 });
