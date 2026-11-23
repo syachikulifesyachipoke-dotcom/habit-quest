@@ -243,7 +243,7 @@
  <div class="metric-cards"><div class="metric-card"><strong id="metricDone">0 / 0日</strong><span>達成日数 / 対象日数</span></div><div class="metric-card"><strong id="metricRate">0%</strong><span id="metricRateLabel">実施日率</span></div><div class="metric-card"><strong id="metricGoal">—</strong><span id="metricGoalLabel">週目標換算の達成率</span></div><div class="metric-card"><strong id="metricStreak">0日</strong><span>期間内の最長連続日数</span></div><div class="metric-card"><strong id="metricWeeks">0週</strong><span id="metricWeeksLabel">週目標を達成した週数（完了週）</span></div><div class="metric-card"><strong id="metricRating">—</strong><span>達成評価</span></div></div>
  <p class="small-note" id="goalMethodNote">目標達成率は、週目標回数を選択期間の計測日数に換算して評価します。実施日率とは別の指標です。</p>
  <div class="v2-chart-grid"><div class="chart-panel"><div class="chart-title">直近8週間の達成回数（選択した習慣）</div><div id="weekBars" class="bars"></div><p class="small-note">棒の高さは週目標に対する進捗率（上限100%）。棒の上に達成回数を表示します。今週は途中経過です。</p></div><div class="chart-panel"><div class="chart-title">曜日別のチェック率（選択した期間）</div><div id="weekdayBars" class="weekday-rows"></div><p class="small-note spaced">その曜日が期間内に登場した日数を分母としています。</p></div></div>
- <div class="chart-panel spaced"><div class="chart-title">日別の達成カレンダー <span id="heatLabel" class="muted"></span></div><div id="heatGrid" class="heat-grid"></div><p class="small-note">紫＝手動で達成、青緑＝Oura自動、灰色＝未チェック、斜線＝Oura未取得（欠測）。欠測日はOuraの記録率の分母に含めません。</p></div>
+ <div class="chart-panel spaced"><div class="chart-title">日別の達成カレンダー <span id="heatLabel" class="muted"></span></div><div id="heatGrid" class="heat-grid"></div><p class="small-note">紫＝手動で達成、青緑＝Oura自動、灰色＝未チェック、斜線＝Oura未取得（欠測）。習慣の登録日より前は対象外です。欠測日はOuraの実施日率の分母に含めません。</p></div>
  <div class="chart-panel spaced"><div class="chart-title">全習慣の比較（選択した期間）</div><div id="habitRank"></div></div>
 </section>
 <details class="extra-accord" id="settingsDetail"><summary>⚙ 設定・連携・画像管理</summary><div class="settings-inner"><p class="small-note">画像・Oura連携をここで管理します。</p><details class="extra-accord"><summary>🎨 キャラクター画像の管理</summary><section class="section-v2 panel v2-panel" id="artSection">
@@ -367,7 +367,7 @@ function markFirstLoginDate(user){
  }
 }
 function normalizeHabitState(input){
- const s={...input,xpStartDate:validXpStartDate(input.xpStartDate),habits:(input.habits||[]).map(h=>({...h})),checks:Object.fromEntries(Object.entries(input.checks||{}).map(([day,v])=>[day,{...v}]))};
+ const s={...input,xpStartDate:validXpStartDate(input.xpStartDate),habits:(input.habits||[]).map(h=>({...h,createdOn:habitCreatedOn(h)})),checks:Object.fromEntries(Object.entries(input.checks||{}).map(([day,v])=>[day,{...v}]))};
  if(Number(input.ouraTrackingVersion||0)<3){
    // Legacy version marked multiple exercise types together as "train".
    // Remove only those 8-style Oura-sourced checks; keep any manual exercise checks.
@@ -409,6 +409,8 @@ function validAvatarImages(a){const o={};if(a&&typeof a==='object')for(const [k,
 function validOuraData(a){const o={};if(a&&typeof a==='object')for(const [day,row] of Object.entries(a)){if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!row||typeof row!=='object')continue;const safe={};for(const k of ['sleep','readiness','steps'])if(row[k]!==null&&Number.isFinite(Number(row[k])))safe[k]=Math.round(Number(row[k]));if(Object.keys(safe).length)o[day]=safe}return o}
 function safeOuraDates(raw){return Array.isArray(raw)?[...new Set(raw.filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)))].slice(-1000):[]}
 function validHabit(h){return h&&typeof h.id==='string'&&typeof h.name==='string'&&typeof h.icon==='string'&&Number.isInteger(Number(h.target))&&+h.target>=1&&+h.target<=7}
+function habitCreatedOn(h){return validXpStartDate(h?.createdOn)}
+function eligibleHabitDay(h,key){const created=habitCreatedOn(h);return !created||key>=created}
 function store(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){toast('保存できません。ブラウザの空き容量をご確認ください。')} cloud.seq++;if(cloud.ready&&!cloud.blocked){cloudMessage('変更を保存しました。クラウド同期待ち…');scheduleCloudSave()}}
 const pad=n=>String(n).padStart(2,'0');
 function dayKey(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
@@ -425,16 +427,18 @@ function checked(d,id){return !!state.checks[dayKey(d)]?.[id]}
 function weeklyFor(start){
  let done=0,target=0;
  const planned=state.habits.filter(h=>!h.ouraTrackingOnly);
- const days=weekDays(start).filter(d=>dayKey(d)>=xpStartDate());
- let all=planned.length>0&&days.length>0;
+ let all=false;
  for(const h of planned){
-   // First login can be midweek: prorate the possible weekly target, never use earlier check marks.
+   // A newly added habit never creates missed obligations before its creation date.
+   // The account's first-login XP start is independently preserved.
+   const days=weekDays(start).filter(d=>dayKey(d)>=xpStartDate()&&eligibleHabitDay(h,dayKey(d)));
    const available=Math.min(h.target,days.length);
+   if(!available)continue;
    const count=days.filter(d=>checked(d,h.id)).length;
    done+=Math.min(count,available);target+=available;
    if(count<available)all=false;
  }
- return{done,target,complete:all};
+ return{done,target,complete:target>0&&all};
 }
 function weekKeysWithData(){const set=new Set();for(const [key,checks] of Object.entries(state.checks)){if(Object.values(checks).some(Boolean)&&/^\d{4}-\d{2}-\d{2}$/.test(key)){const d=parseDay(key);if(!isNaN(d))set.add(dayKey(weekStart(d)))}}return [...set]}
 function stats(){
@@ -465,7 +469,7 @@ if(!state.habits.length)html+='<div class="empty-habits">まだ習慣があり�
 for(const h of displayHabits()){
   const group=isOuraAutoHabit(h)?'auto':'manual';
  const count=days.filter(d=>checked(d,h.id)).length;
- html+=`<div class="habit-row habit-row--${group}"><div class="habit-info"><div class="habit-icon">${habitIconSvg(h.icon)}</div><div class="habit-label"><button type="button" class="habit-name habit-detail-trigger" data-detail="${esc(h.id)}" title="達成分析を見る">${esc(h.name)}</button><div class="habit-goal">${h.ouraTrackingOnly?'自動記録・週目標なし':`週${h.target}回を目標`}</div></div><button class="edit-habit" data-edit="${esc(h.id)}" aria-label="${esc(h.name)}を編集">⋯</button></div><div class="checks">${days.map(d=>{const key=dayKey(d),done=checked(d,h.id),future=key>today;return `<div class="check-wrap"><span class="mobile-day ${key===today?'is-today':''}">${['日','月','火','水','木','金','土'][d.getDay()]}${d.getDate()}</span><button type="button" class="check ${done?'checked':''}" data-day="${key}" data-habit="${esc(h.id)}" ${future?'disabled':''} aria-label="${esc(h.name)} ${key} ${done?'達成済み':'未達成'}" aria-pressed="${done}" data-oura-auto="${done&&(state.ouraAutoKeys||[]).includes(key+'|'+h.id)}">✓</button></div>`}).join('')}</div><div class="rate ${!h.ouraTrackingOnly&&count>=h.target?'done':''}">${h.ouraTrackingOnly?count+'日':count+'/'+h.target}</div></div>`}
+ html+=`<div class="habit-row habit-row--${group}"><div class="habit-info"><div class="habit-icon">${habitIconSvg(h.icon)}</div><div class="habit-label"><button type="button" class="habit-name habit-detail-trigger" data-detail="${esc(h.id)}" title="達成分析を見る">${esc(h.name)}</button><div class="habit-goal">${h.ouraTrackingOnly?'自動記録・週目標なし':`週${h.target}回を目標`}</div></div><button class="edit-habit" data-edit="${esc(h.id)}" aria-label="${esc(h.name)}を編集">⋯</button></div><div class="checks">${days.map(d=>{const key=dayKey(d),done=checked(d,h.id),future=key>today||!eligibleHabitDay(h,key);return `<div class="check-wrap"><span class="mobile-day ${key===today?'is-today':''}">${['日','月','火','水','木','金','土'][d.getDay()]}${d.getDate()}</span><button type="button" class="check ${done?'checked':''}" data-day="${key}" data-habit="${esc(h.id)}" ${future?'disabled':''} aria-label="${esc(h.name)} ${key} ${done?'達成済み':'未達成'}" aria-pressed="${done}" data-oura-auto="${done&&(state.ouraAutoKeys||[]).includes(key+'|'+h.id)}">✓</button></div>`}).join('')}</div><div class="rate ${!h.ouraTrackingOnly&&count>=h.target?'done':''}">${h.ouraTrackingOnly?count+'日':count+'/'+h.target}</div></div>`}
 $('tracker').classList.toggle('auto-open',mobileAutoExpanded);$('tracker').innerHTML=html;const percentage=w.target?Math.min(100,Math.round(100*w.done/w.target)):0;$('ring').style.background=`conic-gradient(var(--mint) ${percentage}%,#323851 ${percentage}%)`;$('weekRate').textContent=percentage+'%';$('weekCount').textContent=`${w.done} / ${w.target} 回`;const earned=state.rewardedWeeks.includes(dayKey(start));$('chest').classList.toggle('unlocked',earned);$('chestEmoji').innerHTML=habitIconSvg(earned?'trophy':'gift');$('chestTitle').textContent=earned?'週間ミッションクリア！':'ウィークリー宝箱';$('chestText').textContent=earned?'+100 XP を獲得済み':'全目標達成で +100 XP';const keyMilestones=[EVO[stageNo],EVO[stageNo+1],EVO[EVO.length-1]].filter(Boolean);
 $('evoList').innerHTML=[...new Map(keyMilestones.map(e=>[e.lv,e])).values()].map(e=>`<div class="evo-item ${s.level<e.lv?'locked':''} ${e.lv===EVO[stageNo].lv?'current':''}"><div class="evo-emoji">${s.level<e.lv?'◆':e.emoji}</div><div><strong>Lv.${e.lv} ${e.name}</strong><small>${e.desc}</small></div></div>`).join('');
 $('evoAllList').innerHTML=LEVEL_ATLAS.map(item=>`<div class="evo-level ${item.lv<=s.level?'unlocked':'locked'} ${item.major?'milestone':''} ${item.lv===s.level?'current':''}"><span class="evo-level-num">Lv.${item.lv}</span><span class="evo-level-name">${item.major?(item.lv<=s.level?EVO.find(e=>e.lv===item.lv).emoji:'◆')+' '+esc(item.label):esc(item.label)}</span><span class="evo-level-state">${item.lv<=s.level?'達成':'未解放'}</span></div>`).join('');
@@ -486,7 +490,7 @@ function openModal(id){editing=id||null;const h=state.habits.find(x=>x.id===id);
 function closeModal(){$('modalBackdrop').classList.remove('show');editing=null}
 $('addHabit').onclick=()=>openModal();$('cancelModal').onclick=closeModal;$('modalBackdrop').addEventListener('click',e=>{if(e.target===$('modalBackdrop'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 $('habitIcon').onchange=()=>{$('habitIconPreview').innerHTML=habitIconSvg($('habitIcon').value)};
-$('habitForm').addEventListener('submit',e=>{e.preventDefault();const name=$('habitName').value.trim(),icon=$('habitIcon').value,target=Number($('habitTarget').value);if(!name||!Number.isInteger(target)||target<1||target>7)return;const h=state.habits.find(x=>x.id===editing);if(h){Object.assign(h,{name,icon,target,ouraTrackingOnly:false});toast('習慣を更新しました')}else{state.habits.push({id:'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,icon,target});toast('新しい習慣が追加されました',true)}store();closeModal();render()});
+$('habitForm').addEventListener('submit',e=>{e.preventDefault();const name=$('habitName').value.trim(),icon=$('habitIcon').value,target=Number($('habitTarget').value);if(!name||!Number.isInteger(target)||target<1||target>7)return;const h=state.habits.find(x=>x.id===editing);if(h){Object.assign(h,{name,icon,target});toast('習慣を更新しました')}else{state.habits.push({id:'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,icon,target,createdOn:isoToday()});toast('新しい習慣が追加されました',true)}store();closeModal();render()});
 $('deleteHabit').onclick=()=>{if(!editing)return;const h=state.habits.find(x=>x.id===editing);if(!confirm(`「${h?.name||'この習慣'}」を削除しますか？\n過去のチェック記録と獲得したXPは残ります。`))return;if(editing.startsWith('oura_')){
   state.ouraIgnoredTypes=state.ouraIgnoredTypes||[];
   if(!state.ouraIgnoredTypes.includes(editing))state.ouraIgnoredTypes.push(editing);
@@ -515,9 +519,12 @@ function isOuraMissing(day,id){
 }
 function analyse(id,n){
  const today=parseDay(isoToday()),days=Array.from({length:n},(_,i)=>addDay(today,i-n+1));
- let done=0,streak=0,best=0,observed=0;
+ let done=0,streak=0,best=0,observed=0,eligible=0;
+ const h=state.habits.find(x=>x.id===id);
  const weekday=Array.from({length:7},()=>({n:0,hit:0}));
  for(const d of days){
+   if(h&&!eligibleHabitDay(h,dayKey(d))){streak=0;continue}
+   eligible++;
    const yes=checked(d,id),missing=isOuraMissing(d,id);
    if(yes){done++;streak++;best=Math.max(best,streak)}
    else streak=0;
@@ -525,7 +532,7 @@ function analyse(id,n){
    observed++;
    const w=(d.getDay()+6)%7;weekday[w].n++;if(yes)weekday[w].hit++;
  }
- const h=state.habits.find(x=>x.id===id),goal=h&&!h.ouraTrackingOnly?
+ const goal=h&&!h.ouraTrackingOnly?
    window.HabitQuestGoalMetrics.compute(done,observed,Number(h.target)):
    {goalCount:null,goalRate:null,counted:null};
  const current=weekStart(today);let metWeeks=0,fullWeeks=0;
@@ -533,11 +540,15 @@ function analyse(id,n){
    const start=addDay(current,-k*7),end=addDay(start,6);
    if(start<days[0]||end>today)break;
    if(h&&!h.ouraTrackingOnly){
-     fullWeeks++;
-     if(weekDays(start).filter(d=>checked(d,id)).length>=h.target)metWeeks++;
+     const eligibleDays=weekDays(start).filter(d=>eligibleHabitDay(h,dayKey(d)));
+     const target=Math.min(h.target,eligibleDays.length);
+     if(target>0){
+       fullWeeks++;
+       if(eligibleDays.filter(d=>checked(d,id)).length>=target)metWeeks++;
+     }
    }
  }
- return{days,done,observed,missing:n-observed,rate:observed?Math.round(100*done/observed):0,best,weekday,metWeeks,fullWeeks,goal};
+ return{days,done,observed,eligible,missing:eligible-observed,rate:observed?Math.round(100*done/observed):0,best,weekday,metWeeks,fullWeeks,goal};
 }
 function openHabitDetail(id){if(!state.habits.some(h=>h.id===id))return;const sel=$('analysisHabit');sel.value=id;renderAnalytics();$('analyticsSection').scrollIntoView({behavior:'smooth',block:'start'});}
  function renderAnalytics(){const sel=$('analysisHabit'),previous=sel.value;sel.innerHTML=displayHabits().map(h=>`<option value="${esc(h.id)}">${esc(h.name)}</option>`).join('');if(state.habits.some(h=>h.id===previous))sel.value=previous;const id=sel.value,n=Number($('analysisPeriod').value)||30,h=state.habits.find(x=>x.id===id);if(!h){$('weekBars').innerHTML='<div class="analysis-empty">まず習慣を追加してください。</div>';$('weekdayBars').innerHTML='';$('heatGrid').innerHTML='';$('habitRank').innerHTML='';return}const a=analyse(id,n);$('metricDone').textContent=`${a.done} / ${a.observed}日`;$('metricRate').textContent=a.rate+'%';$('metricRateLabel').textContent=isOuraAutoHabit(h)?'実施日率（Oura欠測'+a.missing+'日を除外）':'実施日率（記録日 / 全日数）';$('metricGoal').textContent=a.goal.goalRate===null?'—':a.goal.goalRate+'%';$('metricGoalLabel').textContent=a.goal.goalCount===null?'週目標なし（記録専用）':'期間換算目標：'+a.goal.counted+' / '+a.goal.goalCount+'回';$('goalMethodNote').textContent=a.goal.goalCount===null?'この習慣は記録専用です。実施日率は参考値として表示します。':'週'+h.target+'回の目標を計測対象'+a.observed+'日に換算（端数は切り上げ）。目標達成率と実施日率は別の指標です。目標変更前の記録にも現在の週目標を適用します。';const evaluation=a.goal.goalRate;$('metricRating').textContent=evaluation===null?'目標未設定':evaluation>=90?'非常に良好':evaluation>=75?'良好':evaluation>=50?'改善余地あり':'要改善';$('metricStreak').textContent=`${a.best}日`;$('metricWeeks').textContent=h.ouraTrackingOnly?'—':`${a.metWeeks} / ${a.fullWeeks}週`;$('metricWeeksLabel').textContent=h.ouraTrackingOnly?'週目標なし':'週目標達成（完了週のみ）';$('heatLabel').textContent=`（直近${n}日）`;
@@ -550,7 +561,7 @@ $('weekBars').innerHTML=windows.map(w=>{
  const unit=h.ouraTrackingOnly?hit+'日':hit+'/'+h.target;
  const title=h.ouraTrackingOnly?'自動記録 '+hit+'日':'目標'+h.target+'回中 '+hit+'回';
  return `<div class="bar-item" title="${dayKey(w)}：${title}"><span class="bar-value">${unit}</span><div class="bar-column ${isOuraAutoHabit(h)?'auto':''}" style="height:${Math.max(hit?5:2,pct)}%"></div><span class="bar-caption">${w.getMonth()+1}/${w.getDate()}</span></div>`;
-}).join('');const names=['月','火','水','木','金','土','日'];$('weekdayBars').innerHTML=a.weekday.map((o,i)=>{const pct=o.n?Math.round(100*o.hit/o.n):0;return `<div class="weekday-row"><span>${names[i]}</span><div class="weekday-track"><i style="width:${pct}%"></i></div><span>${o.hit}/${o.n}</span></div>`}).join('');const blanks=(a.days[0].getDay()+6)%7;$('heatGrid').innerHTML='<div class="heat-square blank"></div>'.repeat(blanks)+a.days.map(d=>{const done=checked(d,id),missing=isOuraMissing(d,id);return `<div class="heat-square ${done?'done '+(isOuraAutoHabit(h)?'auto':'manual'):missing?'missing':''}" title="${dayKey(d)} ${done?'達成':missing?'Oura未取得':'未チェック'}">${d.getDate()}</div>`}).join('');const ranks=displayHabits().map(h=>{const t=analyse(h.id,n);return{h,...t}}).sort((x,y)=>Number(isOuraAutoHabit(x.h))-Number(isOuraAutoHabit(y.h))||y.rate-x.rate);$('habitRank').innerHTML=`<table class="habit-ranking"><thead><tr><th>習慣</th><th>実績</th><th>実施日率</th><th>目標達成率</th></tr></thead><tbody>${ranks.map(r=>`<tr><td><span class="rank-habit-icon">${habitIconSvg(r.h.icon)}</span>${esc(r.h.name)}</td><td>${r.done}/${r.observed}日</td><td>${r.rate}%</td><td>${r.goal.goalRate===null?'—':r.goal.goalRate+'%'}</td></tr>`).join('')}</tbody></table>`}
+}).join('');const names=['月','火','水','木','金','土','日'];$('weekdayBars').innerHTML=a.weekday.map((o,i)=>{const pct=o.n?Math.round(100*o.hit/o.n):0;return `<div class="weekday-row"><span>${names[i]}</span><div class="weekday-track"><i style="width:${pct}%"></i></div><span>${o.hit}/${o.n}</span></div>`}).join('');const blanks=(a.days[0].getDay()+6)%7;$('heatGrid').innerHTML='<div class="heat-square blank"></div>'.repeat(blanks)+a.days.map(d=>{const active=eligibleHabitDay(h,dayKey(d)),done=active&&checked(d,id),missing=active&&isOuraMissing(d,id);return `<div class="heat-square ${!active?'blank':done?'done '+(isOuraAutoHabit(h)?'auto':'manual'):missing?'missing':''}" title="${dayKey(d)} ${!active?'習慣開始前（対象外）':done?'達成':missing?'Oura未取得':'未チェック'}">${active?d.getDate():'—'}</div>`}).join('');const ranks=displayHabits().map(h=>{const t=analyse(h.id,n);return{h,...t}}).sort((x,y)=>Number(isOuraAutoHabit(x.h))-Number(isOuraAutoHabit(y.h))||y.rate-x.rate);$('habitRank').innerHTML=`<table class="habit-ranking"><thead><tr><th>習慣</th><th>実績</th><th>実施日率</th><th>目標達成率</th></tr></thead><tbody>${ranks.map(r=>`<tr><td><span class="rank-habit-icon">${habitIconSvg(r.h.icon)}</span>${esc(r.h.name)}</td><td>${r.done}/${r.observed}日</td><td>${r.rate}%</td><td>${r.goal.goalRate===null?'—':r.goal.goalRate+'%'}</td></tr>`).join('')}</tbody></table>`}
 $('analysisHabit').addEventListener('change',()=>{renderAnalytics();renderOura()});$('analysisPeriod').addEventListener('change',renderAnalytics);
 $('exportCsv').addEventListener('click',()=>{const rows=[['date',...state.habits.map(x=>x.name)]];const keys=Object.keys(state.checks).filter(dayIsoOk).sort();const first=keys[0]?parseDay(keys[0]):parseDay(isoToday()),today=parseDay(isoToday());for(let d=first;d<=today;d=addDay(d,1))rows.push([dayKey(d),...state.habits.map(h=>checked(d,h.id)?1:0)]);const q=s=>'"'+String(s).replace(/"/g,'""')+'"';downloadText('\ufeff'+rows.map(r=>r.map(q).join(',')).join('\r\n'),`habit-quest-records-${isoToday()}.csv`,'text/csv;charset=utf-8');toast('CSVを出力しました',true)});
 function ingestOuraPayload(obj,assumedType='auto'){const collections=[];if(Array.isArray(obj))collections.push([assumedType==='auto'?'generic':assumedType,obj]);if(obj&&typeof obj==='object'){if(Array.isArray(obj.data))collections.push([obj.type||obj.kind||(assumedType==='auto'?'generic':assumedType),obj.data]);for(const [type,val]of Object.entries(obj)){if(Array.isArray(val))collections.push([type,val]);else if(val&&Array.isArray(val.data))collections.push([type,val.data])}}let added=0;for(const [kind,items] of collections){for(const raw of items.slice(0,11000)){if(!raw||typeof raw!=='object')continue;const day=raw.day||raw.date||raw.timestamp?.slice?.(0,10);if(!dayIsoOk(day))continue;const dest=state.ouraData[day]||{};let touched=false;const score=Number(raw.score);if(Number.isFinite(score)&&score>=0&&score<=100){if(/readiness/i.test(kind)||/readiness/i.test(raw.type||'')){dest.readiness=score;touched=true}else if(/sleep/i.test(kind)||/sleep/i.test(raw.type||'')){dest.sleep=score;touched=true}}
@@ -821,7 +832,7 @@ let cloudSdkPromise=null;
 function loadCloudSdk(){if(window.supabase?.createClient)return Promise.resolve();if(cloudSdkPromise)return cloudSdkPromise;cloudSdkPromise=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=sdkUrl;s.onload=()=>window.supabase?.createClient?resolve():reject(Error('SDKの読み込みに失敗'));s.onerror=()=>reject(Error('CDNに接続できません'));document.head.append(s)});return cloudSdkPromise}
 function stableStringify(x){if(Array.isArray(x))return '['+x.map(stableStringify).join(',')+']';if(x&&typeof x==='object')return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+stableStringify(x[k])).join(',')+'}';return JSON.stringify(x)}
 function validateIncoming(raw){if(!raw||!Array.isArray(raw.habits)||raw.habits.some(x=>!validHabit(x))||!raw.checks||Array.isArray(raw.checks)||typeof raw.checks!=='object')throw Error('不正なクラウドデータ');const checks={};for(const[day,values]of Object.entries(raw.checks)){if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!values||typeof values!=='object'||Array.isArray(values))continue;checks[day]={};for(const [id,yes] of Object.entries(values))if(yes===true&&id.length<=80)checks[day][id]=true;if(!Object.keys(checks[day]).length)delete checks[day]}
-return normalizeHabitState({habits:raw.habits.map(h=>({id:h.id.slice(0,80),name:h.name.slice(0,28),icon:h.icon.slice(0,24),target:Number(h.target),ouraTrackingOnly:h.ouraTrackingOnly===true})),checks,rewardedWeeks:Array.isArray(raw.rewardedWeeks)?[...new Set(raw.rewardedWeeks.filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)))]:[],avatarImages:validAvatarImages(raw.avatarImages),ouraData:validOuraData(raw.ouraData),ouraAutoEnabled:raw.ouraAutoEnabled===true,ouraAutoDays:safeOuraDates(raw.ouraAutoDays),ouraAutoSuppressed:safeOuraDates(raw.ouraAutoSuppressed),xpStartDate:raw.xpStartDate,ouraTrackingVersion:raw.ouraTrackingVersion,ouraAutoKeys:raw.ouraAutoKeys,ouraSuppressedKeys:raw.ouraSuppressedKeys,ouraIgnoredTypes:raw.ouraIgnoredTypes})}
+return normalizeHabitState({habits:raw.habits.map(h=>({id:h.id.slice(0,80),name:h.name.slice(0,28),icon:h.icon.slice(0,24),target:Number(h.target),ouraTrackingOnly:h.ouraTrackingOnly===true,createdOn:validXpStartDate(h.createdOn)})),checks,rewardedWeeks:Array.isArray(raw.rewardedWeeks)?[...new Set(raw.rewardedWeeks.filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)))]:[],avatarImages:validAvatarImages(raw.avatarImages),ouraData:validOuraData(raw.ouraData),ouraAutoEnabled:raw.ouraAutoEnabled===true,ouraAutoDays:safeOuraDates(raw.ouraAutoDays),ouraAutoSuppressed:safeOuraDates(raw.ouraAutoSuppressed),xpStartDate:raw.xpStartDate,ouraTrackingVersion:raw.ouraTrackingVersion,ouraAutoKeys:raw.ouraAutoKeys,ouraSuppressedKeys:raw.ouraSuppressedKeys,ouraIgnoredTypes:raw.ouraIgnoredTypes})}
 function cloudSnapshot(s){return {xpStartDate:validXpStartDate(s.xpStartDate),habits:s.habits,checks:s.checks,rewardedWeeks:s.rewardedWeeks,ouraAutoEnabled:true,ouraTrackingVersion:3,ouraAutoKeys:safeOuraAutoKeys(s.ouraAutoKeys),ouraSuppressedKeys:safeOuraAutoKeys(s.ouraSuppressedKeys),ouraIgnoredTypes:safeOuraIgnoredTypes(s.ouraIgnoredTypes),avatarImages:{},ouraData:{}}}
 function choiceVisible(on,hasRemote=true){$('cloudChoice').classList.toggle('show',on);$('cloudUseRemote').hidden=!hasRemote}
 async function cloudFetch(){const {data,error}=await cloud.client.from('habit_states').select('data,revision,updated_at').eq('user_id',cloud.user.id).maybeSingle();if(error)throw error;return data}
