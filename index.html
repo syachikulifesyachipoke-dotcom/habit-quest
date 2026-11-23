@@ -409,6 +409,10 @@
   <div><strong>☁ アカウントと同期</strong><small id="optionsSyncStatus">ログイン状態を確認しています。</small></div>
   <button type="button" class="char-action primary" id="optionsCloudOpen">ログイン・同期を開く</button>
  </div>
+ <div class="option-sync-card">
+  <div><strong>💾 記録のバックアップ</strong><small>端末を変更する前やクラウド競合時に保存しておくと安全です。</small></div>
+  <div class="event-hero-actions"><button type="button" class="char-action" id="optionsExportBtn">JSONを保存</button><button type="button" class="char-action" id="optionsImportBtn">バックアップを復元</button></div>
+ </div>
  <div class="options-settings-host" id="optionsSettingsHost"></div>
 </section>
 <nav class="game-bottom-nav" id="gameBottomNav" aria-label="ゲームのメインメニュー">
@@ -795,6 +799,8 @@ function initGameShell(){
   setCosmetic(button.dataset.shopFrame);
  });
  $('optionsCloudOpen').onclick=()=>toggleCloudMenu(true);
+ $('optionsExportBtn').onclick=()=>$('exportBtn').click();
+ $('optionsImportBtn').onclick=()=>$('importBtn').click();
  $('syncBannerOpen').onclick=()=>toggleCloudMenu(true);
  $('gameUnlockClose').onclick=()=>$('gameUnlockDialog').close();
  $('gameUnlockAction').onclick=()=>{
