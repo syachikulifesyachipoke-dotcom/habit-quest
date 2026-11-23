@@ -368,6 +368,7 @@
 <script src="./sync-merge.js"></script>
 <script src="./daily-adventure.js"></script>
 <script src="./adventure-world.js"></script>
+<script src="./cloud-onboarding.js"></script>
 <script>
 (()=>{'use strict';
 const KEY='habit-quest-v1', XP_CHECK=20, XP_WEEK=100;
@@ -1067,10 +1068,13 @@ async function cloudFetch(){const {data,error}=await cloud.client.from('habit_st
 async function attachCloudUser(user){if(!cloud.client||cloud.user?.id===user.id&&cloud.loadPromise)return cloud.loadPromise;cloud.user=user;cloud.ready=false;cloud.blocked=true;$('cloudLogout').hidden=false;$('cloudEmail').value=user.email||'';$('cloudLogin').hidden=true;$('cloudAuthPanel').hidden=true;$('cloudPasswordPanel').hidden=false;cloudMessage(`${user.email} でログイン済み。クラウドの記録を確認しています…`);
 cloud.baseSnapshot=restoreCloudBase(user.id)?.data||null;
 cloud.baseRevision=restoreCloudBase(user.id)?.revision??null;
+const freshLocal=window.HabitQuestCloudOnboard.canAdopt(
+ localStorage.getItem(KEY),defaultHabits,user.id,localStorage.getItem(KEY+'-xp-owner')
+);
 cloud.loadPromise=(async()=>{try{cloud.remote=await cloudFetch();
 let validated=null;
 if(cloud.remote){
- if(missingLifecycleFrom(state,cloud.remote.data).length){
+ if(!freshLocal&&missingLifecycleFrom(state,cloud.remote.data).length){
   choiceVisible(true,true);
   cloudMessage('⚠ クラウド側に習慣の休止・目標履歴が欠けています。端末の履歴を保護するため、自動同期を止めました。JSONバックアップを保存し、上書き前に内容を確認してください。','warning');
   return;
@@ -1078,6 +1082,17 @@ if(cloud.remote){
  validated=validateIncoming(cloud.remote.data);
  // Cloud start date is canonical and never resets on new device or later login.
  validated.xpStartDate=validXpStartDate(validated.xpStartDate)||isoToday();
+ if(freshLocal){
+   // A truly untouched phone may safely import existing cloud history on login.
+   state={...validated,avatarImages:state.avatarImages||{},ouraData:state.ouraData||{}};
+   try{localStorage.setItem(KEY,JSON.stringify(state));localStorage.setItem(KEY+'-xp-owner',user.id)}
+   catch(_){cloudMessage('端末の保存容量を確認してください。クラウドの自動読込を保留しました。','warning');return}
+   cloud.revision=Number(cloud.remote.revision);cloud.ready=true;cloud.blocked=false;
+   cloud.syncedSeq=cloud.seq;rememberCloudBase(validated,cloud.revision);
+   choiceVisible(false);render();
+   cloudMessage('☁ クラウドの習慣と過去記録をこの端末へ自動反映しました（改訂 '+cloud.revision+'）','good');
+   setTimeout(()=>checkOuraConnection(),0);return;
+ }
  state.xpStartDate=validated.xpStartDate;
  try{localStorage.setItem(KEY+'-xp-owner',user.id)}catch(_){}
  if(stableStringify(cloudSnapshot(validated))===stableStringify(cloudSnapshot(state))){cloud.revision=cloud.remote.revision;cloud.ready=true;cloud.blocked=false;cloud.syncedSeq=cloud.seq;rememberCloudBase(validated,cloud.revision);choiceVisible(false);cloudMessage('☁ クラウドから記録を読み込みました','good');
@@ -1229,7 +1244,7 @@ async function cloudPollLatest(){
    if(!cloud.saving&&cloud.ready)cloudMessage('☁ オフラインの可能性があります。記録は端末内に保持します。','warning');
  }finally{cloud.polling=false}
 }
-$('cloudRefresh').onclick=async()=>{if(!cloud.client||!cloud.user){cloudMessage('クラウド設定とログインを完了してください。','warning');return}if(cloud.blocked){cloud.loadPromise=null;await attachCloudUser(cloud.user);return}try{const current=await cloudFetch();if(current&&Number(current.revision)!==Number(cloud.revision)){cloud.remote=current;cloud.ready=false;cloud.blocked=true;choiceVisible(true,true);cloudMessage('⚠ 別端末の新しい記録を検出しました。クラウド版か端末版を選んでください。','warning');return}if(cloud.seq!==cloud.syncedSeq)await saveCloud(true);else cloudMessage('☁ クラウドと同期済みです（改訂 '+cloud.revision+'）','good')}catch(e){cloudMessage('クラウド状態の確認に失敗：'+e.message,'warning')}};
+$('cloudRefresh').onclick=async()=>{if(!cloud.client||!cloud.user){cloudMessage('クラウド設定とログインを完了してください。','warning');return}if(cloud.blocked){cloud.loadPromise=null;await attachCloudUser(cloud.user);return}try{const current=await cloudFetch();if(cloud.seq!==cloud.syncedSeq)await saveCloud(true);else if(current&&Number(current.revision)!==Number(cloud.revision))await cloudPollLatest();else cloudMessage('☁ クラウドと同期済みです（改訂 '+cloud.revision+'）','good')}catch(e){cloudMessage('クラウド状態の確認に失敗：'+e.message,'warning')}};
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&cloud.ready&&cloud.seq!==cloud.syncedSeq)saveCloud(true);if(document.visibilityState==='visible'){cloudPollLatest();if(cloud.user&&!ouraBusy)checkOuraConnection()}});
 window.addEventListener('online',()=>{cloudPollLatest();if(cloud.user&&!ouraBusy)checkOuraConnection()});
 setInterval(cloudPollLatest,120000);
