@@ -1531,12 +1531,13 @@ function showOuraAuthResult(){
 
 function showGameUpdateNotice(){const banner=$('appUpdateBanner');if(banner)banner.hidden=false}
 $('appUpdateApply').onclick=()=>{
- if(cloud.user&&cloud.ready&&cloud.seq!==cloud.syncedSeq
+ if(cloud.user&&(cloud.blocked||cloud.seq!==cloud.syncedSeq)
    &&!confirm('クラウドにまだ送っていない変更があります。端末内の記録は保持されますが、先に同期することを推奨します。今すぐ更新しますか？'))return;
  location.reload();
 };
 if('serviceWorker' in navigator && location.protocol !== 'file:'){
- navigator.serviceWorker.addEventListener('controllerchange',showGameUpdateNotice);
+ const previousController=!!navigator.serviceWorker.controller;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(previousController)showGameUpdateNotice()});
  navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>{
   if(reg.waiting&&navigator.serviceWorker.controller)showGameUpdateNotice();
   reg.addEventListener('updatefound',()=>{
