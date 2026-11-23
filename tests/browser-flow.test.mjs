@@ -28,7 +28,7 @@ const prelude=`<script>
 })();
 </script>`;
 const injection=`<script>
-(()=>{try {
+(async()=>{try {
  const requireOk=(yes,label)=>{if(!yes)throw Error(label)};
  const state=()=>JSON.parse(localStorage.getItem('habit-quest-v1'));
  const xp=()=>document.getElementById('totalXp').textContent;
@@ -71,13 +71,40 @@ const injection=`<script>
  requireOk(!!document.querySelector('[data-edit="'+h.id+'"]'),'restored habit missing from tracker');
  requireOk(state().checks[day]?.[h.id]===true,'restore deleted history');
  requireOk(xp()===xpBefore,'restore changed XP');
+ // Test the actual Export button and File input Import flow, not only JSON.parse.
+ let exportedBlob=null;
+ const oldCreate=URL.createObjectURL;
+ URL.createObjectURL=function(blob){exportedBlob=blob;return oldCreate.call(URL,blob)};
+ document.getElementById('exportBtn').click();
+ URL.createObjectURL=oldCreate;
+ requireOk(exportedBlob instanceof Blob,'backup did not create a Blob');
+ const backup=JSON.parse(await exportedBlob.text());
+ const backed=backup.habits.find(x=>x.id===h.id);
+ requireOk(!!backed&&backed.missionEnabled===false,'backup lost mission flag');
+ requireOk(backed.targetHistory?.length>0&&backed.activeIntervals?.length>0,'backup lost lifecycle history');
+ requireOk(backup.checks[day]?.[h.id]===true,'backup lost check');
+ // Create a real change, then import the exported backup through the file UI.
+ const checkedButton=[...document.querySelectorAll('[data-habit="'+h.id+'"][data-day]')].find(x=>x.dataset.day===day);
+ requireOk(!!checkedButton&&!checkedButton.disabled,'cannot toggle backed up check');
+ checkedButton.click();
+ requireOk(state().checks[day]?.[h.id]!==true,'test did not create a changed check');
+ const dt=new DataTransfer();
+ dt.items.add(new File([JSON.stringify(backup)],'backup.json',{type:'application/json'}));
+ const fileInput=document.getElementById('fileInput');
+ fileInput.files=dt.files;
+ fileInput.dispatchEvent(new Event('change',{bubbles:true}));
+ await new Promise(resolve=>setTimeout(resolve,90));
+ const reimported=state().habits.find(x=>x.id===h.id);
+ requireOk(state().checks[day]?.[h.id]===true,'JSON import failed to restore check');
+ requireOk(reimported.targetHistory?.length>0&&reimported.activeIntervals?.length>0,'JSON import lost lifecycle');
+ requireOk(xp()===xpBefore,'JSON import changed XP');
  document.body.setAttribute('data-browser-flow','PASS');
 } catch(error){
  document.body.setAttribute('data-browser-flow','FAIL '+String(error.message).replace(/["<>]/g,''));
 }})();
 </script>`;
 
-test('headless Chrome: add, check, edit, archive and restore preserve XP and history',{timeout:35000},async t=>{
+test('headless Chrome: lifecycle and JSON backup/import preserve checks and XP',{timeout:35000},async t=>{
  const executable=findBrowser();
  if(!executable){
    if(process.env.CI)assert.fail('No Chrome or Chromium binary found on CI');
@@ -92,6 +119,8 @@ test('headless Chrome: add, check, edit, archive and restore preserve XP and his
    ['/index.html',app],
    ['/goal-metrics.js',fs.readFileSync(path.join(root,'goal-metrics.js'),'utf8')],
    ['/habit-lifecycle.js',fs.readFileSync(path.join(root,'habit-lifecycle.js'),'utf8')],
+   ['/sync-guard.js',fs.readFileSync(path.join(root,'sync-guard.js'),'utf8')],
+   ['/sync-merge.js',fs.readFileSync(path.join(root,'sync-merge.js'),'utf8')],
    ['/cloud-config.js','window.HABIT_QUEST_CLOUD={url:"",anonKey:""};']
  ]);
  const server=http.createServer((req,res)=>{
