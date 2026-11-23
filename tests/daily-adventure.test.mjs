@@ -127,3 +127,12 @@ test('invalid dates fail safely with no trial XP or changes',()=>{
  assert.equal(r.activeDays,0);
  assert.equal(r.dayNodes.length,0);
 });
+
+test('before account first-login start, existing historical checks do not unlock badges',()=>{
+ const s=base();s.xpStartDate=null;s.checks[today]={read:true};
+ const r=describe(s);
+ assert.equal(r.activeDays,0);
+ assert.equal(r.badge,null);
+ assert.equal(r.weekDone,0);
+ assert.equal(r.todayDone,1); // visible daily action is still counted normally
+});
