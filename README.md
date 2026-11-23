@@ -75,3 +75,12 @@ OuraのRedirect URI: `https://kpiqktibvzymgzwxiajv.supabase.co/functions/v1/oura
 - GitHub Actionsの回帰テスト**55件成功**。本番のSupabase RPCもトランザクション方式で検証し、既存データが変わらないことを確認しました。
 - 実機のPC⇄スマホ同期、iOS/Androidの表示、Oura実更新およびGitHub Pages配信後の画面検査は別途確認が必要です。
 - 作業履歴：[STATUS.md](./STATUS.md) ／ [HABIT_LIFECYCLE.md](./HABIT_LIFECYCLE.md) ／ [ops/PHASE_A2_DEPLOYMENT.md](./ops/PHASE_A2_DEPLOYMENT.md)。
+
+## Phase A-3: 複数端末・オフライン対応（2026-11-23）
+
+- PCとスマートフォンで別々の習慣チェックを行い、その変更が**互いに衝突しない場合だけ**自動統合する機能を追加しました。
+- オフラインで付けたチェックは端末内に保持し、接続復帰またはアプリ再表示時に同期を試みます。
+- 習慣の追加・削除（休止）・週目標変更・Oura出典に競合がある場合は、勝手に統合せず従来の確認画面を表示します。
+- JSONバックアップの出力とファイルからの復元をChrome実操作で試験しました。
+- **GitHub Actions 70件成功、失敗0**。実PC・スマートフォン間の本人ログイン同期とiOS/Android実機テストは未完了です。
+- 詳細：[PHASE_A3_ACCEPTANCE.md](./PHASE_A3_ACCEPTANCE.md) ／ [STATUS.md](./STATUS.md)。
