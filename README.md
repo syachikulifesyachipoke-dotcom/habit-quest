@@ -84,3 +84,11 @@ OuraのRedirect URI: `https://kpiqktibvzymgzwxiajv.supabase.co/functions/v1/oura
 - JSONバックアップの出力とファイルからの復元をChrome実操作で試験しました。
 - **GitHub Actions 70件成功、失敗0**。実PC・スマートフォン間の本人ログイン同期とiOS/Android実機テストは未完了です。
 - 詳細：[PHASE_A3_ACCEPTANCE.md](./PHASE_A3_ACCEPTANCE.md) ／ [STATUS.md](./STATUS.md)。
+
+## ゲーム体験G1（2026-11-23）
+
+- 「今日の冒険」：実行候補の手動習慣を1つ表示し、該当する今日のチェックへ移動できます。
+- 「今週の冒険ルート」：手動習慣を達成した日だけ星を表示する7日間の足跡。連続でなくても、進めた記録は消えません。
+- 「冒険称号」：初回ログイン日起算の手動習慣達成日数（累計1/3/7/14/30/60/100/365日）で称号が進みます。称号は演出のみで追加XPはありません。
+- XP計算・進化段階・DB・Ouraはそのまま。GitHub Actionsの回帰テスト**84件成功**。
+- 詳細：[GAMEPLAY_LOOP.md](./GAMEPLAY_LOOP.md) ／ [STATUS.md](./STATUS.md)。
