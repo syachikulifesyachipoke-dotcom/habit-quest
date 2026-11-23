@@ -36,7 +36,7 @@
   const monday=addDays(today,-weekDay),sunday=addDays(monday,6);
   const hasManualDay=day=>manualHabits.some(h=>activeOn(h,day)&&checked(checks,day,h.id));
   const activityDays=new Set(Object.keys(checks).filter(key=>validDate(key)&&key<=today&&
-    (!begin||key>=begin)&&hasManualDay(key)));
+    !!begin&&key>=begin&&hasManualDay(key)));
   const dayNodes=Array.from({length:7},(_,i)=>{
     const date=addDays(monday,i);
     return {date,label:['月','火','水','木','金','土','日'][i],done:activityDays.has(date),
