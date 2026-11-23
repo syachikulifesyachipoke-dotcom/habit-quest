@@ -93,14 +93,14 @@ test('PWA manifest is valid JSON', () => {
 });
 
 test('goal metric module is loaded before app and in offline cache', () => {
-  assert.match(html, /<script src="\.\/goal-metrics\.js"><\/script>\s*<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script src="\.\/sync-guard\.js"><\/script>\s*<script src="\.\/sync-merge\.js"><\/script>\s*<script src="\.\/daily-adventure\.js"><\/script>\s*<script src="\.\/adventure-world\.js"><\/script>\s*<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script>/);
+  assert.match(html, /<script src="\.\/goal-metrics\.js"><\/script>\s*<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script src="\.\/sync-guard\.js"><\/script>\s*<script src="\.\/sync-merge\.js"><\/script>\s*<script src="\.\/daily-adventure\.js"><\/script>\s*<script src="\.\/adventure-world\.js"><\/script>\s*<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script src="\.\/coin-shop\.js"><\/script>\s*<script>/);
   assert.match(html, /id="metricGoal"/);
   assert.match(html, /window\.HabitQuestGoalMetrics\.compute/);
   assert.match(sw, /\.\/goal-metrics\.js/);
 });
 
 test('phase A-2 lifecycle module is loaded and cached offline',()=>{
- assert.match(html, /<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script src="\.\/sync-guard\.js"><\/script>\s*<script src="\.\/sync-merge\.js"><\/script>\s*<script src="\.\/daily-adventure\.js"><\/script>\s*<script src="\.\/adventure-world\.js"><\/script>\s*<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script>/);
+ assert.match(html, /<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script src="\.\/sync-guard\.js"><\/script>\s*<script src="\.\/sync-merge\.js"><\/script>\s*<script src="\.\/daily-adventure\.js"><\/script>\s*<script src="\.\/adventure-world\.js"><\/script>\s*<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script src="\.\/coin-shop\.js"><\/script>\s*<script>/);
  assert.match(sw, /\.\/habit-lifecycle\.js/);
  assert.match(html, /id="archiveJump"/);
  assert.match(html, /id="archiveCount"/);
@@ -119,7 +119,7 @@ test('sync safety guard is loaded and refuses downgrades before auto-replacement
 });
 
 test('Phase A-3 strict sync merge is loaded for browser and PWA offline',()=>{
- assert.match(html, /<script src="\.\/sync-merge\.js"><\/script>\s*<script src="\.\/daily-adventure\.js"><\/script>\s*<script src="\.\/adventure-world\.js"><\/script>\s*<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script>/);
+ assert.match(html, /<script src="\.\/sync-merge\.js"><\/script>\s*<script src="\.\/daily-adventure\.js"><\/script>\s*<script src="\.\/adventure-world\.js"><\/script>\s*<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script src="\.\/coin-shop\.js"><\/script>\s*<script>/);
  assert.match(sw, /\.\/sync-merge\.js/);
  assert.match(html, /reconcileIndependentChecks\(latest\)/);
 });
@@ -144,7 +144,7 @@ test('exploration world is loaded and cached with accessible map and diary',()=>
 });
 
 test('pristine-device cloud auto-adoption helper is cached and loaded',()=>{
- assert.match(html, /<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script>/);
+ assert.match(html, /<script src="\.\/cloud-onboarding\.js"><\/script>\s*<script src="\.\/game-shell\.js"><\/script>\s*<script src="\.\/coin-shop\.js"><\/script>\s*<script>/);
  assert.match(sw, /\.\/cloud-onboarding\.js/);
  assert.match(html, /HabitQuestCloudOnboard\.canAdopt/);
 });
@@ -176,4 +176,18 @@ test('game expressions and direct options backup controls remain integrated',()=
  assert.match(html,/id="syncBanner"/);
  assert.match(html,/previousController/);
  assert.match(html,/screen-options/);
+});
+
+test('G4 server coin shop and dark navigation assets are loaded and precached',()=>{
+ assert.match(html, /<script src="\.\/coin-shop\.js"><\/script>\s*<script>/);
+ assert.match(html, /<link rel="stylesheet" href="\.\/coin-shop\.css">/);
+ assert.match(sw, /\.\/coin-shop\.js/);
+ assert.match(sw, /\.\/coin-shop\.css/);
+ for(const id of ['coinBalance','coinFreeGacha','coinShopItems','coinResultDialog','coinRefresh','coinGearOnCharacter']){
+  assert.match(html,new RegExp('id="'+id+'"'));
+ }
+ assert.match(html,/hq_game_action/);
+ assert.match(html,/gameWalletAction\('refresh'\)/);
+ assert.match(html,/HabitQuestCoinShop\.gameDayUTC/);
+ assert.match(read('coin-shop.css'),/linear-gradient\(165deg,rgba\(30,35,61/);
 });

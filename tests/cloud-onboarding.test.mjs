@@ -43,7 +43,8 @@ function fixture({raw=null,owner=null,baseline=null,local=null,remoteData=remote
   rememberCloudBase:(x,rev)=>{cloud.baseSnapshot=clone(x);cloud.baseRevision=rev},
   choiceVisible:(visible)=>shown.push(visible),cloudMessage:m=>messages.push(m),
   render:()=>renders.push(clone(env.state)),scheduleCloudSave:()=>{},
-  checkOuraConnection:()=>{},markFirstLoginDate:()=>{},setTimeout:()=>{}
+  checkOuraConnection:()=>{},markFirstLoginDate:()=>{},setTimeout:()=>{},
+  gameWalletAction:async()=>null
  };
  vm.runInNewContext(actual,env);
  return {env,cloud,shown,messages,renders,entries,login:()=>env.attachCloudUser({id:'userA',email:'test@example.invalid'})};
