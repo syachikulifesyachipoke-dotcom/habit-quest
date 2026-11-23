@@ -24,9 +24,8 @@
    const raw=Array.isArray(h.activeIntervals)?h.activeIntervals:[];
    const activeIntervals=[];
    for(const x of raw){
-     if(!x||!validStart(x.from)||!validStart(x.until)||x.until===null&&x.from===null&&!dayValid(createdOn)) {
-       if(x&&x.from===null&&x.until!==null&&dayValid(x.until)){} else continue;
-     }
+     if(!x||!validStart(x.from)||!validStart(x.until))continue;
+     if(x.from===null&&x.until===null)continue;
      if(x.until!==null && x.from!==null && x.from>x.until)continue;
      activeIntervals.push({from:x.from??null,until:x.until??null});
    }
@@ -70,7 +69,8 @@
    else hist.push({effectiveOn:date,target:Number(target),mission});
    return normalize({...old,target:Number(target),ouraTrackingOnly:!mission,targetHistory:hist});
  }
- function archive(h,date){
+ function dayAfter(date){const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10)}
+ function archive(h,date,preserveToday=false){
    if(!dayValid(date))throw Error('Invalid archive date');
    const old=normalize(h);
    if(archived(old))return old;
@@ -78,7 +78,7 @@
      [{from:old.createdOn,until:null}];
    const last=intervals[intervals.length-1];
    if(last.from!==null && date<last.from)throw Error('Archive date before start');
-   last.until=date; // Exclusive: a paused habit is not required starting today.
+   last.until=preserveToday?dayAfter(date):date; // Preserve an existing check from today.
    return normalize({...old,activeIntervals:intervals});
  }
  function restore(h,date){
@@ -87,7 +87,7 @@
    if(!archived(old))return old;
    const intervals=old.activeIntervals.map(x=>({...x}));
    const last=intervals[intervals.length-1];
-   if(date<last.until)throw Error('Restore date before archive date');
+   if(date<last.until){if(dayAfter(date)===last.until){last.until=null;return normalize({...old,activeIntervals:intervals})}throw Error('Restore date before archive date')}
    // A pause/resume on the same date has no inactive calendar days.
    if(last.from===date&&last.until===date){last.until=null;}
    else intervals.push({from:date,until:null});
