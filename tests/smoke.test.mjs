@@ -100,7 +100,7 @@ test('goal metric module is loaded before app and in offline cache', () => {
 });
 
 test('phase A-2 lifecycle module is loaded and cached offline',()=>{
- assert.match(html, /<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script>/);
+ assert.match(html, /<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script src="\.\/sync-guard\.js"><\/script>\s*<script>/);
  assert.match(sw, /\.\/habit-lifecycle\.js/);
  assert.match(html, /id="archiveJump"/);
  assert.match(html, /id="archiveCount"/);
@@ -109,4 +109,11 @@ test('phase A-2 lifecycle module is loaded and cached offline',()=>{
 test('streak remains a manual-habit metric even when mission setting changes',()=>{
  assert.match(html,/const anyDone=k=>state\.habits\.some\(h=>\{const day=dayKey\(k\);return !isOuraAutoHabit\(h\)&&eligibleHabitDay\(h,day\)/);
  assert.match(html,/手動習慣を1項目以上達成した連続日数/);
+});
+
+test('sync safety guard is loaded and refuses downgrades before auto-replacement',()=>{
+ assert.match(html, /function missingLifecycleFrom\(previous,next\)/);
+ assert.match(html, /missingLifecycleFrom\(state,latest\.data\)/);
+ assert.match(html, /missingLifecycleFrom\(cloud\.remote\.data,snapshot\)/);
+ assert.match(sw, /\.\/sync-guard\.js/);
 });
