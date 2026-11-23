@@ -194,6 +194,30 @@
 .settings-inner{padding:0 12px 15px}.settings-inner>.extra-accord{margin:12px 0}
 .metric-cards{grid-template-columns:repeat(auto-fit,minmax(125px,1fr))}
 @media(max-width:580px){.metric-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Daily Adventure: a small game loop that never changes stored XP. */
+.daily-quest{margin-top:18px;display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid rgba(167,139,250,.3);border-radius:15px;background:rgba(39,30,79,.4)}
+.daily-quest-icon{font-size:24px;flex-shrink:0}.daily-quest-main{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.daily-quest-main strong{font-size:14px}.daily-quest-main small{font-size:12px;color:var(--muted);line-height:1.55}
+.daily-quest-action{border-radius:10px;padding:9px 11px;background:rgba(167,139,250,.18);border:1px solid rgba(167,139,250,.45);color:var(--text);font-weight:750;flex-shrink:0}
+.daily-quest-action:hover{background:rgba(167,139,250,.3)}
+.daily-quest-complete{border-color:rgba(94,234,212,.35);background:rgba(19,79,72,.24)}
+.daily-quest-complete .daily-quest-action{background:rgba(94,234,212,.15);border-color:rgba(94,234,212,.4)}
+.journey-panel{margin-top:16px;border-top:1px solid var(--stroke);padding-top:16px}
+.journey-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.journey-head strong{font-size:13px}.journey-head small{font-size:12px;color:var(--muted);white-space:nowrap}
+.journey-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:12px}
+.journey-day{min-width:0;padding:8px 2px 7px;border-radius:11px;background:rgba(157,165,195,.08);border:1px solid rgba(157,165,195,.15);display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted)}
+.journey-day span{font-size:11px}.journey-day strong{font-size:19px;line-height:1.1;font-weight:800}
+.journey-day.is-done{color:#f6df99;background:rgba(249,198,106,.13);border-color:rgba(249,198,106,.35)}
+.journey-day.is-today{outline:2px solid var(--purple);outline-offset:1px}
+.journey-day.is-future{opacity:.53}
+.journey-badge{display:flex;align-items:center;gap:10px;margin-top:15px;background:rgba(94,234,212,.06);border-radius:12px;padding:10px}
+.journey-badge-icon{font-size:24px}.journey-badge>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.journey-badge strong{font-size:13px}.journey-badge small{font-size:11px;color:var(--muted);line-height:1.5}
+.journey-footnote{font-size:11px;color:var(--muted);line-height:1.55;margin:10px 0 0}
+@media(max-width:580px){.daily-quest{padding:10px;gap:9px}.daily-quest-icon{font-size:20px}.daily-quest-main strong{font-size:13px}.daily-quest-main small{font-size:11px}.daily-quest-action{padding:8px;font-size:11px}.journey-days{gap:4px}}
+@media(prefers-reduced-motion:reduce){.daily-quest-action{transition:none}}
 </style>
 </head>
 <body>
@@ -227,13 +251,15 @@
 </section>
 <main>
 <section class="intro">
- <div class="hero"><div class="eyebrow">YOUR DAILY ADVENTURE</div><h2>今日の一歩で、<br><em>未来の自分を進化させる。</em></h2><p class="hero-sub">小さな習慣が経験値になる。1日ずつ積み重ねて、<br>あなただけの相棒を育てていこう。</p><div class="hero-counters"><div class="counter"><strong id="todayDone">0/0</strong><label>今日の達成（進行中の全項目）</label></div><div class="counter"><strong id="streak">0<span style="font-size:14px"> 日</span></strong><label title="手動習慣を1項目以上達成した連続日数（当日未記録なら昨日まで）">連続記録日数（手動1項目以上）ⓘ</label></div><div class="counter"><strong id="totalXp">0</strong><label>開始日以降の XP</label></div></div></div>
+ <div class="hero"><div class="eyebrow">YOUR DAILY ADVENTURE</div><h2>今日の一歩で、<br><em>未来の自分を進化させる。</em></h2><p class="hero-sub">小さな習慣が経験値になる。1日ずつ積み重ねて、<br>あなただけの相棒を育てていこう。</p><div class="hero-counters"><div class="counter"><strong id="todayDone">0/0</strong><label>今日の達成（進行中の全項目）</label></div><div class="counter"><strong id="streak">0<span style="font-size:14px"> 日</span></strong><label title="手動習慣を1項目以上達成した連続日数（当日未記録なら昨日まで）">連続記録日数（手動1項目以上）ⓘ</label></div><div class="counter"><strong id="totalXp">0</strong><label>開始日以降の XP</label></div></div>
+ <div class="daily-quest" id="dailyQuest" aria-live="polite"><div class="daily-quest-icon" aria-hidden="true">⚔️</div><div class="daily-quest-main"><strong id="dailyQuestTitle">今日の冒険</strong><small id="dailyQuestText">小さな一歩から始めましょう</small></div><button type="button" class="daily-quest-action" id="dailyQuestJump">習慣へ</button></div></div>
  <div class="companion-card"><div class="companion-top"><span class="tag" id="evoTag">✦ 進化のたまご</span><div class="level" id="levelLabel">Lv. 1</div></div><div class="avatar-box" id="avatar"></div><div class="companion-bottom"><div><div class="companion-title" id="stageName">星のたまご</div><div class="companion-next" id="nextEvolution">Lv.3で次の姿に進化</div></div><div><div class="xp-val" id="xpLabel">0 / 40 XP</div><div class="xp-start-line" id="xpStartLine">XP開始日：ログイン時に確定</div></div></div><div class="progress"><i id="xpBar"></i></div></div>
 </section>
 <section class="content">
  <div class="panel"><div class="panel-heading"><div><h3 class="hq-section-heading"><span data-hq-icon="calendar"></span>週間トラッカー</h3><div class="subheading">今日からの達成に +20 XP <span class="mobile-grid-hint">・スマホは1行で7日をチェック</span></div></div><div class="week-nav"><span class="week-range" id="weekRange"></span><button class="btn icon-btn" id="prevWeek" aria-label="前の週">‹</button><button class="btn" id="thisWeek">今週</button><button class="btn icon-btn" id="nextWeek" aria-label="次の週">›</button></div></div><div id="tracker" class="tracker"></div><div class="tracker-footer"><div class="legend"><span><i class="dot dot-manual"></i>手動チェック</span><span><i class="dot dot-oura"></i>Oura自動</span><span><i class="dot empty"></i>未チェック</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" id="archiveJump">休止中の習慣 <span id="archiveCount">0</span></button><button class="btn primary" id="addHabit">＋ 習慣を追加</button></div></div></div>
  <aside class="side-stack">
-  <section class="panel quest-panel"><h3 class="hq-section-heading"><span data-hq-icon="trophy"></span>今週のミッション</h3><p class="subheading">週間ミッションONの習慣の目標合計（Ouraも設定可能）</p><div class="quest-row" style="margin-top:20px"><div class="ring" id="ring"><div class="ring-core"><strong id="weekRate">0%</strong><span>達成率</span></div></div><div><div class="quest-title" id="weekCount">0 / 0 回</div><div class="quest-explain">「週◯回」を合計した数字です。習慣の項目数ではありません。</div></div></div><div class="chest" id="chest"><div class="chest-emoji" id="chestEmoji">🎁</div><div><strong id="chestTitle">ウィークリー宝箱</strong><small id="chestText">全目標達成で +100 XP</small></div></div><div class="stats-grid"><div class="mini-stat"><strong id="totalChecks">0</strong><span>累計チェック数</span></div><div class="mini-stat"><strong id="clearWeeks">0</strong><span>目標達成した週</span></div></div></section>
+  <section class="panel quest-panel"><h3 class="hq-section-heading"><span data-hq-icon="trophy"></span>今週のミッション</h3><p class="subheading">週間ミッションONの習慣の目標合計（Ouraも設定可能）</p><div class="quest-row" style="margin-top:20px"><div class="ring" id="ring"><div class="ring-core"><strong id="weekRate">0%</strong><span>達成率</span></div></div><div><div class="quest-title" id="weekCount">0 / 0 回</div><div class="quest-explain">「週◯回」を合計した数字です。習慣の項目数ではありません。</div></div></div><div class="chest" id="chest"><div class="chest-emoji" id="chestEmoji">🎁</div><div><strong id="chestTitle">ウィークリー宝箱</strong><small id="chestText">全目標達成で +100 XP</small></div></div><div class="journey-panel" aria-label="冒険の足跡"><div class="journey-head"><strong>🧭 今週の冒険ルート</strong><small id="journeyCount">0 / 7日</small></div><div class="journey-days" id="journeyDays" aria-label="月曜日から日曜日までの冒険の足跡"></div><div class="journey-badge"><span id="journeyBadgeIcon" class="journey-badge-icon">🌱</span><div><strong id="journeyBadgeTitle">旅立ちの準備</strong><small id="journeyBadgeNext">手動習慣を1日達成すると称号を獲得</small></div></div><p class="journey-footnote">手動習慣を1つ達成すると、その日の足跡が残ります。連続でなくても進歩は消えません。</p></div>
+ <div class="stats-grid"><div class="mini-stat"><strong id="totalChecks">0</strong><span>累計チェック数</span></div><div class="mini-stat"><strong id="clearWeeks">0</strong><span>目標達成した週</span></div></div></section>
   <section class="panel"><h3 class="hq-section-heading"><span data-hq-icon="sparkles"></span>進化図鑑</h3><p class="subheading">レベルを上げると相棒が進化</p><div class="evo-list" id="evoList"></div><details id="evoCatalog" class="evo-catalog"><summary>レベル1〜50の進化図鑑を開く</summary><div id="evoAllList" class="evo-all-list"></div></details></section>
  </aside>
 </section>
@@ -271,6 +297,7 @@
 <script src="./habit-lifecycle.js"></script>
 <script src="./sync-guard.js"></script>
 <script src="./sync-merge.js"></script>
+<script src="./daily-adventure.js"></script>
 <script>
 (()=>{'use strict';
 const KEY='habit-quest-v1', XP_CHECK=20, XP_WEEK=100;
@@ -405,7 +432,7 @@ function normalizeHabitState(input){
 function safeOuraIgnoredTypes(v){return Array.isArray(v)?[...new Set(v.filter(x=>typeof x==='string'&&/^oura_[a-z0-9]{2,40}$/.test(x)))].slice(0,100):[]}
 function safeOuraAutoKeys(v){return Array.isArray(v)?[...new Set(v.filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}\|[a-z0-9_]{2,40}$/.test(x)))].slice(-3000):[]}
 
-let state=load(),offset=0,editing=null,artStage=0,mobileAutoExpanded=true;
+let state=load(),offset=0,editing=null,artStage=0,mobileAutoExpanded=true,adventureFocusId=null;
 const cloud={client:null,user:null,ready:false,blocked:true,remote:null,revision:null,seq:0,syncedSeq:0,saving:false,timer:null,loadPromise:null,baseSnapshot:null,baseRevision:null};
 function load(){try{const a=JSON.parse(localStorage.getItem(KEY)||'null');if(a&&Array.isArray(a.habits)&&a.checks&&typeof a.checks==='object'){return normalizeHabitState({habits:a.habits.filter(validHabit),checks:a.checks,rewardedWeeks:Array.isArray(a.rewardedWeeks)?a.rewardedWeeks.filter(k=>typeof k==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(k)):[],avatarImages:validAvatarImages(a.avatarImages),ouraData:validOuraData(a.ouraData),ouraAutoEnabled:a.ouraAutoEnabled===true,ouraAutoDays:safeOuraDates(a.ouraAutoDays),ouraAutoSuppressed:safeOuraDates(a.ouraAutoSuppressed),xpStartDate:a.xpStartDate,ouraTrackingVersion:a.ouraTrackingVersion,ouraAutoKeys:a.ouraAutoKeys,ouraSuppressedKeys:a.ouraSuppressedKeys,ouraIgnoredTypes:a.ouraIgnoredTypes})}}catch(e){}return normalizeHabitState({habits:defaultHabits.map(x=>({...x})),checks:{},rewardedWeeks:[],avatarImages:{},ouraData:{},ouraTrackingVersion:3,ouraAutoEnabled:true,ouraAutoKeys:[],ouraSuppressedKeys:[]})}
 function validAvatarImages(a){const o={};if(a&&typeof a==='object')for(const [k,v] of Object.entries(a))if(/^(?:[0-9]|10)$/.test(k)&&typeof v==='string'&&/^data:image\/(webp|png|jpeg);base64,/.test(v)&&v.length<1200000)o[k]=v;return o}
@@ -471,7 +498,51 @@ for(const h of displayHabits()){
 $('tracker').classList.toggle('auto-open',mobileAutoExpanded);$('tracker').innerHTML=html;const percentage=w.target?Math.min(100,Math.round(100*w.done/w.target)):0;$('ring').style.background=`conic-gradient(var(--mint) ${percentage}%,#323851 ${percentage}%)`;$('weekRate').textContent=percentage+'%';$('weekCount').textContent=`${w.done} / ${w.target} 回`;const earned=state.rewardedWeeks.includes(dayKey(start));$('chest').classList.toggle('unlocked',earned);$('chestEmoji').innerHTML=habitIconSvg(earned?'trophy':'gift');$('chestTitle').textContent=earned?'週間ミッションクリア！':'ウィークリー宝箱';$('chestText').textContent=earned?'+100 XP を獲得済み':'全目標達成で +100 XP';const keyMilestones=[EVO[stageNo],EVO[stageNo+1],EVO[EVO.length-1]].filter(Boolean);
 $('evoList').innerHTML=[...new Map(keyMilestones.map(e=>[e.lv,e])).values()].map(e=>`<div class="evo-item ${s.level<e.lv?'locked':''} ${e.lv===EVO[stageNo].lv?'current':''}"><div class="evo-emoji">${s.level<e.lv?'◆':e.emoji}</div><div><strong>Lv.${e.lv} ${e.name}</strong><small>${e.desc}</small></div></div>`).join('');
 $('evoAllList').innerHTML=LEVEL_ATLAS.map(item=>`<div class="evo-level ${item.lv<=s.level?'unlocked':'locked'} ${item.major?'milestone':''} ${item.lv===s.level?'current':''}"><span class="evo-level-num">Lv.${item.lv}</span><span class="evo-level-name">${item.major?(item.lv<=s.level?EVO.find(e=>e.lv===item.lv).emoji:'◆')+' '+esc(item.label):esc(item.label)}</span><span class="evo-level-state">${item.lv<=s.level?'達成':'未解放'}</span></div>`).join('');
-renderAnalytics();renderArchivedHabits();renderArt();renderOura();updateOuraAutoStatus();}
+renderDailyAdventure(today);renderAnalytics();renderArchivedHabits();renderArt();renderOura();updateOuraAutoStatus();}
+function renderDailyAdventure(today){
+ const data=window.HabitQuestDailyAdventure.describe({
+  habits:state.habits,checks:state.checks,today,xpStartDate:validXpStartDate(state.xpStartDate),
+  activeOn:window.HabitQuestLifecycle.activeOn,
+  archived:window.HabitQuestLifecycle.archived,
+  configOn:window.HabitQuestLifecycle.configOn
+ });
+ const title=$('dailyQuestTitle'),description=$('dailyQuestText'),jump=$('dailyQuestJump');
+ adventureFocusId=data.focus?.id||null;
+ if(!data.hasManualHabits){
+  title.textContent='今日の冒険を準備しよう';
+  description.textContent='手動習慣を1つ追加すると、冒険の足跡が始まります。';
+  jump.textContent='習慣を追加';
+ }else if(data.allTodayDone){
+  title.textContent='今日の冒険、すべて達成！';
+  description.textContent='自分で記録する習慣をすべてクリア。相棒と一緒に前進しました。';
+  jump.textContent='記録を見る';
+ }else if(data.todayDone>0){
+  title.textContent='今日の一歩、達成！';
+  description.textContent=data.focus?'次の冒険：'+data.focus.name:'今日も相棒と一歩前進しました。';
+  jump.textContent=data.focus?'次の習慣へ':'記録を見る';
+ }else{
+  title.textContent='今日の冒険：まずは1つ';
+  description.textContent=data.focus?'おすすめ：'+data.focus.name:'手動習慣を1つチェックして冒険を始めましょう。';
+  jump.textContent=data.focus?'この習慣へ':'習慣を見る';
+ }
+ $('dailyQuest').classList.toggle('daily-quest-complete',data.todayDone>0);
+ $('journeyCount').textContent=data.weekDone+' / 7日';
+ $('journeyDays').innerHTML=data.dayNodes.map(day=>`<div class="journey-day${day.done?' is-done':''}${day.today?' is-today':''}${day.future?' is-future':''}" aria-label="${day.date}：${day.done?'冒険達成':day.future?'これから':day.beforeStart?'冒険開始前':'足跡なし'}"><span>${day.label}</span><strong aria-hidden="true">${day.done?'★':day.today?'◇':'·'}</strong></div>`).join('');
+ $('journeyBadgeIcon').textContent=data.badge?.icon||'🌱';
+ $('journeyBadgeTitle').textContent=data.badge?data.badge.name:'冒険のはじまり';
+ $('journeyBadgeNext').textContent=data.nextBadge?
+  '次の称号「'+data.nextBadge.name+'」まであと'+(data.nextBadge.days-data.activeDays)+'日（累計'+data.activeDays+'日）':
+  '累計'+data.activeDays+'日達成！ 全称号を獲得しました';
+}
+$('dailyQuestJump').onclick=()=>{
+ if(!state.habits.some(h=>!isOuraAutoHabit(h))){openModal();return}
+ offset=0;render();
+ let target=null;
+ if(adventureFocusId)target=document.querySelector('#tracker [data-habit="'+adventureFocusId+'"][data-day="'+isoToday()+'"]');
+ if(!target)target=$('tracker');
+ target.scrollIntoView({behavior:'smooth',block:'center'});
+ if(target!==$('tracker'))target.focus({preventScroll:true});
+};
 function renderArchivedHabits(){
  const archived=state.habits.filter(h=>window.HabitQuestLifecycle.archived(h));
  $('archiveCount').textContent=String(archived.length);
