@@ -24,4 +24,4 @@ jobs:
         with:
           node-version: '22'
       - name: Check app syntax and contracts
-        run: node --test tests/smoke.test.mjs
+        run: node --test tests/*.test.mjs
