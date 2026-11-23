@@ -42,8 +42,11 @@ const injection=`<script>
   requireOk(button.getAttribute('aria-current')==='page','nav current marker missing '+tab);
   requireOk(document.querySelectorAll('.game-screen:not([hidden])').length===1,'multiple screens visible');
  }
+ requireOk(document.getElementById('settingsDetail').closest('#screen-options'),'settings were not moved into options');
+ requireOk(!!document.getElementById('optionsExportBtn')&&!!document.getElementById('optionsImportBtn'),'backup shortcuts missing');
  document.getElementById('characterPat').click();
  requireOk(document.getElementById('characterReactionText').textContent.includes('ありがとう'),'companion pet reaction failed');
+ requireOk(document.getElementById('characterMoodFace').textContent==='🥰','companion expression icon did not react');
  document.querySelector('#gameBottomNav [data-game-tab="home"]').click();
  const name='A2ブラウザ試験 '+Date.now();
  window.confirm=()=>true;
@@ -109,7 +112,9 @@ const injection=`<script>
  let exportedBlob=null;
  const oldCreate=URL.createObjectURL;
  URL.createObjectURL=function(blob){exportedBlob=blob;return oldCreate.call(URL,blob)};
- document.getElementById('exportBtn').click();
+ document.querySelector('#gameBottomNav [data-game-tab="options"]').click();
+ document.getElementById('optionsExportBtn').click();
+ document.querySelector('#gameBottomNav [data-game-tab="home"]').click();
  URL.createObjectURL=oldCreate;
  requireOk(exportedBlob instanceof Blob,'backup did not create a Blob');
  const backup=JSON.parse(await exportedBlob.text());
