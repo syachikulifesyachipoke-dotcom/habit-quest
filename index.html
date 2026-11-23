@@ -285,142 +285,131 @@ async function fetchOuraMetrics(){
  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){}renderOura();await renderOuraCandidates(all);return all.length;
 }
 
-let ouraAutoEligibleCount=0,ouraAutoPendingCount=0;
-function awardCompletedOuraWeeks(days){
- const weeks=new Set(days.map(day=>dayKey(weekStart(parseDay(day)))));
- for(const week of weeks){
-   if(weeklyFor(parseDay(week)).complete&&!state.rewardedWeeks.includes(week))state.rewardedWeeks.push(week);
- }
-}
-const OURA_ACTIVITY_JA={walking:'ウォーキング',housework:'家事',strengthtraining:'筋トレ',cycling:'自転車',running:'ランニング',pilates:'ピラティス',dance:'ダンス',yoga:'ヨガ',swimming:'水泳',hiking:'ハイキング',rowing:'ボート',elliptical:'クロストレーナー'};
-const OURA_AUTO_SPORTS=new Set(['strengthtraining','cycling','running','swimming','pilates','dance','yoga','rowing','elliptical','hiking']);
-function qualifiesOuraWorkout(w){
- if(!w?.start_time||!w?.end_time)return false;
- const kind=String(w.activity||'').toLowerCase().replace(/[^a-z]/g,'');
- const minutes=(Date.parse(w.end_time)-Date.parse(w.start_time))/60000;
- return OURA_AUTO_SPORTS.has(kind)&&Number.isFinite(minutes)&&minutes>=10&&minutes<=24*60;
-}
-function updateOuraAutoStatus(){
- const button=$('ouraAutoToggle'),info=$('ouraAutoInfo');if(!button||!info)return;
- const enabled=state.ouraAutoEnabled===true;
- button.textContent=enabled?'運動の自動反映：ON（停止）':'Ouraの運動を習慣に自動反映';
- button.setAttribute('aria-pressed',String(enabled));
- const summary='対象の運動 '+ouraAutoEligibleCount+'日・未反映 '+ouraAutoPendingCount+'日。';
- info.textContent=enabled?summary+' 自動記録中。💍印はOura由来。歩行と早起きは確認式です。':summary+' 有効化すると過去分もまとめて反映します。歩行と早起きは確認式です。';
-}
-function applyOuraWorkoutsToHabits(workouts){
- if(!state.ouraAutoEnabled||!cloud.ready||cloud.blocked||!state.habits.some(h=>h.id==='train'))return 0;
- const excluded=new Set(state.ouraAutoSuppressed||[]);
- const dates=new Set();
- for(const w of workouts){
-   if(!qualifiesOuraWorkout(w))continue;
-   const day=dateInTokyo(w.start_time);
-   if(day>isoToday()||!/^\d{4}-\d{2}-\d{2}$/.test(day))continue;
-   dates.add(day);
- }
- let added=0;
- for(const day of dates){
-   if(excluded.has(day)||state.checks[day]?.train)continue;
-   state.checks[day] ||= {};
-   state.checks[day].train=true;
-   state.ouraAutoDays ||= [];
-   if(!state.ouraAutoDays.includes(day))state.ouraAutoDays.push(day);
-   added++;
- }
- if(added){awardCompletedOuraWeeks([...dates]);store();render();toast('Ouraの運動実績 '+added+'日分をゲームに反映しました',true)}
- return added;
-}
-$('ouraAutoToggle').onclick=async()=>{
- if(!cloud.client||!cloud.user||!cloud.ready||cloud.blocked){
-   toast('先に右上のクラウドメニューで記録の同期を完了してください');return;
- }
- const enable=!state.ouraAutoEnabled;
- if(enable&&!confirm('Ouraの運動記録のうち、筋トレ・自転車・ランニングなどの10分以上のものを習慣「筋トレ・運動」の達成に自動反映します。過去の記録にも適用します。歩行・家事・起床時刻は自動で達成扱いしません。続けますか？'))return;
- state.ouraAutoEnabled=enable;
- store();updateOuraAutoStatus();
- if(enable){
-   try{await fetchOuraMetrics()}catch(e){$('ouraStatus').textContent='自動反映は有効ですが、Oura記録の取得に失敗しました: '+e.message}
- }else toast('Ouraの運動自動反映を停止しました。既存の達成記録は残ります。');
-};
 
-let ouraCandidateShown=40, ouraCandidateCache=[];
+/* Oura v3: activity-type-specific automatic scoring. No opt-in clicks required. */
+const OURA_ACTIVITY_HABITS={
+ strengthtraining:{id:'oura_strengthtraining',name:'筋トレ',icon:'dumbbell',target:3},
+ cycling:{id:'oura_cycling',name:'サイクリング',icon:'bike',target:2},
+ walking:{id:'oura_walking',name:'ウォーキング',icon:'footsteps',target:5},
+ running:{id:'oura_running',name:'ランニング',icon:'run',target:2},
+ pilates:{id:'oura_pilates',name:'ピラティス',icon:'yoga',target:1},
+ dance:{id:'oura_dance',name:'ダンス',icon:'music',target:1},
+ swimming:{id:'oura_swimming',name:'水泳',icon:'waves',target:2},
+ yoga:{id:'oura_yoga',name:'ヨガ',icon:'yoga',target:2},
+ hiking:{id:'oura_hiking',name:'ハイキング',icon:'footsteps',target:2},
+ rowing:{id:'oura_rowing',name:'ローイング',icon:'waves',target:2},
+ elliptical:{id:'oura_elliptical',name:'クロストレーナー',icon:'run',target:2}
+};
+const OURA_ACTIVITY_JA={...Object.fromEntries(Object.entries(OURA_ACTIVITY_HABITS).map(([k,v])=>[k,v.name])),housework:'家事'};
+let ouraSyncStats={workouts:0,wakeups:0,added:0};
 function dateInTokyo(timestamp){
- const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(timestamp));
+ const t=new Date(timestamp);
+ if(!Number.isFinite(t.getTime()))return '';
+ const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(t);
  const get=type=>parts.find(p=>p.type===type)?.value||'';
  return get('year')+'-'+get('month')+'-'+get('day');
 }
+function ouraWakeDay(row){
+ if(!row?.wake_time)return null;
+ const instant=new Date(row.wake_time);
+ if(!Number.isFinite(instant.getTime()))return null;
+ const hh=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Tokyo',hour:'2-digit',hourCycle:'h23'}).format(instant);
+ if(hh!=='05'&&hh!=='06')return null;
+ const date=dateInTokyo(row.wake_time);
+ return date&&date<=isoToday()?date:null;
+}
+function ouraWorkoutHabit(w){
+ if(!w?.start_time||!w?.end_time)return null;
+ const kind=String(w.activity||'').toLowerCase().replace(/[^a-z]/g,'');
+ const spec=OURA_ACTIVITY_HABITS[kind];
+ if(!spec)return null;
+ const duration=(Date.parse(w.end_time)-Date.parse(w.start_time))/60000;
+ if(!Number.isFinite(duration)||duration<10||duration>12*60)return null;
+ const day=dateInTokyo(w.start_time);
+ if(!day||day>isoToday())return null;
+ return {day,...spec};
+}
+function awardCompletedOuraWeeks(days){
+ const weeks=new Set(days.map(day=>dayKey(weekStart(parseDay(day)))));
+ let bonus=false;
+ for(const week of weeks){
+   if(weeklyFor(parseDay(week)).complete&&!state.rewardedWeeks.includes(week)){
+     state.rewardedWeeks.push(week);bonus=true;
+   }
+ }
+ return bonus;
+}
+function updateOuraAutoStatus(){
+ const info=$('ouraAutoInfo');if(!info)return;
+ info.textContent='自動連携ON：5:00〜6:59に起床した日、Ouraの運動種別ごとの10分以上の記録を自動チェック。新しい記録は次の同期で反映します。';
+}
+function reconcileOuraHabits(daily,workouts){
+ const records=[];
+ const types=new Set();
+ for(const r of daily){
+   const date=ouraWakeDay(r);
+   if(date)records.push({day:date,id:'wake',label:'早起き'});
+ }
+ for(const w of workouts){
+   const x=ouraWorkoutHabit(w);
+   if(!x)continue;
+   records.push({day:x.day,id:x.id,label:x.name});
+   types.add(x.id);
+ }
+ const unique=new Map(records.map(r=>[r.day+'|'+r.id,r]));
+ ouraSyncStats={workouts:types.size,wakeups:new Set(records.filter(x=>x.id==='wake').map(x=>x.day)).size,added:0};
+ if(!cloud.client||!cloud.user||!cloud.ready||cloud.blocked)return{added:0,records:[...unique.values()]};
+ state.ouraAutoKeys=safeOuraAutoKeys(state.ouraAutoKeys);
+ state.ouraSuppressedKeys=safeOuraAutoKeys(state.ouraSuppressedKeys);
+ const suppressed=new Set(state.ouraSuppressedKeys);
+ const ignored=new Set(state.ouraIgnoredTypes||[]);
+ let modified=false;
+ for(const id of types){
+   if(ignored.has(id)||state.habits.some(h=>h.id===id))continue;
+   const definition=Object.values(OURA_ACTIVITY_HABITS).find(h=>h.id===id);
+   if(definition){state.habits.push({...definition});modified=true}
+ }
+ const activeIds=new Set(state.habits.map(h=>h.id));
+ const days=new Set();
+ let added=0;
+ for(const [key,record] of unique){
+   if(!activeIds.has(record.id)||suppressed.has(key)||state.checks[record.day]?.[record.id])continue;
+   state.checks[record.day] ||= {};
+   state.checks[record.day][record.id]=true;
+   if(!state.ouraAutoKeys.includes(key))state.ouraAutoKeys.push(key);
+   days.add(record.day);added++;modified=true;
+ }
+ if(days.size&&awardCompletedOuraWeeks([...days]))modified=true;
+ ouraSyncStats.added=added;
+ if(modified){
+   store();render();
+   toast('Ouraから'+added+'件の習慣実績を自動反映しました',true);
+ }
+ return{added,records:[...unique.values()]};
+}
 async function renderOuraCandidates(daily){
- const area=$('ouraCandidates');if(!area)return;
+ const area=$('ouraCandidates');if(!area||!cloud.user)return;
  let workouts=[];
  try{
-   const {data,error}=await cloud.client.from('oura_workouts').select('start_time,end_time,activity').eq('user_id',cloud.user.id).order('start_time',{ascending:false}).limit(1000);
-   if(!error)workouts=data||[];
- }catch(_){}
- const byDay=new Map();
- for(const w of workouts){
-   if(!w.start_time)continue;
-   const day=dateInTokyo(w.start_time);
-   if(!/^\d{4}-\d{2}-\d{2}$/.test(day))continue;
-   if(!byDay.has(day))byDay.set(day,[]);
-   const rawActivity=String(w.activity||'種類不明'),activity=OURA_ACTIVITY_JA[rawActivity.toLowerCase().replace(/[^a-z]/g,'')]||rawActivity.replace(/[_-]+/g,' ').slice(0,55);
-   if(!byDay.get(day).includes(activity))byDay.get(day).push(activity);
+   const {data,error}=await cloud.client.from('oura_workouts')
+     .select('start_time,end_time,activity')
+     .eq('user_id',cloud.user.id).order('start_time',{ascending:false}).limit(1000);
+   if(error)throw error;
+   workouts=data||[];
+ }catch(e){
+   area.textContent='Ouraの運動履歴を取得できませんでした：'+String(e.message||e);
+   return;
  }
- const qualifiedDates=new Set(workouts.filter(qualifiesOuraWorkout).map(w=>dateInTokyo(w.start_time)).filter(day=>day<=isoToday()));
- ouraAutoEligibleCount=qualifiedDates.size;
- applyOuraWorkoutsToHabits(workouts);
- ouraAutoPendingCount=[...qualifiedDates].filter(day=>!state.checks[day]?.train&&!(state.ouraAutoSuppressed||[]).includes(day)).length;
+ const {added,records}=reconcileOuraHabits(daily,workouts);
+ const byType=new Map();
+ for(const r of records){const k=r.id;byType.set(k,(byType.get(k)||0)+1)}
+ const activityNames={wake:'5〜6時台に起床',...Object.fromEntries(Object.values(OURA_ACTIVITY_HABITS).map(h=>[h.id,h.name]))};
+ const rows=[...byType].sort((a,b)=>b[1]-a[1]).map(([id,count])=>
+   '<div class="oura-type-stat"><span>'+habitIconSvg(state.habits.find(h=>h.id===id)?.icon||'sparkles')+
+   esc(activityNames[id]||id)+'</span><strong>'+count+'日</strong></div>').join('');
+ area.innerHTML='<div class="small-note">Oura実測記録から'+records.length+'件の習慣達成候補を検出。ゲームへ自動反映：今回'+added+'件。日付は日本時間です。</div><div class="oura-type-grid">'+rows+'</div>';
  updateOuraAutoStatus();
- const choices=[];
- const days=new Map(daily.map(x=>[x.day,x]));
- // Workouts may exist on days without a daily sleep/activity score.
- for(const d of byDay.keys())if(!days.has(d))days.set(d,{day:d,wake_time:null});
- for(const row of days.values()){
-   if(row.wake_time){
-     const wake=new Date(row.wake_time);
-     if(!Number.isNaN(wake.getTime())){
-       const hhmm=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(wake);
-       if(hhmm<='05:40'&&!state.checks[row.day]?.wake&&state.habits.some(h=>h.id==='wake'))
-         choices.push({date:row.day,type:'wake',label:'起床 '+hhmm+'（睡眠終了時刻から推定）'});
-     }
-   }
-   if(byDay.has(row.day)&&!state.checks[row.day]?.train&&state.habits.some(h=>h.id==='train'))
-     choices.push({date:row.day,type:'train',label:'運動: '+byDay.get(row.day).join('・').slice(0,88)+'（実施内容を要確認）'});
- }
- choices.sort((a,b)=>b.date.localeCompare(a.date));
- const wakeCount=choices.filter(c=>c.type==='wake').length;
- $('ouraBulkWake').hidden=wakeCount===0;
- $('ouraBulkWake').textContent='早起き候補 '+wakeCount+'日分を確認して記録';
- ouraCandidateCache=choices;
- drawOuraCandidateList();
-
 }
-function drawOuraCandidateList(){
- const area=$('ouraCandidates'),items=ouraCandidateCache;
- if(!area)return;
- const visible=items.slice(0,ouraCandidateShown);
- area.innerHTML=items.length?'<div class="small-note">候補 '+items.length+'件（'+visible.length+'件を表示）。早起きは5:40以前、運動はOuraの活動種類を本人が確認して確定します。</div><div class="habit-ranking-wrap"><table class="habit-ranking"><thead><tr><th>日付</th><th>Ouraの候補</th><th>操作</th></tr></thead><tbody>'+visible.map(c=>'<tr><td>'+esc(c.date)+'</td><td>'+esc(c.label)+'</td><td><button class="btn ghost" type="button" data-oura-confirm="'+c.type+'" data-oura-date="'+c.date+'">記録する</button></td></tr>').join('')+'</tbody></table></div>'+(visible.length<items.length?'<button type="button" class="btn" id="ouraMore" style="margin-top:12px">さらに40件表示</button>':''):'過去の早起き・運動について、新しい候補はありません。';
-}
-$('ouraCandidates')?.addEventListener('click',e=>{if(!e.target.closest('#ouraMore'))return;ouraCandidateShown+=40;drawOuraCandidateList()});
-
-$('ouraBulkWake').onclick=async()=>{
- const candidates=ouraCandidateCache.filter(c=>c.type==='wake'&&!state.checks[c.date]?.wake);
- if(!candidates.length)return;
- if(!confirm('Ouraの睡眠終了時刻が5:40以前の次の日付を、早起きの達成として一括記録します。\n'+candidates.map(c=>c.date).join('、')+'\n\n睡眠終了時刻と実際の起床時刻は異なる場合があります。実際に早起きできた日だけ記録してください。続けますか？'))return;
- let added=0;
- for(const c of candidates){
-   if(state.checks[c.date]?.wake)continue;
-   state.checks[c.date] ||= {};
-   state.checks[c.date].wake=true;added++;
- }
- if(!added)return;
- awardCompletedOuraWeeks(candidates.map(c=>c.date));
- store();render();
- try{await fetchOuraMetrics()}catch(e){$('ouraStatus').textContent='早起きは記録しましたが、Oura表示の更新に失敗: '+e.message}
- toast('早起き '+added+'日分を記録しました',true);
-};
-$('ouraCandidates')?.addEventListener('click',async e=>{const b=e.target.closest('[data-oura-confirm]');if(!b)return;const day=b.dataset.ouraDate,id=b.dataset.ouraConfirm;if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!['wake','train'].includes(id))return;if(!confirm(day+' の「'+(id==='wake'?'早起き':'運動')+'」を実施した記録として確定しますか？'))return;state.checks[day] ||= {};state.checks[day][id]=true;
- if(id==='train'){state.ouraAutoSuppressed=(state.ouraAutoSuppressed||[]).filter(x=>x!==day);state.ouraAutoDays=(state.ouraAutoDays||[]).filter(x=>x!==day)}
- awardCompletedOuraWeeks([day]);store();render();await fetchOuraMetrics();toast('過去の実績に記録しました',true)});
 async function checkOuraConnection(preserveStatus=false){
  $('ouraConnect').disabled=true;$('ouraSync').disabled=true;$('ouraBackfill').disabled=true;$('ouraDisconnect').hidden=true;
  if(!cloud.user){if(!preserveStatus)$('ouraStatus').textContent='先にクラウドへログインしてください。';return}
