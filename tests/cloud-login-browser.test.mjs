@@ -33,7 +33,7 @@ window.supabase.createClient=function(){
    return {data:{session:{user:{id:'test-account',email:'test@example.invalid'}}},error:null};
  };
  client.auth.getUser=async function(){
-   return {data:{user:{id:'test-account',email:'test@example.invalid'}}},error:null};
+   return {data:{user:{id:'test-account',email:'test@example.invalid'}},error:null};
  };
  client.from=function(){
    return {
