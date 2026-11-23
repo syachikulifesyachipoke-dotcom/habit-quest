@@ -49,7 +49,7 @@
 .extra-accord>.section-v2{margin:0;border:0;border-radius:0;box-shadow:none}
 .site-links{text-align:center;font-size:11px;margin:0 0 20px;color:#8892b2}
 .site-links a{color:#8892b2;text-decoration:none}.bottom-foot{font-size:11px!important;opacity:.7}
-@media(max-width:760px){.cloud-overlay{top:8px;right:8px;max-height:calc(100dvh - 16px);width:calc(100vw - 16px);padding:17px}.cloud-auth{flex-direction:column;align-items:stretch}.cloud-auth input{width:100%;flex:auto}.cloud-overlay .cloud-head{align-items:start}.top-actions #cloudToggle,.top-actions #ouraJump{font-size:11px;padding:8px!important}.extra-accord>summary{padding:13px 16px}}
+@media(max-width:760px){.cloud-overlay{top:8px;right:8px;max-height:calc(100dvh - 16px);width:calc(100vw - 16px);padding:17px}.cloud-auth{flex-direction:column;align-items:stretch}.cloud-auth input{width:100%;flex:auto}.cloud-overlay .cloud-head{align-items:start}.top-actions #cloudToggle,.top-actions #settingsJump{font-size:11px;padding:8px!important}.extra-accord>summary{padding:13px 16px}}
 .oura-auto-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0 15px}
 .oura-auto-label{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;border:1px solid #2d7569;background:rgba(26,123,111,.12);color:#86e0d2;border-radius:9px;padding:9px 12px;font-size:12px;font-weight:850;letter-spacing:.02em}
 .oura-auto-dot{width:8px;height:8px;border-radius:50%;background:#55d9c7;box-shadow:0 0 0 4px rgba(84,217,199,.11)}
@@ -200,7 +200,7 @@
 <div class="wrap">
 <header class="header">
  <div class="brand"><div class="brand-mark">✦</div><div><h1>HABIT QUEST</h1><small>習慣を冒険に変える</small></div></div>
- <div class="top-actions"><div class="date-chip" id="nowDate"></div><button class="btn ghost" id="ouraJump" type="button">💍 Oura</button><button class="btn ghost" id="cloudToggle" type="button" aria-controls="cloudSection" aria-expanded="false">☁ ログイン</button></div>
+ <div class="top-actions"><div class="date-chip" id="nowDate"></div><button class="btn ghost" id="settingsJump" type="button">⚙ 設定</button><button class="btn ghost" id="cloudToggle" type="button" aria-controls="cloudSection" aria-expanded="false">☁ ログイン</button></div>
 </header>
 
 <div id="cloudBackdrop" class="cloud-backdrop" hidden></div><section class="cloud-card cloud-overlay" id="cloudSection" aria-labelledby="cloudTitle" role="dialog" aria-modal="true" hidden>
@@ -239,7 +239,7 @@
 </section>
 
 <section class="section-v2 panel v2-panel" id="analyticsSection">
- <div class="v2-title-row"><div><h3 class="hq-section-heading"><span data-hq-icon="chart"></span>習慣分析</h3><p class="subheading">達成記録を、継続の改善につながる数字に変える</p></div><div class="v2-controls"><select id="analysisHabit" aria-label="分析する習慣"></select><select id="analysisPeriod" aria-label="集計期間"><option value="7">直近7日</option><option value="30" selected>直近30日</option><option value="90">直近3か月（90日）</option><option value="180">直近6か月（180日）</option><option value="365">直近1年（365日）</option></select><button class="btn" id="exportCsv">CSV出力</button></div></div>
+ <div class="v2-title-row"><div><h3 class="hq-section-heading"><span data-hq-icon="chart"></span>習慣分析</h3><p class="subheading">達成記録を、継続の改善につながる数字に変える</p></div><div class="v2-controls"><select id="analysisHabit" aria-label="分析する習慣"></select><select id="analysisPeriod" aria-label="集計期間"><option value="7">直近1週間（7日）</option><option value="30" selected>直近1か月（30日）</option><option value="90">直近3か月（90日）</option><option value="180">直近6か月（180日）</option><option value="365">直近1年（365日）</option></select><button class="btn" id="exportCsv">CSV出力</button></div></div>
  <div class="metric-cards"><div class="metric-card"><strong id="metricDone">0 / 0日</strong><span>達成日数 / 対象日数</span></div><div class="metric-card"><strong id="metricRate">0%</strong><span id="metricRateLabel">期間内の記録率</span></div><div class="metric-card"><strong id="metricStreak">0日</strong><span>期間内の最長連続日数</span></div><div class="metric-card"><strong id="metricWeeks">0週</strong><span id="metricWeeksLabel">週目標を達成した週数（完了週）</span></div><div class="metric-card"><strong id="metricRating">—</strong><span>達成評価</span></div></div>
  <div class="v2-chart-grid"><div class="chart-panel"><div class="chart-title">直近8週間の達成回数（選択した習慣）</div><div id="weekBars" class="bars"></div><p class="small-note">棒の高さは週目標に対する進捗率（上限100%）。棒の上に達成回数を表示します。今週は途中経過です。</p></div><div class="chart-panel"><div class="chart-title">曜日別のチェック率（選択した期間）</div><div id="weekdayBars" class="weekday-rows"></div><p class="small-note spaced">その曜日が期間内に登場した日数を分母としています。</p></div></div>
  <div class="chart-panel spaced"><div class="chart-title">日別の達成カレンダー <span id="heatLabel" class="muted"></span></div><div id="heatGrid" class="heat-grid"></div><p class="small-note">紫＝手動で達成、青緑＝Oura自動、灰色＝未チェック、斜線＝Oura未取得（欠測）。欠測日はOuraの記録率の分母に含めません。</p></div>
@@ -543,7 +543,7 @@ $('weekBars').innerHTML=windows.map(w=>{
  const unit=h.ouraTrackingOnly?hit+'日':hit+'/'+h.target;
  const title=h.ouraTrackingOnly?'自動記録 '+hit+'日':'目標'+h.target+'回中 '+hit+'回';
  return `<div class="bar-item" title="${dayKey(w)}：${title}"><span class="bar-value">${unit}</span><div class="bar-column ${isOuraAutoHabit(h)?'auto':''}" style="height:${Math.max(hit?5:2,pct)}%"></div><span class="bar-caption">${w.getMonth()+1}/${w.getDate()}</span></div>`;
-}).join('');const names=['月','火','水','木','金','土','日'];$('weekdayBars').innerHTML=a.weekday.map((o,i)=>{const pct=o.n?Math.round(100*o.hit/o.n):0;return `<div class="weekday-row"><span>${names[i]}</span><div class="weekday-track"><i style="width:${pct}%"></i></div><span>${o.hit}/${o.n}</span></div>`}).join('');const blanks=(a.days[0].getDay()+6)%7;$('heatGrid').innerHTML='<div class="heat-square blank"></div>'.repeat(blanks)+a.days.map(d=>{const done=checked(d,id),missing=isOuraMissing(d,id);return `<div class="heat-square ${done?'done '+(isOuraAutoHabit(h)?'auto':'manual'):missing?'missing':''}" title="${dayKey(d)} ${done?'達成':missing?'Oura未取得':'未チェック'}">${d.getDate()}</div>`}).join('');const ranks=displayHabits().map(h=>{const t=analyse(h.id,n);return{h,...t}}).sort((x,y)=>Number(isOuraAutoHabit(x.h))-Number(isOuraAutoHabit(y.h))||y.rate-x.rate);$('habitRank').innerHTML=`<table class="habit-ranking"><thead><tr><th>習慣</th><th>実績</th><th>記録率</th><th>比較</th></tr></thead><tbody>${ranks.map(r=>`<tr><td><span class="rank-habit-icon">${habitIconSvg(r.h.icon)}</span>${esc(r.h.name)}</td><td>${r.done}/${n}日</td><td>${r.rate}%</td><td><div class="rank-track"><i style="width:${r.rate}%"></i></div></td></tr>`).join('')}</tbody></table>`}
+}).join('');const names=['月','火','水','木','金','土','日'];$('weekdayBars').innerHTML=a.weekday.map((o,i)=>{const pct=o.n?Math.round(100*o.hit/o.n):0;return `<div class="weekday-row"><span>${names[i]}</span><div class="weekday-track"><i style="width:${pct}%"></i></div><span>${o.hit}/${o.n}</span></div>`}).join('');const blanks=(a.days[0].getDay()+6)%7;$('heatGrid').innerHTML='<div class="heat-square blank"></div>'.repeat(blanks)+a.days.map(d=>{const done=checked(d,id),missing=isOuraMissing(d,id);return `<div class="heat-square ${done?'done '+(isOuraAutoHabit(h)?'auto':'manual'):missing?'missing':''}" title="${dayKey(d)} ${done?'達成':missing?'Oura未取得':'未チェック'}">${d.getDate()}</div>`}).join('');const ranks=displayHabits().map(h=>{const t=analyse(h.id,n);return{h,...t}}).sort((x,y)=>Number(isOuraAutoHabit(x.h))-Number(isOuraAutoHabit(y.h))||y.rate-x.rate);$('habitRank').innerHTML=`<table class="habit-ranking"><thead><tr><th>習慣</th><th>実績</th><th>記録率</th><th>比較</th></tr></thead><tbody>${ranks.map(r=>`<tr><td><span class="rank-habit-icon">${habitIconSvg(r.h.icon)}</span>${esc(r.h.name)}</td><td>${r.done}/${r.observed}日</td><td>${r.rate}%</td><td><div class="rank-track"><i style="width:${r.rate}%"></i></div></td></tr>`).join('')}</tbody></table>`}
 $('analysisHabit').addEventListener('change',()=>{renderAnalytics();renderOura()});$('analysisPeriod').addEventListener('change',renderAnalytics);
 $('exportCsv').addEventListener('click',()=>{const rows=[['date',...state.habits.map(x=>x.name)]];const keys=Object.keys(state.checks).filter(dayIsoOk).sort();const first=keys[0]?parseDay(keys[0]):parseDay(isoToday()),today=parseDay(isoToday());for(let d=first;d<=today;d=addDay(d,1))rows.push([dayKey(d),...state.habits.map(h=>checked(d,h.id)?1:0)]);const q=s=>'"'+String(s).replace(/"/g,'""')+'"';downloadText('\ufeff'+rows.map(r=>r.map(q).join(',')).join('\r\n'),`habit-quest-records-${isoToday()}.csv`,'text/csv;charset=utf-8');toast('CSVを出力しました',true)});
 function ingestOuraPayload(obj,assumedType='auto'){const collections=[];if(Array.isArray(obj))collections.push([assumedType==='auto'?'generic':assumedType,obj]);if(obj&&typeof obj==='object'){if(Array.isArray(obj.data))collections.push([obj.type||obj.kind||(assumedType==='auto'?'generic':assumedType),obj.data]);for(const [type,val]of Object.entries(obj)){if(Array.isArray(val))collections.push([type,val]);else if(val&&Array.isArray(val.data))collections.push([type,val.data])}}let added=0;for(const [kind,items] of collections){for(const raw of items.slice(0,11000)){if(!raw||typeof raw!=='object')continue;const day=raw.day||raw.date||raw.timestamp?.slice?.(0,10);if(!dayIsoOk(day))continue;const dest=state.ouraData[day]||{};let touched=false;const score=Number(raw.score);if(Number.isFinite(score)&&score>=0&&score<=100){if(/readiness/i.test(kind)||/readiness/i.test(raw.type||'')){dest.readiness=score;touched=true}else if(/sleep/i.test(kind)||/sleep/i.test(raw.type||'')){dest.sleep=score;touched=true}}
@@ -786,7 +786,7 @@ $('cloudToggle').onclick=()=>toggleCloudMenu($('cloudSection').hidden);
 $('cloudClose').onclick=()=>toggleCloudMenu(false);
 $('cloudBackdrop').onclick=()=>toggleCloudMenu(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('cloudSection').hidden)toggleCloudMenu(false)});
-$('ouraJump').onclick=()=>{$('settingsDetail').open=true;$('ouraDetail').open=true;$('settingsDetail').scrollIntoView({behavior:'smooth',block:'start'})};
+$('settingsJump').onclick=()=>{$('settingsDetail').open=true;$('settingsDetail').scrollIntoView({behavior:'smooth',block:'start'})};
 
 function readRecoveryLanding(href){
   // Read the email link *before* Supabase removes its one-use URL hash.
@@ -944,7 +944,7 @@ function showOuraAuthResult(){
  const params=new URLSearchParams(location.search);
  const result=params.get('oura');
  if(!result)return;
- $('ouraDetail').open=true;
+ $('settingsDetail').open=true;$('ouraDetail').open=true;
  const messages={
    connected:'Oura認証が完了しました。実データを確認します。',
    denied:'Ouraのアクセス承認は行われませんでした。',
