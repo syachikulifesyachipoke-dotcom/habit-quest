@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import http from 'node:http';
+import vm from 'node:vm';
 import os from 'node:os';
 import path from 'node:path';
 import {spawn,spawnSync} from 'node:child_process';
@@ -18,50 +19,62 @@ const remote={
 };
 const fakeSdk=`<script>
 window.__coinTest={coins:255,items:[],equipped:null,gachaUsed:false,drawCount:0};
-window.supabase={createClient:function(){
- return {
-  auth:{
-   onAuthStateChange:function(){return{}},
-   getSession:async()=>({data:{session:{user:{id:'test-player',email:'user@example.invalid'}}},error:null}),
-   getUser:async()=>({data:{user:{id:'test-player',email:'user@example.invalid'}}},error:null})
-  },
-  from:function(){return{select:function(){return{eq:function(){return{maybeSingle:async()=>({
-   data:{data:${JSON.stringify(remote)},revision:2},error:null
-  })}}}}}},
-  rpc:async function(name,args){
-   if(name!=='hq_game_action')return {error:{message:'unexpected rpc'}};
-   const s=window.__coinTest,action=args.p_action,item=args.p_item_id,prices={cloak:60,lantern:100,crown:140,aura:200,wings:280};
-   let event=null;
-   if(action==='buy'){
-    if(s.items.includes(item)||s.coins<prices[item])return{error:{message:'bad purchase'}};
-    s.coins-=prices[item];s.items.push(item);event={type:'buy',itemId:item,price:prices[item]};
-   }
-   if(action==='equip'){
-    if(!s.items.includes(item))return{error:{message:'not owned'}};
-    s.equipped=item;event={type:'equip',itemId:item};
-   }
-   if(action==='draw'){
-    if(s.gachaUsed)return{error:{message:'Daily free draw already used'}};
-    s.gachaUsed=true;s.drawCount++;
-    const duplicate=s.items.includes('cloak');
-    if(duplicate)s.coins+=15;else s.items.push('cloak');
-    event={type:'draw',itemId:'cloak',duplicate,refund:duplicate?15:0};
-   }
-   return {data:{coins:s.coins,items:s.items,equipped:s.equipped,gachaUsed:s.gachaUsed,
-    gameDay:'2026-11-23',yesterday:'2026-11-22',yesterdayChecks:2,yesterdayCoins:10,
-    earnedNow:0,event},error:null};
-  },
-  functions:{invoke:async()=>({data:{},error:null})}
+window.__bootErrors=[];
+window.addEventListener('error',e=>window.__bootErrors.push('error:'+e.message));
+window.addEventListener('unhandledrejection',e=>window.__bootErrors.push('rejection:'+e.reason?.message));
+window.supabase={};
+window.supabase.createClient=function(){
+ const client={};
+ client.auth={};
+ client.auth.onAuthStateChange=function(){return {data:{subscription:{unsubscribe:function(){}}}}};
+ client.auth.getSession=async function(){
+  return {data:{session:{user:{id:'test-player',email:'user@example.invalid'}}},error:null};
  };
-}};
+ client.auth.getUser=async function(){
+  return {data:{user:{id:'test-player',email:'user@example.invalid'}},error:null};
+ };
+ client.from=function(){return{select:function(){return{eq:function(){return{
+  maybeSingle:async function(){return{data:{data:${JSON.stringify(remote)},revision:2},error:null};}
+ }}}}}};
+ client.rpc=async function(name,args){
+  if(name!=='hq_game_action')return {error:{message:'unexpected rpc'}};
+  const s=window.__coinTest,action=args.p_action,item=args.p_item_id;
+  const prices={cloak:60,lantern:100,crown:140,aura:200,wings:280};
+  let event=null;
+  if(action==='buy'){
+   if(s.items.includes(item)||s.coins<prices[item])return{error:{message:'bad purchase'}};
+   s.coins-=prices[item];s.items.push(item);event={type:'buy',itemId:item,price:prices[item]};
+  }
+  if(action==='equip'){
+   if(!s.items.includes(item))return{error:{message:'not owned'}};
+   s.equipped=item;event={type:'equip',itemId:item};
+  }
+  if(action==='draw'){
+   if(s.gachaUsed)return{error:{message:'Daily free draw already used'}};
+   s.gachaUsed=true;s.drawCount++;
+   const duplicate=s.items.includes('cloak');
+   if(duplicate)s.coins+=15;else s.items.push('cloak');
+   event={type:'draw',itemId:'cloak',duplicate,refund:duplicate?15:0};
+  }
+  return {data:{coins:s.coins,items:s.items,equipped:s.equipped,gachaUsed:s.gachaUsed,
+   gameDay:'2026-11-23',yesterday:'2026-11-22',yesterdayChecks:2,yesterdayCoins:10,
+   earnedNow:0,event},error:null};
+ };
+ client.functions={invoke:async function(){return{data:{},error:null}}};
+ return client;
+};
 </script>`;
+// Validate mocked cloud SDK before browser simulation; syntax errors must not masquerade as product bugs.
+assert.doesNotThrow(()=>new vm.Script(fakeSdk.slice('<script>'.length,-'</script>'.length),{filename:'coin-cloud-fixture.js'}));
 const check=`<script>
 (async()=>{try{
  const requireOk=(yes,label)=>{if(!yes)throw Error(label)};
  const pause=()=>new Promise(resolve=>setTimeout(resolve,160));
- await pause();await pause();
+ for(let i=0;i<12&&!localStorage.getItem('habit-quest-v1');i++)await pause();
+ const saved=localStorage.getItem('habit-quest-v1');
+ requireOk(!!saved,'fresh login did not import cloud state; status:'+document.getElementById('cloudStatus').textContent+'; boot:'+JSON.stringify(window.__bootErrors));
  const xpBefore=document.getElementById('totalXp').textContent;
- const habitsBefore=JSON.stringify(JSON.parse(localStorage.getItem('habit-quest-v1')).habits);
+ const habitsBefore=JSON.stringify(JSON.parse(saved).habits);
  document.querySelector('#gameBottomNav [data-game-tab="shop"]').click();
  await pause();
  requireOk(document.querySelectorAll('#coinShopItems .coin-item').length===5,'market needs exactly five items');
