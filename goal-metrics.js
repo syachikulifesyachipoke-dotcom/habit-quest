@@ -20,5 +20,14 @@
       counted: Math.min(completed, goalCount)
     };
   }
-  root.HabitQuestGoalMetrics = Object.freeze({ compute });
+  function computeForDays(days) {
+    const eligible=(Array.isArray(days)?days:[]).filter(d=>d&&d.observed===true&&d.mission===true&&
+      Number.isInteger(Number(d.target))&&Number(d.target)>=1&&Number(d.target)<=7);
+    if(!eligible.length) return {goalCount:null,goalRate:null,counted:null,goalObserved:0,goalDone:0};
+    const goalCount=Math.ceil(eligible.reduce((sum,d)=>sum+Number(d.target),0)/7);
+    const goalDone=eligible.filter(d=>d.done===true).length;
+    return {goalCount,goalRate:Math.min(100,Math.round(goalDone*100/goalCount)),
+      counted:Math.min(goalDone,goalCount),goalObserved:eligible.length,goalDone};
+  }
+  root.HabitQuestGoalMetrics = Object.freeze({ compute,computeForDays });
 })(typeof window === 'undefined' ? globalThis : window);
