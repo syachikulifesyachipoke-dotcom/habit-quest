@@ -227,7 +227,7 @@
 </section>
 <main>
 <section class="intro">
- <div class="hero"><div class="eyebrow">YOUR DAILY ADVENTURE</div><h2>今日の一歩で、<br><em>未来の自分を進化させる。</em></h2><p class="hero-sub">小さな習慣が経験値になる。1日ずつ積み重ねて、<br>あなただけの相棒を育てていこう。</p><div class="hero-counters"><div class="counter"><strong id="todayDone">0/0</strong><label>今日の達成（進行中の全項目）</label></div><div class="counter"><strong id="streak">0<span style="font-size:14px"> 日</span></strong><label title="週間ミッションONの習慣を1項目以上達成した連続日数（当日未記録なら昨日まで）">連続記録日数（週ミッション対象1項目以上）ⓘ</label></div><div class="counter"><strong id="totalXp">0</strong><label>開始日以降の XP</label></div></div></div>
+ <div class="hero"><div class="eyebrow">YOUR DAILY ADVENTURE</div><h2>今日の一歩で、<br><em>未来の自分を進化させる。</em></h2><p class="hero-sub">小さな習慣が経験値になる。1日ずつ積み重ねて、<br>あなただけの相棒を育てていこう。</p><div class="hero-counters"><div class="counter"><strong id="todayDone">0/0</strong><label>今日の達成（進行中の全項目）</label></div><div class="counter"><strong id="streak">0<span style="font-size:14px"> 日</span></strong><label title="手動習慣を1項目以上達成した連続日数（当日未記録なら昨日まで）">連続記録日数（手動1項目以上）ⓘ</label></div><div class="counter"><strong id="totalXp">0</strong><label>開始日以降の XP</label></div></div></div>
  <div class="companion-card"><div class="companion-top"><span class="tag" id="evoTag">✦ 進化のたまご</span><div class="level" id="levelLabel">Lv. 1</div></div><div class="avatar-box" id="avatar"></div><div class="companion-bottom"><div><div class="companion-title" id="stageName">星のたまご</div><div class="companion-next" id="nextEvolution">Lv.3で次の姿に進化</div></div><div><div class="xp-val" id="xpLabel">0 / 40 XP</div><div class="xp-start-line" id="xpStartLine">XP開始日：ログイン時に確定</div></div></div><div class="progress"><i id="xpBar"></i></div></div>
 </section>
 <section class="content">
@@ -448,7 +448,7 @@ function stats(){
  const completedWeeks=begin?state.rewardedWeeks.filter(key=>validXpStartDate(key)&&dayKey(addDay(parseDay(key),6))>=begin).length:0;
  const xp=xpChecks*XP_CHECK+completedWeeks*XP_WEEK,level=levelFromXp(xp);
  let streak=0,d=parseDay(isoToday());
- const anyDone=k=>state.habits.some(h=>{const day=dayKey(k);return eligibleHabitDay(h,day)&&window.HabitQuestLifecycle.configOn(h,day).mission&&state.checks[day]?.[h.id]===true});
+ const anyDone=k=>state.habits.some(h=>{const day=dayKey(k);return !isOuraAutoHabit(h)&&eligibleHabitDay(h,day)&&state.checks[day]?.[h.id]===true});
  if(!anyDone(d))d=addDay(d,-1);
  while(begin&&dayKey(d)>=begin&&anyDone(d)){streak++;d=addDay(d,-1);if(streak>20000)break}
  return{checks,xpChecks,completedWeeks,xp,level,streak};
