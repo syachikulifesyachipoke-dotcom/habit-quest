@@ -6,13 +6,13 @@
 
 - アプリ本体はGitHub Pagesで公開済み。独自ドメイン接続は未実施。
 - Supabaseプロジェクト `habit-quest` (東京): [管理画面](https://supabase.com/dashboard/project/kpiqktibvzymgzwxiajv)。Freeプラン。
-- DB・RLS・Oura OAuth用Edge Functionは稼働中。Oura実アカウント連携・トークン自動更新は **未検証**。
+- DB・RLS・Oura OAuthサーバーは稼働中。**Ouraアカウント接続と日次184日・ワークアウト338件の取得を実データで確認済み**。トークン期限切れ後の実更新は未検証。
 - 現在のOura Edge Functionソースは `supabase/functions/oura-service/index.ts` に保存しています。変更後はSupabase側への再デプロイが必要です。
 
 ## 残りの作業
 
 - 既存アカウントのパスワード登録・ログイン・クラウド初回保存は成功済み（2026-11-23にDBで確認）。
-- Ouraの初回認証と過去6か月のデータ取込・実測値の検証。
+- Ouraの測定データは取込済み。Oura欄の「運動実績をゲームに自動反映」を一度有効化し、ゲームへの反映を確認する。筋トレ・自転車・ランニングなど10分以上のみ自動対象（現在8日）。ウォーキングと早起きは本人確認式。
 - 独自ドメインへの切替（後回し可）。
 - 技術的な検証結果は[STATUS.md](./STATUS.md)を参照。
 
@@ -40,4 +40,4 @@ OuraのRedirect URI: `https://kpiqktibvzymgzwxiajv.supabase.co/functions/v1/oura
 
 個人の習慣記録・Ouraデータ・暗号化トークンはSupabaseに保存し、GitHubの公開リポジトリには置きません。ブラウザに置けるのはSupabaseの公開可能なキーだけです。Supabase Freeプランを維持し、有料プランへ変更しない限り、無料枠超過による自動従量課金は発生しません。ただし無料サービスの利用制限や休止は起こり得ます。JSONバックアップを定期的に取得してください。
 
-**認証とクラウド初回保存は実動作確認済み。** Oura実接続・自動更新・PC↔スマホ同期は実地検証待ちです。
+**認証・クラウド初回保存・Oura実接続・184日分のデータ取込は実動作確認済み。** Ouraからの習慣自動反映はユーザーの初回有効化待ち。PC↔スマホ同期とトークン自動更新は実地検証待ちです。
