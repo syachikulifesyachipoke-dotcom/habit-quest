@@ -516,46 +516,42 @@ function isOuraMissing(day,id){
 function analyse(id,n){
  const today=parseDay(isoToday()),days=Array.from({length:n},(_,i)=>addDay(today,i-n+1));
  let done=0,streak=0,best=0,observed=0,eligible=0;
- const h=state.habits.find(x=>x.id===id);
+ const h=state.habits.find(x=>x.id===id),goalDays=[];
  const weekday=Array.from({length:7},()=>({n:0,hit:0}));
  for(const d of days){
-   if(h&&!eligibleHabitDay(h,dayKey(d))){streak=0;continue}
+   const key=dayKey(d);
+   if(!h||!eligibleHabitDay(h,key)){streak=0;continue}
    eligible++;
-   const yes=checked(d,id),missing=isOuraMissing(d,id);
-   if(yes){done++;streak++;best=Math.max(best,streak)}
-   else streak=0;
+   const yes=checked(d,id),missing=isOuraMissing(d,id),config=window.HabitQuestLifecycle.configOn(h,key);
+   if(yes){done++;streak++;best=Math.max(best,streak)}else streak=0;
+   goalDays.push({observed:!missing,done:yes,target:config.target,mission:config.mission});
    if(missing)continue;
    observed++;
    const w=(d.getDay()+6)%7;weekday[w].n++;if(yes)weekday[w].hit++;
  }
- const goal=h&&!h.ouraTrackingOnly?
-   window.HabitQuestGoalMetrics.compute(done,observed,Number(h.target)):
-   {goalCount:null,goalRate:null,counted:null};
+ const goal=window.HabitQuestGoalMetrics.computeForDays(goalDays);
  const current=weekStart(today);let metWeeks=0,fullWeeks=0;
  for(let k=1;k<=Math.ceil(n/7);k++){
    const start=addDay(current,-k*7),end=addDay(start,6);
    if(start<days[0]||end>today)break;
-   if(h&&!h.ouraTrackingOnly){
-     const eligibleDays=weekDays(start).filter(d=>eligibleHabitDay(h,dayKey(d)));
-     const target=Math.min(h.target,eligibleDays.length);
-     if(target>0){
-       fullWeeks++;
-       if(eligibleDays.filter(d=>checked(d,id)).length>=target)metWeeks++;
-     }
-   }
+   const result=window.HabitQuestLifecycle.weekProgress(h,weekDays(start).map(dayKey),
+     (key,hid)=>state.checks[key]?.[hid]===true);
+   if(result.target>0){fullWeeks++;if(result.complete)metWeeks++;}
  }
  return{days,done,observed,eligible,missing:eligible-observed,rate:observed?Math.round(100*done/observed):0,best,weekday,metWeeks,fullWeeks,goal};
 }
 function openHabitDetail(id){if(!state.habits.some(h=>h.id===id))return;const sel=$('analysisHabit');sel.value=id;renderAnalytics();$('analyticsSection').scrollIntoView({behavior:'smooth',block:'start'});}
- function renderAnalytics(){const sel=$('analysisHabit'),previous=sel.value;sel.innerHTML=displayHabits().map(h=>`<option value="${esc(h.id)}">${esc(h.name)}</option>`).join('');if(state.habits.some(h=>h.id===previous))sel.value=previous;const id=sel.value,n=Number($('analysisPeriod').value)||30,h=state.habits.find(x=>x.id===id);if(!h){$('weekBars').innerHTML='<div class="analysis-empty">まず習慣を追加してください。</div>';$('weekdayBars').innerHTML='';$('heatGrid').innerHTML='';$('habitRank').innerHTML='';return}const a=analyse(id,n);$('metricDone').textContent=`${a.done} / ${a.observed}日`;$('metricRate').textContent=a.rate+'%';$('metricRateLabel').textContent=isOuraAutoHabit(h)?'実施日率（Oura欠測'+a.missing+'日を除外）':'実施日率（記録日 / 全日数）';$('metricGoal').textContent=a.goal.goalRate===null?'—':a.goal.goalRate+'%';$('metricGoalLabel').textContent=a.goal.goalCount===null?'週目標なし（記録専用）':'期間換算目標：'+a.goal.counted+' / '+a.goal.goalCount+'回';$('goalMethodNote').textContent=a.goal.goalCount===null?'この習慣は記録専用です。実施日率は参考値として表示します。':'週'+h.target+'回の目標を計測対象'+a.observed+'日に換算（端数は切り上げ）。目標達成率と実施日率は別の指標です。目標変更前の記録にも現在の週目標を適用します。';const evaluation=a.goal.goalRate;$('metricRating').textContent=evaluation===null?'目標未設定':evaluation>=90?'非常に良好':evaluation>=75?'良好':evaluation>=50?'改善余地あり':'要改善';$('metricStreak').textContent=`${a.best}日`;$('metricWeeks').textContent=h.ouraTrackingOnly?'—':`${a.metWeeks} / ${a.fullWeeks}週`;$('metricWeeksLabel').textContent=h.ouraTrackingOnly?'週目標なし':'週目標達成（完了週のみ）';$('heatLabel').textContent=`（直近${n}日）`;
+ function renderAnalytics(){const sel=$('analysisHabit'),previous=sel.value;sel.innerHTML=displayHabits().map(h=>`<option value="${esc(h.id)}">${esc(h.name)}</option>`).join('');if(state.habits.some(h=>h.id===previous))sel.value=previous;const id=sel.value,n=Number($('analysisPeriod').value)||30,h=state.habits.find(x=>x.id===id);if(!h){$('weekBars').innerHTML='<div class="analysis-empty">まず習慣を追加してください。</div>';$('weekdayBars').innerHTML='';$('heatGrid').innerHTML='';$('habitRank').innerHTML='';return}const a=analyse(id,n);$('metricDone').textContent=`${a.done} / ${a.observed}日`;$('metricRate').textContent=a.rate+'%';$('metricRateLabel').textContent=isOuraAutoHabit(h)?'実施日率（Oura欠測'+a.missing+'日を除外）':'実施日率（記録日 / 全日数）';$('metricGoal').textContent=a.goal.goalRate===null?'—':a.goal.goalRate+'%';$('metricGoalLabel').textContent=a.goal.goalCount===null?'当該期間に週目標なし':'期間換算目標：'+a.goal.counted+' / '+a.goal.goalCount+'回';$('goalMethodNote').textContent=a.goal.goalCount===null?'この期間に週間ミッション対象の日はありません。実施日率のみ表示します。':'各日の週目標を計測対象日ごとに7分の1ずつ換算（端数切り上げ）。目標変更前は当時の設定で評価します。停止期間・Oura欠測日・週ミッションOFFの日は達成率の目標分母から除外します。';const evaluation=a.goal.goalRate;$('metricRating').textContent=evaluation===null?'目標未設定':evaluation>=90?'非常に良好':evaluation>=75?'良好':evaluation>=50?'改善余地あり':'要改善';$('metricStreak').textContent=`${a.best}日`;$('metricWeeks').textContent=a.fullWeeks? `${a.metWeeks} / ${a.fullWeeks}週`:'—';$('metricWeeksLabel').textContent=a.fullWeeks?'週目標達成（完了週のみ）':'期間内に対象週なし';$('heatLabel').textContent=`（直近${n}日）`;
 const mon=weekStart(parseDay(isoToday()));
 const windows=Array.from({length:8},(_,i)=>addDay(mon,(i-7)*7));
 $('weekBars').innerHTML=windows.map(w=>{
- const hit=weekDays(w).filter(d=>checked(d,id)).length;
- const denom=h.ouraTrackingOnly?7:h.target;
- const pct=Math.min(100,100*hit/denom);
- const unit=h.ouraTrackingOnly?hit+'日':hit+'/'+h.target;
- const title=h.ouraTrackingOnly?'自動記録 '+hit+'日':'目標'+h.target+'回中 '+hit+'回';
+ const relevant=weekDays(w).filter(d=>eligibleHabitDay(h,dayKey(d)));
+ const hit=relevant.filter(d=>checked(d,id)).length;
+ const progress=window.HabitQuestLifecycle.weekProgress(h,weekDays(w).map(dayKey),
+   (key,hid)=>state.checks[key]?.[hid]===true);
+ const pct=progress.target?Math.min(100,100*progress.done/progress.target):Math.min(100,100*hit/7);
+ const unit=progress.target?progress.done+'/'+progress.target:hit+'日';
+ const title=progress.target?'当時の目標'+progress.target+'回中 '+progress.done+'回':'週目標なし・実施'+hit+'日';
  return `<div class="bar-item" title="${dayKey(w)}：${title}"><span class="bar-value">${unit}</span><div class="bar-column ${isOuraAutoHabit(h)?'auto':''}" style="height:${Math.max(hit?5:2,pct)}%"></div><span class="bar-caption">${w.getMonth()+1}/${w.getDate()}</span></div>`;
 }).join('');const names=['月','火','水','木','金','土','日'];$('weekdayBars').innerHTML=a.weekday.map((o,i)=>{const pct=o.n?Math.round(100*o.hit/o.n):0;return `<div class="weekday-row"><span>${names[i]}</span><div class="weekday-track"><i style="width:${pct}%"></i></div><span>${o.hit}/${o.n}</span></div>`}).join('');const blanks=(a.days[0].getDay()+6)%7;$('heatGrid').innerHTML='<div class="heat-square blank"></div>'.repeat(blanks)+a.days.map(d=>{const active=eligibleHabitDay(h,dayKey(d)),done=active&&checked(d,id),missing=active&&isOuraMissing(d,id);return `<div class="heat-square ${!active?'blank':done?'done '+(isOuraAutoHabit(h)?'auto':'manual'):missing?'missing':''}" title="${dayKey(d)} ${!active?'習慣開始前（対象外）':done?'達成':missing?'Oura未取得':'未チェック'}">${active?d.getDate():'—'}</div>`}).join('');const ranks=displayHabits().map(h=>{const t=analyse(h.id,n);return{h,...t}}).sort((x,y)=>Number(isOuraAutoHabit(x.h))-Number(isOuraAutoHabit(y.h))||y.rate-x.rate);$('habitRank').innerHTML=`<table class="habit-ranking"><thead><tr><th>習慣</th><th>実績</th><th>実施日率</th><th>目標達成率</th></tr></thead><tbody>${ranks.map(r=>`<tr><td><span class="rank-habit-icon">${habitIconSvg(r.h.icon)}</span>${esc(r.h.name)}</td><td>${r.done}/${r.observed}日</td><td>${r.rate}%</td><td>${r.goal.goalRate===null?'—':r.goal.goalRate+'%'}</td></tr>`).join('')}</tbody></table>`}
 $('analysisHabit').addEventListener('change',()=>{renderAnalytics();renderOura()});$('analysisPeriod').addEventListener('change',renderAnalytics);
