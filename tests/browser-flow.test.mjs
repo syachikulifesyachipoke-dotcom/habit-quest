@@ -18,11 +18,14 @@ const findBrowser=()=>{
 const prelude=`<script>
 (()=>{
  const today=new Date(Date.now()+9*60*60*1000).toISOString().slice(0,10);
+ const previous=new Date(today.slice(0,7)+'-01T12:00:00Z');
+ previous.setUTCDate(0);
+ const lastMonthDay=previous.toISOString().slice(0,10);
  localStorage.setItem('habit-quest-v1',JSON.stringify({
   xpStartDate:today,
   habits:[{id:'baseline',name:'既存の習慣',icon:'book',target:7,ouraTrackingOnly:false}],
   checks:{'2026-01-01':{baseline:true}},
-  rewardedWeeks:[],avatarImages:{},ouraData:{},ouraTrackingVersion:3,
+  rewardedWeeks:[],avatarImages:{},ouraData:{[today]:{steps:8000},[lastMonthDay]:{steps:9000}},ouraTrackingVersion:3,
   ouraAutoEnabled:true,ouraAutoKeys:[],ouraSuppressedKeys:[]
  }));
 })();
@@ -43,6 +46,24 @@ const injection=`<script>
   requireOk(document.querySelectorAll('.game-screen:not([hidden])').length===1,'multiple screens visible');
  }
  requireOk(document.getElementById('settingsDetail').closest('#screen-options'),'settings were not moved into options');
+ requireOk(document.querySelectorAll('.group-streak').length===3,'three group streak indicators missing');
+ requireOk(document.getElementById('homeStepsValue').textContent==='8,000','home steps did not display imported Oura count');
+ requireOk(document.getElementById('homeStepsStatus').dataset.state==='under','exactly 8,000 must NOT qualify');
+ requireOk(document.getElementById('homeStepsSync'),'one-click Oura refresh absent');
+ document.getElementById('homeStepsOpen').click();
+ requireOk(!document.getElementById('stepsHistory').hidden,'history not open');
+ requireOk(document.getElementById('stepsHistoryList').textContent.includes('8,000歩'),'today missing from historical steps');
+ requireOk(document.getElementById('stepsHistoryList').textContent.includes('未達成'),'8,000 walking should be under threshold in history');
+ const monthBefore=document.getElementById('stepsHistoryMonth').textContent;
+ document.getElementById('stepsOlder').click();
+ requireOk(document.getElementById('stepsHistoryMonth').textContent!==monthBefore,'previous-month step history unavailable');
+ requireOk(document.getElementById('stepsHistoryList').textContent.includes('未取得'),'missing step dates should be distinguishable');
+ document.getElementById('stepsNewer').click();
+ requireOk(document.getElementById('stepsHistoryMonth').textContent===monthBefore,'step history next month did not restore current month');
+ document.getElementById('homeStepsOpen').click();
+ requireOk(document.getElementById('weeklyBoss'),'weekly boss encounter missing');
+ requireOk(document.querySelectorAll('.tracker-group-heading').length>=1,'tracker category headings missing');
+
  requireOk(!!document.getElementById('optionsExportBtn')&&!!document.getElementById('optionsImportBtn'),'backup shortcuts missing');
  document.getElementById('characterPat').click();
  requireOk(document.getElementById('characterReactionText').textContent.includes('ありがとう'),'companion pet reaction failed');
@@ -61,11 +82,15 @@ const injection=`<script>
  requireOk(document.getElementById('headerCoins').textContent==='—','offline coin HUD should show unavailable state');
  requireOk(/^\\d{4}-\\d{2}-\\d{2}$/.test(h.createdOn),'creation date missing');
  requireOk(h.ouraTrackingOnly===false&&h.missionEnabled===true,'manual category');
+ const bossHpBefore=Number(document.getElementById('bossHp').textContent.split('/')[0]);
  const currentButton=[...document.querySelectorAll('[data-habit="'+h.id+'"][data-day]')].find(x=>!x.disabled);
  requireOk(!!currentButton,'no available check button');
  currentButton.click();
  const day=currentButton.dataset.day;
  requireOk(state().checks[day]?.[h.id]===true,'check missing');
+ requireOk(document.getElementById('streakInvestment').textContent==='1','investment category streak must rise after custom habit check');
+ requireOk(document.querySelector('.tracker-group-heading[data-group="investment"]'),'investment category heading missing after adding habit');
+ requireOk(Number(document.getElementById('bossHp').textContent.split('/')[0])===bossHpBefore-20,'weekly boss damage is not aligned with checkbox');
  requireOk(document.getElementById('headerXp').textContent===document.getElementById('totalXp').textContent,'XP HUD did not update with daily check');
  requireOk(document.getElementById('journeyCount').textContent.includes('/ 7日'),'adventure map did not render');
  requireOk(document.getElementById('dailyQuestTitle').textContent.includes('達成'),'daily adventure did not celebrate a manual check');
@@ -194,6 +219,11 @@ test('headless Chrome: lifecycle and JSON backup/import preserve checks and XP',
    ['/coin-shop.js',fs.readFileSync(path.join(root,'coin-shop.js'),'utf8')],
    ['/coin-shop.css',fs.readFileSync(path.join(root,'coin-shop.css'),'utf8')],
    ['/resource-hud.css',fs.readFileSync(path.join(root,'resource-hud.css'),'utf8')],
+   ['/habit-groups.js',fs.readFileSync(path.join(root,'habit-groups.js'),'utf8')],
+   ['/weekly-boss.js',fs.readFileSync(path.join(root,'weekly-boss.js'),'utf8')],
+   ['/oura-steps.js',fs.readFileSync(path.join(root,'oura-steps.js'),'utf8')],
+   ['/reminder-calendar.js',fs.readFileSync(path.join(root,'reminder-calendar.js'),'utf8')],
+   ['/g6-gameplay.css',fs.readFileSync(path.join(root,'g6-gameplay.css'),'utf8')],
    ['/game-shell.css',fs.readFileSync(path.join(root,'game-shell.css'),'utf8')],
    ['/cloud-config.js','window.HABIT_QUEST_CLOUD={url:"",anonKey:""};']
  ]);
