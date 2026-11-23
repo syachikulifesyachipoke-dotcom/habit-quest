@@ -53,6 +53,7 @@ const check=`<script>
  const verify=(yes,msg)=>{if(!yes)throw Error(msg)};
  const blocked=new URLSearchParams(location.search).has('conflictingPhone');
  const saved=JSON.parse(localStorage.getItem('habit-quest-v1'));
+ verify(!!saved,'phone local state absent; mock SDK: '+Boolean(window.supabase?.createClient)+'; status: '+document.getElementById('cloudStatus').textContent);
  const reading=saved.habits.find(h=>h.id==='read');
  verify(!!reading,'reading habit disappeared');
  if(blocked){
