@@ -1,4 +1,4 @@
-const CACHE="habit-quest-offline-v4-github1";
+const CACHE="habit-quest-offline-v5-oura-auto";
 const ASSETS=["./","./index.html","./cloud-config.js","./manifest.webmanifest","./icon.svg","./privacy.html","./terms.html"];
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));self.skipWaiting()});
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
