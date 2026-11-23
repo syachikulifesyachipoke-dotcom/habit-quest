@@ -427,7 +427,7 @@ function checked(d,id){return !!state.checks[dayKey(d)]?.[id]}
 function weeklyFor(start){
  let done=0,target=0;
  const planned=state.habits.filter(h=>!h.ouraTrackingOnly);
- let all=false;
+ let all=true;
  for(const h of planned){
    // A newly added habit never creates missed obligations before its creation date.
    // The account's first-login XP start is independently preserved.
