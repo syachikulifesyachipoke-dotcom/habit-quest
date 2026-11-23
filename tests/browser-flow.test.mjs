@@ -15,6 +15,18 @@ const findBrowser=()=>{
   }
   return null;
 };
+const prelude=`<script>
+(()=>{
+ const today=new Date(Date.now()+9*60*60*1000).toISOString().slice(0,10);
+ localStorage.setItem('habit-quest-v1',JSON.stringify({
+  xpStartDate:today,
+  habits:[{id:'baseline',name:'既存の習慣',icon:'book',target:7,ouraTrackingOnly:false}],
+  checks:{'2026-01-01':{baseline:true}},
+  rewardedWeeks:[],avatarImages:{},ouraData:{},ouraTrackingVersion:3,
+  ouraAutoEnabled:true,ouraAutoKeys:[],ouraSuppressedKeys:[]
+ }));
+})();
+</script>`;
 const injection=`<script>
 (()=>{try {
  const requireOk=(yes,label)=>{if(!yes)throw Error(label)};
@@ -37,6 +49,7 @@ const injection=`<script>
  const day=currentButton.dataset.day;
  requireOk(state().checks[day]?.[h.id]===true,'check missing');
  const xpBefore=xp();
+ requireOk(Number(xpBefore.replace(/[^0-9]/g,''))===20,'XP baseline or pre-first-login exclusion failed: '+xpBefore);
  document.querySelector('[data-edit="'+h.id+'"]').click();
  document.getElementById('habitTarget').value='3';
  document.getElementById('habitWeeklyMission').checked=false;
@@ -72,7 +85,8 @@ test('headless Chrome: add, check, edit, archive and restore preserve XP and his
    return;
  }
  const raw=fs.readFileSync(path.join(root,'index.html'),'utf8');
- const app=raw.replace('</body>',injection+'</body>');
+ const app=raw.replace('<script src="./cloud-config.js"></script>',prelude+'<script src="./cloud-config.js"></script>')
+   .replace('</body>',injection+'</body>');
  assert.notEqual(app,raw,'browser fixture injection failed');
  const scripts=new Map([
    ['/index.html',app],
