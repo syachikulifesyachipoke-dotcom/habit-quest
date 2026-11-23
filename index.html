@@ -223,6 +223,7 @@ function awardCompletedOuraWeeks(days){
    if(weeklyFor(parseDay(week)).complete&&!state.rewardedWeeks.includes(week))state.rewardedWeeks.push(week);
  }
 }
+const OURA_ACTIVITY_JA={walking:'ウォーキング',housework:'家事',strengthtraining:'筋トレ',cycling:'自転車',running:'ランニング',pilates:'ピラティス',dance:'ダンス',yoga:'ヨガ',swimming:'水泳',hiking:'ハイキング',rowing:'ボート',elliptical:'クロストレーナー'};
 const OURA_AUTO_SPORTS=new Set(['strengthtraining','cycling','running','swimming','pilates','dance','yoga','rowing','elliptical','hiking']);
 function qualifiesOuraWorkout(w){
  if(!w?.start_time||!w?.end_time)return false;
@@ -292,7 +293,7 @@ async function renderOuraCandidates(daily){
    const day=dateInTokyo(w.start_time);
    if(!/^\d{4}-\d{2}-\d{2}$/.test(day))continue;
    if(!byDay.has(day))byDay.set(day,[]);
-   const activity=String(w.activity||'種類不明').replace(/[_-]+/g,' ').slice(0,55);
+   const rawActivity=String(w.activity||'種類不明'),activity=OURA_ACTIVITY_JA[rawActivity.toLowerCase().replace(/[^a-z]/g,'')]||rawActivity.replace(/[_-]+/g,' ').slice(0,55);
    if(!byDay.get(day).includes(activity))byDay.get(day).push(activity);
  }
  const qualifiedDates=new Set(workouts.filter(qualifiesOuraWorkout).map(w=>dateInTokyo(w.start_time)).filter(day=>day<=isoToday()));
