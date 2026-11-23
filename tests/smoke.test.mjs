@@ -158,7 +158,7 @@ test('five fixed navigation buttons link to live character/event/shop/options pa
  assert.match(html,/id="characterPat"/);
  assert.match(html,/id="eventChapters"/);
  assert.match(html,/id="shopFrames"/);
- assert.match(html,/id="optionsCloudOpen"/);
+ assert.match(html,/id="cloudToggle"/);
  assert.match(html,/function initGameShell\(/);
  assert.match(html,/function setGameScreen\(/);
  assert.match(html,/function showGameUnlock\(/);
