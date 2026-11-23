@@ -73,7 +73,7 @@ test('Chrome real interaction: region arrival overlay and final day-seven chapte
  assert.notEqual(raw,app);
  const resources=new Map([['/index.html',app],['/cloud-config.js','window.HABIT_QUEST_CLOUD={url:"",anonKey:""};']]);
  for(const file of ['goal-metrics.js','habit-lifecycle.js','sync-guard.js','sync-merge.js','daily-adventure.js',
-   'adventure-world.js','cloud-onboarding.js','game-shell.js','game-shell.css','coin-shop.js','coin-shop.css']){
+   'adventure-world.js','cloud-onboarding.js','game-shell.js','game-shell.css','coin-shop.js','coin-shop.css','resource-hud.css']){
   resources.set('/'+file,fs.readFileSync(path.join(root,file),'utf8'));
  }
  const server=http.createServer((request,response)=>{

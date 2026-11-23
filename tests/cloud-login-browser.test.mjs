@@ -71,7 +71,7 @@ const check=`<script>
  const verify=(yes,msg)=>{if(!yes)throw Error(msg)};
  const blocked=new URLSearchParams(location.search).has('conflictingPhone');
  const saved=JSON.parse(localStorage.getItem('habit-quest-v1'));
- verify(!!saved,'phone local state absent; mock SDK: '+Boolean(window.supabase?.createClient)+'; config: '+window.HABIT_QUEST_CLOUD?.url+'; game date: '+document.getElementById('nowDate').textContent+'; status: '+document.getElementById('cloudStatus').textContent+'; errors: '+JSON.stringify(window.__testErrors));
+ verify(!!saved,'phone local state absent; mock SDK: '+Boolean(window.supabase?.createClient)+'; config: '+window.HABIT_QUEST_CLOUD?.url+'; game date: '+document.getElementById('headerXp').textContent+'; status: '+document.getElementById('cloudStatus').textContent+'; errors: '+JSON.stringify(window.__testErrors));
  const reading=saved.habits.find(h=>h.id==='read');
  verify(!!reading,'reading habit disappeared');
  if(blocked){
@@ -100,7 +100,7 @@ test('Chrome simulated Supabase Auth login: pristine phone auto-syncs, edited ph
  const resources=new Map([['/index.html',app],
   ['/cloud-config.js','window.HABIT_QUEST_CLOUD={url:"https://test.supabase.co",anonKey:"sb_publishable_mock"};']]);
  for(const file of ['goal-metrics.js','habit-lifecycle.js','sync-guard.js','sync-merge.js','daily-adventure.js',
-    'adventure-world.js','cloud-onboarding.js','game-shell.js','game-shell.css','coin-shop.js','coin-shop.css']){
+    'adventure-world.js','cloud-onboarding.js','game-shell.js','game-shell.css','coin-shop.js','coin-shop.css','resource-hud.css']){
   resources.set('/'+file,fs.readFileSync(path.join(root,file),'utf8'));
  }
  const server=http.createServer((request,response)=>{

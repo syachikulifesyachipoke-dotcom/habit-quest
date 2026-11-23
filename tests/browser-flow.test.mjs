@@ -46,7 +46,8 @@ const injection=`<script>
  requireOk(!!document.getElementById('optionsExportBtn')&&!!document.getElementById('optionsImportBtn'),'backup shortcuts missing');
  document.getElementById('characterPat').click();
  requireOk(document.getElementById('characterReactionText').textContent.includes('ありがとう'),'companion pet reaction failed');
- requireOk(document.getElementById('characterMoodFace').textContent==='🥰','companion expression icon did not react');
+ requireOk(document.getElementById('characterPortrait').dataset.mood==='petted','companion portrait did not react');
+ requireOk(!document.getElementById('characterMoodFace')&&!document.getElementById('homeCompanionMood'),'emoji-face stickers must not exist');
  document.querySelector('#gameBottomNav [data-game-tab="home"]').click();
  const name='A2ブラウザ試験 '+Date.now();
  window.confirm=()=>true;
@@ -56,6 +57,8 @@ const injection=`<script>
  fireForm();
  let h=state().habits.find(x=>x.name===name);
  requireOk(!!h,'habit not saved');
+ requireOk(document.getElementById('headerXp').textContent===document.getElementById('totalXp').textContent,'header XP initially inconsistent');
+ requireOk(document.getElementById('headerCoins').textContent==='—','offline coin HUD should show unavailable state');
  requireOk(/^\\d{4}-\\d{2}-\\d{2}$/.test(h.createdOn),'creation date missing');
  requireOk(h.ouraTrackingOnly===false&&h.missionEnabled===true,'manual category');
  const currentButton=[...document.querySelectorAll('[data-habit="'+h.id+'"][data-day]')].find(x=>!x.disabled);
@@ -63,6 +66,7 @@ const injection=`<script>
  currentButton.click();
  const day=currentButton.dataset.day;
  requireOk(state().checks[day]?.[h.id]===true,'check missing');
+ requireOk(document.getElementById('headerXp').textContent===document.getElementById('totalXp').textContent,'XP HUD did not update with daily check');
  requireOk(document.getElementById('journeyCount').textContent.includes('/ 7日'),'adventure map did not render');
  requireOk(document.getElementById('dailyQuestTitle').textContent.includes('達成'),'daily adventure did not celebrate a manual check');
  requireOk(document.getElementById('journeyBadgeTitle').textContent==='旅立ちの証','first adventure badge did not unlock');
@@ -136,7 +140,10 @@ const injection=`<script>
  const fileInput=document.getElementById('fileInput');
  fileInput.files=dt.files;
  fileInput.dispatchEvent(new Event('change',{bubbles:true}));
- await new Promise(resolve=>setTimeout(resolve,90));
+ // File.text() and the import change listener are async: wait for the actual
+ // restored check, not a brittle fixed 90ms on virtual-time Chrome.
+ for(let i=0;i<30&&state().checks[day]?.[h.id]!==true;i++)
+  await new Promise(resolve=>setTimeout(resolve,50));
  const reimported=state().habits.find(x=>x.id===h.id);
  requireOk(state().checks[day]?.[h.id]===true,'JSON import failed to restore check');
  requireOk(reimported.targetHistory?.length>0&&reimported.activeIntervals?.length>0,'JSON import lost lifecycle');
@@ -147,6 +154,11 @@ const injection=`<script>
  requireOk(document.querySelectorAll('#worldDiaryList .world-diary-entry').length===1,'backup restore did not restore diary');
  if(new URLSearchParams(location.search).has('mobileTest')){
   requireOk(window.innerWidth<=580,'mobile viewport not active: '+window.innerWidth);
+  requireOk(!document.getElementById('headerCoins').hidden,'mobile coin HUD not visible');
+  const header=document.querySelector('header.header').getBoundingClientRect();
+  const last=document.getElementById('headerCoins').closest('.resource-pill').getBoundingClientRect();
+  requireOk(last.right<=header.right+2,'resource HUD overflows header on narrow screen');
+  requireOk(last.left>=header.left-2,'resource HUD is not inside header');
   requireOk(getComputedStyle(document.querySelector('main>.intro')).order==='0','mobile RPG card not first');
   requireOk(getComputedStyle(document.querySelector('main>.content')).order==='1','mobile tracker not second');
   requireOk(document.querySelectorAll('.habit-row').length>0,'mobile habit rows not rendered');
@@ -181,6 +193,7 @@ test('headless Chrome: lifecycle and JSON backup/import preserve checks and XP',
    ['/game-shell.js',fs.readFileSync(path.join(root,'game-shell.js'),'utf8')],
    ['/coin-shop.js',fs.readFileSync(path.join(root,'coin-shop.js'),'utf8')],
    ['/coin-shop.css',fs.readFileSync(path.join(root,'coin-shop.css'),'utf8')],
+   ['/resource-hud.css',fs.readFileSync(path.join(root,'resource-hud.css'),'utf8')],
    ['/game-shell.css',fs.readFileSync(path.join(root,'game-shell.css'),'utf8')],
    ['/cloud-config.js','window.HABIT_QUEST_CLOUD={url:"",anonKey:""};']
  ]);
@@ -201,7 +214,7 @@ test('headless Chrome: lifecycle and JSON backup/import preserve checks and XP',
      const args=['--headless=new','--disable-gpu','--no-sandbox','--disable-dev-shm-usage',
        '--disable-background-networking','--no-first-run','--disable-extensions',
        '--window-size='+scenario.size,'--user-data-dir='+profile,
-       '--virtual-time-budget=2500','--dump-dom',target];
+       '--virtual-time-budget=6500','--dump-dom',target];
      const p=spawn(executable,args,{stdio:['ignore','pipe','pipe']});
      p.stdout.on('data',d=>stdout+=d.toString());
      p.stderr.on('data',d=>stderr+=d.toString());
