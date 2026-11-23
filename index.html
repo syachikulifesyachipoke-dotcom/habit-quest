@@ -227,25 +227,26 @@
 </section>
 <main>
 <section class="intro">
- <div class="hero"><div class="eyebrow">YOUR DAILY ADVENTURE</div><h2>今日の一歩で、<br><em>未来の自分を進化させる。</em></h2><p class="hero-sub">小さな習慣が経験値になる。1日ずつ積み重ねて、<br>あなただけの相棒を育てていこう。</p><div class="hero-counters"><div class="counter"><strong id="todayDone">0/0</strong><label>今日の達成（登録済み全項目）</label></div><div class="counter"><strong id="streak">0<span style="font-size:14px"> 日</span></strong><label title="手動習慣を1つ以上達成した連続日数（当日未記録なら昨日まで）">連続記録日数（手動1項目以上）ⓘ</label></div><div class="counter"><strong id="totalXp">0</strong><label>開始日以降の XP</label></div></div></div>
+ <div class="hero"><div class="eyebrow">YOUR DAILY ADVENTURE</div><h2>今日の一歩で、<br><em>未来の自分を進化させる。</em></h2><p class="hero-sub">小さな習慣が経験値になる。1日ずつ積み重ねて、<br>あなただけの相棒を育てていこう。</p><div class="hero-counters"><div class="counter"><strong id="todayDone">0/0</strong><label>今日の達成（進行中の全項目）</label></div><div class="counter"><strong id="streak">0<span style="font-size:14px"> 日</span></strong><label title="手動習慣を1項目以上達成した連続日数（当日未記録なら昨日まで）">連続記録日数（手動1項目以上）ⓘ</label></div><div class="counter"><strong id="totalXp">0</strong><label>開始日以降の XP</label></div></div></div>
  <div class="companion-card"><div class="companion-top"><span class="tag" id="evoTag">✦ 進化のたまご</span><div class="level" id="levelLabel">Lv. 1</div></div><div class="avatar-box" id="avatar"></div><div class="companion-bottom"><div><div class="companion-title" id="stageName">星のたまご</div><div class="companion-next" id="nextEvolution">Lv.3で次の姿に進化</div></div><div><div class="xp-val" id="xpLabel">0 / 40 XP</div><div class="xp-start-line" id="xpStartLine">XP開始日：ログイン時に確定</div></div></div><div class="progress"><i id="xpBar"></i></div></div>
 </section>
 <section class="content">
- <div class="panel"><div class="panel-heading"><div><h3 class="hq-section-heading"><span data-hq-icon="calendar"></span>週間トラッカー</h3><div class="subheading">今日からの達成に +20 XP <span class="mobile-grid-hint">・スマホは1行で7日をチェック</span></div></div><div class="week-nav"><span class="week-range" id="weekRange"></span><button class="btn icon-btn" id="prevWeek" aria-label="前の週">‹</button><button class="btn" id="thisWeek">今週</button><button class="btn icon-btn" id="nextWeek" aria-label="次の週">›</button></div></div><div id="tracker" class="tracker"></div><div class="tracker-footer"><div class="legend"><span><i class="dot dot-manual"></i>手動チェック</span><span><i class="dot dot-oura"></i>Oura自動</span><span><i class="dot empty"></i>未チェック</span></div><button class="btn primary" id="addHabit">＋ 習慣を追加</button></div></div>
+ <div class="panel"><div class="panel-heading"><div><h3 class="hq-section-heading"><span data-hq-icon="calendar"></span>週間トラッカー</h3><div class="subheading">今日からの達成に +20 XP <span class="mobile-grid-hint">・スマホは1行で7日をチェック</span></div></div><div class="week-nav"><span class="week-range" id="weekRange"></span><button class="btn icon-btn" id="prevWeek" aria-label="前の週">‹</button><button class="btn" id="thisWeek">今週</button><button class="btn icon-btn" id="nextWeek" aria-label="次の週">›</button></div></div><div id="tracker" class="tracker"></div><div class="tracker-footer"><div class="legend"><span><i class="dot dot-manual"></i>手動チェック</span><span><i class="dot dot-oura"></i>Oura自動</span><span><i class="dot empty"></i>未チェック</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" id="archiveJump">休止中の習慣 <span id="archiveCount">0</span></button><button class="btn primary" id="addHabit">＋ 習慣を追加</button></div></div></div>
  <aside class="side-stack">
-  <section class="panel quest-panel"><h3 class="hq-section-heading"><span data-hq-icon="trophy"></span>今週のミッション</h3><p class="subheading">手動習慣の週目標合計（Oura自動は対象外）</p><div class="quest-row" style="margin-top:20px"><div class="ring" id="ring"><div class="ring-core"><strong id="weekRate">0%</strong><span>達成率</span></div></div><div><div class="quest-title" id="weekCount">0 / 0 回</div><div class="quest-explain">「週◯回」を合計した数字です。習慣の項目数ではありません。</div></div></div><div class="chest" id="chest"><div class="chest-emoji" id="chestEmoji">🎁</div><div><strong id="chestTitle">ウィークリー宝箱</strong><small id="chestText">全目標達成で +100 XP</small></div></div><div class="stats-grid"><div class="mini-stat"><strong id="totalChecks">0</strong><span>累計チェック数</span></div><div class="mini-stat"><strong id="clearWeeks">0</strong><span>目標達成した週</span></div></div></section>
+  <section class="panel quest-panel"><h3 class="hq-section-heading"><span data-hq-icon="trophy"></span>今週のミッション</h3><p class="subheading">週間ミッションONの習慣の目標合計（Ouraも設定可能）</p><div class="quest-row" style="margin-top:20px"><div class="ring" id="ring"><div class="ring-core"><strong id="weekRate">0%</strong><span>達成率</span></div></div><div><div class="quest-title" id="weekCount">0 / 0 回</div><div class="quest-explain">「週◯回」を合計した数字です。習慣の項目数ではありません。</div></div></div><div class="chest" id="chest"><div class="chest-emoji" id="chestEmoji">🎁</div><div><strong id="chestTitle">ウィークリー宝箱</strong><small id="chestText">全目標達成で +100 XP</small></div></div><div class="stats-grid"><div class="mini-stat"><strong id="totalChecks">0</strong><span>累計チェック数</span></div><div class="mini-stat"><strong id="clearWeeks">0</strong><span>目標達成した週</span></div></div></section>
   <section class="panel"><h3 class="hq-section-heading"><span data-hq-icon="sparkles"></span>進化図鑑</h3><p class="subheading">レベルを上げると相棒が進化</p><div class="evo-list" id="evoList"></div><details id="evoCatalog" class="evo-catalog"><summary>レベル1〜50の進化図鑑を開く</summary><div id="evoAllList" class="evo-all-list"></div></details></section>
  </aside>
 </section>
 
 <section class="section-v2 panel v2-panel" id="analyticsSection">
  <div class="v2-title-row"><div><h3 class="hq-section-heading"><span data-hq-icon="chart"></span>習慣分析</h3><p class="subheading">達成記録を、継続の改善につながる数字に変える</p></div><div class="v2-controls"><select id="analysisHabit" aria-label="分析する習慣"></select><select id="analysisPeriod" aria-label="集計期間"><option value="7">直近1週間（7日）</option><option value="30" selected>直近1か月（30日）</option><option value="90">直近3か月（90日）</option><option value="180">直近6か月（180日）</option><option value="365">直近1年（365日）</option></select><button class="btn" id="exportCsv">CSV出力</button></div></div>
- <div class="metric-cards"><div class="metric-card"><strong id="metricDone">0 / 0日</strong><span>達成日数 / 対象日数</span></div><div class="metric-card"><strong id="metricRate">0%</strong><span id="metricRateLabel">期間内の記録率</span></div><div class="metric-card"><strong id="metricStreak">0日</strong><span>期間内の最長連続日数</span></div><div class="metric-card"><strong id="metricWeeks">0週</strong><span id="metricWeeksLabel">週目標を達成した週数（完了週）</span></div><div class="metric-card"><strong id="metricRating">—</strong><span>達成評価</span></div></div>
+ <div class="metric-cards"><div class="metric-card"><strong id="metricDone">0 / 0日</strong><span>達成日数 / 対象日数</span></div><div class="metric-card"><strong id="metricRate">0%</strong><span id="metricRateLabel">実施日率</span></div><div class="metric-card"><strong id="metricGoal">—</strong><span id="metricGoalLabel">週目標換算の達成率</span></div><div class="metric-card"><strong id="metricStreak">0日</strong><span>期間内の最長連続日数</span></div><div class="metric-card"><strong id="metricWeeks">0週</strong><span id="metricWeeksLabel">週目標を達成した週数（完了週）</span></div><div class="metric-card"><strong id="metricRating">—</strong><span>達成評価</span></div></div>
+ <p class="small-note" id="goalMethodNote">目標達成率は、週目標回数を選択期間の計測日数に換算して評価します。実施日率とは別の指標です。</p>
  <div class="v2-chart-grid"><div class="chart-panel"><div class="chart-title">直近8週間の達成回数（選択した習慣）</div><div id="weekBars" class="bars"></div><p class="small-note">棒の高さは週目標に対する進捗率（上限100%）。棒の上に達成回数を表示します。今週は途中経過です。</p></div><div class="chart-panel"><div class="chart-title">曜日別のチェック率（選択した期間）</div><div id="weekdayBars" class="weekday-rows"></div><p class="small-note spaced">その曜日が期間内に登場した日数を分母としています。</p></div></div>
- <div class="chart-panel spaced"><div class="chart-title">日別の達成カレンダー <span id="heatLabel" class="muted"></span></div><div id="heatGrid" class="heat-grid"></div><p class="small-note">紫＝手動で達成、青緑＝Oura自動、灰色＝未チェック、斜線＝Oura未取得（欠測）。欠測日はOuraの記録率の分母に含めません。</p></div>
+ <div class="chart-panel spaced"><div class="chart-title">日別の達成カレンダー <span id="heatLabel" class="muted"></span></div><div id="heatGrid" class="heat-grid"></div><p class="small-note">紫＝手動で達成、青緑＝Oura自動、灰色＝未チェック、斜線＝Oura未取得（欠測）。習慣の登録日より前は対象外です。欠測日はOuraの実施日率の分母に含めません。</p></div>
  <div class="chart-panel spaced"><div class="chart-title">全習慣の比較（選択した期間）</div><div id="habitRank"></div></div>
 </section>
-<details class="extra-accord" id="settingsDetail"><summary>⚙ 設定・連携・画像管理</summary><div class="settings-inner"><p class="small-note">画像・Oura連携をここで管理します。</p><details class="extra-accord"><summary>🎨 キャラクター画像の管理</summary><section class="section-v2 panel v2-panel" id="artSection">
+<details class="extra-accord" id="settingsDetail"><summary>⚙ 設定・連携・画像管理</summary><div class="settings-inner"><p class="small-note">習慣の休止・再開、画像、Oura連携をここで管理します。</p><details class="extra-accord" id="archiveSection"><summary>📦 休止中の習慣を管理</summary><div class="panel" style="padding:16px"><p class="small-note">休止しても過去のチェックとXPは保持されます。再開すると過去の履歴も同じ習慣に戻り、休止日を達成率の分母に含めません。</p><div id="archivedHabitList"></div></div></details><details class="extra-accord"><summary>🎨 キャラクター画像の管理</summary><section class="section-v2 panel v2-panel" id="artSection">
  <div class="v2-title-row"><div><h3 class="hq-section-heading"><span data-hq-icon="palette"></span>キャラクター画像の管理</h3><p class="subheading">進化段階ごとに画像を登録できます。画像はこの端末だけに保存し、クラウドにアップロードしません。</p></div></div>
  <div id="artGrid" class="art-grid"></div>
  <input id="artFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
@@ -263,9 +264,12 @@
 </main><footer class="bottom-foot">HABIT QUEST · 習慣を冒険に変える</footer>
 <div class="site-links"><a href="./privacy.html">プライバシー</a> · <a href="./terms.html">利用規約</a></div>
 </div>
-<div class="modal-backdrop" id="modalBackdrop" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><h3 id="modalTitle">習慣を追加</h3><p>週の目標回数を決めて、あなたの冒険を始めましょう。</p><form id="habitForm"><div class="field"><label for="habitName">習慣の名前</label><input id="habitName" maxlength="28" placeholder="例：朝の散歩" required></div><div class="inline-fields"><div class="field"><label for="habitIcon">アイコン</label><div class="habit-icon-select"><span id="habitIconPreview" class="habit-icon preview-icon"></span><select id="habitIcon"><option value="sunrise">日の出</option><option value="dumbbell">筋トレ</option><option value="bike">サイクリング</option><option value="footsteps">ウォーキング</option><option value="run">ランニング</option><option value="book">学習</option><option value="bookopen">読書</option><option value="pen">記録・日記</option><option value="yoga">ヨガ・瞑想</option><option value="waves">水泳</option><option value="music">ダンス</option><option value="droplets">水分補給</option><option value="utensils">食事</option><option value="laptop">制作</option><option value="sparkles">その他</option></select></div></div><div class="field"><label for="habitTarget">週の目標回数</label><select id="habitTarget"><option value="1">週1回</option><option value="2">週2回</option><option value="3">週3回</option><option value="4">週4回</option><option value="5">週5回</option><option value="6">週6回</option><option value="7">毎日（週7回）</option></select></div></div><div class="modal-actions"><button type="button" class="btn danger" id="deleteHabit" hidden>削除</button><div style="margin-left:auto"><button type="button" class="btn ghost" id="cancelModal">キャンセル</button><button type="submit" class="btn primary" id="saveHabit">追加する</button></div></div></form></div></div>
+<div class="modal-backdrop" id="modalBackdrop" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><h3 id="modalTitle">習慣を追加</h3><p>週の目標回数を決めて、あなたの冒険を始めましょう。</p><form id="habitForm"><div class="field"><label for="habitName">習慣の名前</label><input id="habitName" maxlength="28" placeholder="例：朝の散歩" required></div><div class="inline-fields"><div class="field"><label for="habitIcon">アイコン</label><div class="habit-icon-select"><span id="habitIconPreview" class="habit-icon preview-icon"></span><select id="habitIcon"><option value="sunrise">日の出</option><option value="dumbbell">筋トレ</option><option value="bike">サイクリング</option><option value="footsteps">ウォーキング</option><option value="run">ランニング</option><option value="book">学習</option><option value="bookopen">読書</option><option value="pen">記録・日記</option><option value="yoga">ヨガ・瞑想</option><option value="waves">水泳</option><option value="music">ダンス</option><option value="droplets">水分補給</option><option value="utensils">食事</option><option value="laptop">制作</option><option value="sparkles">その他</option></select></div></div><div class="field"><label for="habitTarget">週の目標回数</label><select id="habitTarget"><option value="1">週1回</option><option value="2">週2回</option><option value="3">週3回</option><option value="4">週4回</option><option value="5">週5回</option><option value="6">週6回</option><option value="7">毎日（週7回）</option></select></div></div><div class="field"><label style="display:flex;align-items:center;gap:9px"><input type="checkbox" id="habitWeeklyMission" style="width:18px;height:18px;accent-color:#ab8afd">週間ミッションに含める</label><span class="small-note">OFFの場合もチェック・XP・個別分析は利用できます。Oura自動項目は初期状態でOFFです。</span></div><div class="modal-actions"><button type="button" class="btn danger" id="deleteHabit" hidden>休止する</button><div style="margin-left:auto"><button type="button" class="btn ghost" id="cancelModal">キャンセル</button><button type="submit" class="btn primary" id="saveHabit">追加する</button></div></div></form></div></div>
 <div class="toast-wrap" id="toasts" aria-live="polite"></div>
 <script src="./cloud-config.js"></script>
+<script src="./goal-metrics.js"></script>
+<script src="./habit-lifecycle.js"></script>
+<script src="./sync-guard.js"></script>
 <script>
 (()=>{'use strict';
 const KEY='habit-quest-v1', XP_CHECK=20, XP_WEEK=100;
@@ -331,7 +335,7 @@ const HIDDEN_OURA_HABITS=new Set(['oura_pilates','oura_dance']);
 const AUTO_DISPLAY_ORDER=['wake','oura_strengthtraining','oura_cycling','oura_walking','oura_running','oura_swimming','oura_yoga','oura_hiking','oura_rowing','oura_elliptical'];
 function isOuraAutoHabit(h){return h.id==='wake'||h.id.startsWith('oura_')}
 function displayHabits(){
- const indexed=state.habits.map((h,i)=>({h,i}));
+ const indexed=state.habits.map((h,i)=>({h,i})).filter(({h})=>!window.HabitQuestLifecycle.archived(h));
  return indexed.sort((a,b)=>{
    const aAuto=isOuraAutoHabit(a.h),bAuto=isOuraAutoHabit(b.h);
    if(aAuto!==bAuto)return aAuto?1:-1;
@@ -365,7 +369,7 @@ function markFirstLoginDate(user){
  }
 }
 function normalizeHabitState(input){
- const s={...input,xpStartDate:validXpStartDate(input.xpStartDate),habits:(input.habits||[]).map(h=>({...h})),checks:Object.fromEntries(Object.entries(input.checks||{}).map(([day,v])=>[day,{...v}]))};
+ const s={...input,xpStartDate:validXpStartDate(input.xpStartDate),habits:(input.habits||[]).map(h=>window.HabitQuestLifecycle.normalize({...h,createdOn:habitCreatedOn(h)})),checks:Object.fromEntries(Object.entries(input.checks||{}).map(([day,v])=>[day,{...v}]))};
  if(Number(input.ouraTrackingVersion||0)<3){
    // Legacy version marked multiple exercise types together as "train".
    // Remove only those 8-style Oura-sourced checks; keep any manual exercise checks.
@@ -407,6 +411,8 @@ function validAvatarImages(a){const o={};if(a&&typeof a==='object')for(const [k,
 function validOuraData(a){const o={};if(a&&typeof a==='object')for(const [day,row] of Object.entries(a)){if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!row||typeof row!=='object')continue;const safe={};for(const k of ['sleep','readiness','steps'])if(row[k]!==null&&Number.isFinite(Number(row[k])))safe[k]=Math.round(Number(row[k]));if(Object.keys(safe).length)o[day]=safe}return o}
 function safeOuraDates(raw){return Array.isArray(raw)?[...new Set(raw.filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)))].slice(-1000):[]}
 function validHabit(h){return h&&typeof h.id==='string'&&typeof h.name==='string'&&typeof h.icon==='string'&&Number.isInteger(Number(h.target))&&+h.target>=1&&+h.target<=7}
+function habitCreatedOn(h){return validXpStartDate(h?.createdOn)}
+function eligibleHabitDay(h,key){return window.HabitQuestLifecycle.activeOn(h,key)}
 function store(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){toast('保存できません。ブラウザの空き容量をご確認ください。')} cloud.seq++;if(cloud.ready&&!cloud.blocked){cloudMessage('変更を保存しました。クラウド同期待ち…');scheduleCloudSave()}}
 const pad=n=>String(n).padStart(2,'0');
 function dayKey(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
@@ -421,18 +427,15 @@ function isoToday(){return dateInTokyo(new Date())}
 function dayCount(){return Object.keys(state.checks).filter(k=>state.habits.some(h=>state.checks[k]&&state.checks[k][h.id])).length}
 function checked(d,id){return !!state.checks[dayKey(d)]?.[id]}
 function weeklyFor(start){
- let done=0,target=0;
- const planned=state.habits.filter(h=>!h.ouraTrackingOnly);
- const days=weekDays(start).filter(d=>dayKey(d)>=xpStartDate());
- let all=planned.length>0&&days.length>0;
- for(const h of planned){
-   // First login can be midweek: prorate the possible weekly target, never use earlier check marks.
-   const available=Math.min(h.target,days.length);
-   const count=days.filter(d=>checked(d,h.id)).length;
-   done+=Math.min(count,available);target+=available;
-   if(count<available)all=false;
+ let done=0,target=0,all=true;
+ const days=weekDays(start).map(dayKey);
+ for(const h of state.habits){
+   const p=window.HabitQuestLifecycle.weekProgress(h,days,(key,id)=>state.checks[key]?.[id]===true,xpStartDate());
+   if(!p.target)continue;
+   done+=p.done;target+=p.target;
+   if(!p.complete)all=false;
  }
- return{done,target,complete:all};
+ return{done,target,complete:target>0&&all};
 }
 function weekKeysWithData(){const set=new Set();for(const [key,checks] of Object.entries(state.checks)){if(Object.values(checks).some(Boolean)&&/^\d{4}-\d{2}-\d{2}$/.test(key)){const d=parseDay(key);if(!isNaN(d))set.add(dayKey(weekStart(d)))}}return [...set]}
 function stats(){
@@ -446,7 +449,7 @@ function stats(){
  const completedWeeks=begin?state.rewardedWeeks.filter(key=>validXpStartDate(key)&&dayKey(addDay(parseDay(key),6))>=begin).length:0;
  const xp=xpChecks*XP_CHECK+completedWeeks*XP_WEEK,level=levelFromXp(xp);
  let streak=0,d=parseDay(isoToday());
- const anyDone=k=>state.habits.some(h=>!h.ouraTrackingOnly&&state.checks[dayKey(k)]?.[h.id]===true);
+ const anyDone=k=>state.habits.some(h=>{const day=dayKey(k);return !isOuraAutoHabit(h)&&eligibleHabitDay(h,day)&&state.checks[day]?.[h.id]===true});
  if(!anyDone(d))d=addDay(d,-1);
  while(begin&&dayKey(d)>=begin&&anyDone(d)){streak++;d=addDay(d,-1);if(streak>20000)break}
  return{checks,xpChecks,completedWeeks,xp,level,streak};
@@ -454,20 +457,35 @@ function stats(){
 function esc(str){return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function avatarSvg(stage){const palette=[['#c5a0ff','#6b4ac9'],['#7aead6','#28ae9f'],['#87bbff','#4b65c9'],['#ffba87','#f07969'],['#ecc7ff','#9e6fef']][stage];if(stage===0)return `<svg class="avatar-svg" viewBox="0 0 300 240" role="img" aria-label="星のたまご"><defs><radialGradient id="eg" cx="35%" cy="25%"><stop stop-color="#fff4ff"/><stop offset=".54" stop-color="#c2a5ff"/><stop offset="1" stop-color="#7163c8"/></radialGradient></defs><g opacity=".6" fill="#d6c6ff"><path d="M63 62l4 10 10 4-10 4-4 10-4-10-10-4 10-4z"/><path d="M238 50l4 9 9 4-9 4-4 9-4-9-9-4 9-4z"/><circle cx="55" cy="147" r="3"/><circle cx="249" cy="155" r="3"/></g><ellipse cx="150" cy="218" rx="74" ry="13" fill="#7663bd" opacity=".18"/><path d="M150 24C105 24 73 91 73 145c0 49 36 78 77 78s77-29 77-78c0-54-32-121-77-121Z" fill="url(#eg)" stroke="#e0d2ff" stroke-width="4"/><ellipse cx="120" cy="83" rx="20" ry="42" fill="white" opacity=".23" transform="rotate(28 120 83)"/><path d="M137 119l13 9-10 13 17 10-12 16" fill="none" stroke="#f3e8ff" stroke-width="5" stroke-linecap="round"/><circle cx="104" cy="157" r="6" fill="#9b80ee" opacity=".65"/><circle cx="190" cy="118" r="8" fill="#f1ddff" opacity=".8"/><circle cx="181" cy="181" r="5" fill="#9477d9" opacity=".65"/></svg>`;
 const [light,dark]=palette[stage%palette.length], wings=stage>=2, fire=stage>=3, star=stage>=4;return `<svg class="avatar-svg" viewBox="0 0 300 250" role="img" aria-label="${EVO[stage].name}"><defs><linearGradient id="bodyG" x1="0" x2="1" y1="0" y2="1"><stop stop-color="${light}"/><stop offset="1" stop-color="${dark}"/></linearGradient><linearGradient id="wingG" x1="0" x2="0" y1="0" y2="1"><stop stop-color="${light}"/><stop offset="1" stop-color="${dark}"/></linearGradient></defs><g opacity=".9" fill="#f4d9ff"><path d="M47 45l4 9 9 4-9 4-4 9-4-9-9-4 9-4z"/><path d="M249 30l5 12 12 5-12 5-5 12-5-12-12-5 12-5z"/></g>${wings?`<path d="M118 125C72 103 67 54 34 76c6 22-4 45-15 63 30-8 65 4 98 35Z" fill="url(#wingG)" stroke="${dark}" stroke-width="5"/><path d="M181 125c47-22 52-71 84-49-5 22 5 45 16 63-30-8-65 4-98 35Z" fill="url(#wingG)" stroke="${dark}" stroke-width="5"/><path d="M37 78l45 57M264 78l-45 57" fill="none" stroke="#fff" opacity=".36" stroke-width="3"/>`:''}<path d="M184 173c54-31 75-15 78 13-23-11-43 36-90 13" fill="${dark}" stroke="#34335c" stroke-width="4"/><ellipse cx="148" cy="168" rx="64" ry="64" fill="url(#bodyG)" stroke="#2b365a" stroke-width="5"/><ellipse cx="149" cy="181" rx="42" ry="43" fill="#fff2dc" opacity=".84"/><path d="M109 210c-28-3-35 24-7 27h28l4-25M171 212l4 25h28c27-2 21-30-7-27" fill="${dark}" stroke="#364164" stroke-width="4" stroke-linejoin="round"/><path d="M90 91 70 46q37 6 53 44M176 88l40-43q-6 42-23 62" fill="${dark}" stroke="#2c3559" stroke-width="5"/><ellipse cx="150" cy="114" rx="71" ry="59" fill="url(#bodyG)" stroke="#2b365a" stroke-width="5"/><ellipse cx="150" cy="139" rx="46" ry="25" fill="${light}" opacity=".85"/><ellipse cx="122" cy="112" rx="14" ry="17" fill="#fff"/><ellipse cx="177" cy="112" rx="14" ry="17" fill="#fff"/><ellipse cx="126" cy="114" rx="6" ry="9" fill="#222b4b"/><ellipse cx="174" cy="114" rx="6" ry="9" fill="#222b4b"/><circle cx="129" cy="110" r="2.5" fill="#fff"/><circle cx="176" cy="110" r="2.5" fill="#fff"/><ellipse cx="105" cy="139" rx="12" ry="7" fill="#e87593" opacity=".43"/><ellipse cx="195" cy="139" rx="12" ry="7" fill="#e87593" opacity=".43"/><path d="M139 150q11 11 22 0" fill="none" stroke="#323656" stroke-width="3" stroke-linecap="round"/><circle cx="138" cy="135" r="3" fill="#59556f"/><circle cx="163" cy="135" r="3" fill="#59556f"/>${fire?`<path d="M232 143c20-25 3-37 15-59 23 29 34 44 19 64 15-5 19-13 22-22 18 34-14 58-43 47 20-13 9-25 4-31-1 17-9 17-17 1" fill="#ffae65" stroke="#ff7568" stroke-width="4"/>`:''}${star?`<path d="M149 13l9 23 23 2-19 15 6 22-19-14-20 14 6-22-18-15 23-2Z" fill="#ffe6a7" stroke="#f3b6ff" stroke-width="4"/>`:''}</svg>`}
-function render(){const t=parseDay(isoToday()),start=addDay(weekStart(t),offset*7),days=weekDays(start),w=weeklyFor(start),s=stats(),today=isoToday();$('nowDate').textContent=t.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});$('todayDone').textContent=`${state.habits.filter(h=>checked(t,h.id)).length}/${state.habits.length}`;$('streak').innerHTML=`${s.streak}<span style="font-size:14px"> 日</span>`;$('totalXp').textContent=s.xp.toLocaleString();$('xpStartLine').textContent='XP開始 '+(validXpStartDate(state.xpStartDate)||'ログイン時に設定')+'（過去の履歴はXPに含めない）';$('totalChecks').textContent=s.checks.toLocaleString();$('clearWeeks').textContent=s.completedWeeks;$('levelLabel').textContent=`Lv. ${s.level}`;const stage=[...EVO].reverse().find(e=>s.level>=e.lv);const stageNo=EVO.indexOf(stage),next=EVO[stageNo+1];$('evoTag').textContent=`✦ ${stage.tag}`;$('stageName').textContent=stage.name;$('nextEvolution').textContent=next?`Lv.${next.lv}で${next.name}に進化`:'最高段階に到達！';renderAvatar(stageNo);const maxed=s.level>=MAX_LEVEL;
+function render(){const t=parseDay(isoToday()),start=addDay(weekStart(t),offset*7),days=weekDays(start),w=weeklyFor(start),s=stats(),today=isoToday();$('nowDate').textContent=t.toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});$('todayDone').textContent=`${displayHabits().filter(h=>checked(t,h.id)).length}/${displayHabits().length}`;$('streak').innerHTML=`${s.streak}<span style="font-size:14px"> 日</span>`;$('totalXp').textContent=s.xp.toLocaleString();$('xpStartLine').textContent='XP開始 '+(validXpStartDate(state.xpStartDate)||'ログイン時に設定')+'（過去の履歴はXPに含めない）';$('totalChecks').textContent=s.checks.toLocaleString();$('clearWeeks').textContent=s.completedWeeks;$('levelLabel').textContent=`Lv. ${s.level}`;const stage=[...EVO].reverse().find(e=>s.level>=e.lv);const stageNo=EVO.indexOf(stage),next=EVO[stageNo+1];$('evoTag').textContent=`✦ ${stage.tag}`;$('stageName').textContent=stage.name;$('nextEvolution').textContent=next?`Lv.${next.lv}で${next.name}に進化`:'最高段階に到達！';renderAvatar(stageNo);const maxed=s.level>=MAX_LEVEL;
 const into=maxed?threshold(MAX_LEVEL):s.xp-threshold(s.level),needed=maxed?threshold(MAX_LEVEL):threshold(s.level+1)-threshold(s.level);
 $('xpLabel').textContent=maxed?'MAX Lv.50':`${into} / ${needed} XP`;
 $('xpBar').style.width=maxed?'100%':`${Math.max(0,Math.min(100,100*into/needed))}%`;$('weekRange').textContent=`${start.getMonth()+1}/${start.getDate()} – ${days[6].getMonth()+1}/${days[6].getDate()}`;
 let html=`<div class="track-head"><div>習慣 / 週の目標</div>${days.map(d=>`<div class="day ${dayKey(d)===today?'today':''}">${['日','月','火','水','木','金','土'][d.getDay()]}<b>${d.getDate()}</b></div>`).join('')}<div class="rate">達成数</div></div>`;
-if(!state.habits.length)html+='<div class="empty-habits">まだ習慣がありません。「＋ 習慣を追加」から始めましょう。</div>';
+if(!displayHabits().length)html+='<div class="empty-habits">現在進行中の習慣はありません。「＋ 習慣を追加」または「休止中の習慣」から再開できます。</div>';
 for(const h of displayHabits()){
   const group=isOuraAutoHabit(h)?'auto':'manual';
- const count=days.filter(d=>checked(d,h.id)).length;
- html+=`<div class="habit-row habit-row--${group}"><div class="habit-info"><div class="habit-icon">${habitIconSvg(h.icon)}</div><div class="habit-label"><button type="button" class="habit-name habit-detail-trigger" data-detail="${esc(h.id)}" title="達成分析を見る">${esc(h.name)}</button><div class="habit-goal">${h.ouraTrackingOnly?'自動記録・週目標なし':`週${h.target}回を目標`}</div></div><button class="edit-habit" data-edit="${esc(h.id)}" aria-label="${esc(h.name)}を編集">⋯</button></div><div class="checks">${days.map(d=>{const key=dayKey(d),done=checked(d,h.id),future=key>today;return `<div class="check-wrap"><span class="mobile-day ${key===today?'is-today':''}">${['日','月','火','水','木','金','土'][d.getDay()]}${d.getDate()}</span><button type="button" class="check ${done?'checked':''}" data-day="${key}" data-habit="${esc(h.id)}" ${future?'disabled':''} aria-label="${esc(h.name)} ${key} ${done?'達成済み':'未達成'}" aria-pressed="${done}" data-oura-auto="${done&&(state.ouraAutoKeys||[]).includes(key+'|'+h.id)}">✓</button></div>`}).join('')}</div><div class="rate ${!h.ouraTrackingOnly&&count>=h.target?'done':''}">${h.ouraTrackingOnly?count+'日':count+'/'+h.target}</div></div>`}
+ const count=days.filter(d=>eligibleHabitDay(h,dayKey(d))&&checked(d,h.id)).length;
+ html+=`<div class="habit-row habit-row--${group}"><div class="habit-info"><div class="habit-icon">${habitIconSvg(h.icon)}</div><div class="habit-label"><button type="button" class="habit-name habit-detail-trigger" data-detail="${esc(h.id)}" title="達成分析を見る">${esc(h.name)}</button><div class="habit-goal">${window.HabitQuestLifecycle.configOn(h,isoToday()).mission?`週${h.target}回を目標`:'週ミッション対象外'}</div></div><button class="edit-habit" data-edit="${esc(h.id)}" aria-label="${esc(h.name)}を編集">⋯</button></div><div class="checks">${days.map(d=>{const key=dayKey(d),done=checked(d,h.id),future=key>today||!eligibleHabitDay(h,key);return `<div class="check-wrap"><span class="mobile-day ${key===today?'is-today':''}">${['日','月','火','水','木','金','土'][d.getDay()]}${d.getDate()}</span><button type="button" class="check ${done?'checked':''}" data-day="${key}" data-habit="${esc(h.id)}" ${future?'disabled':''} aria-label="${esc(h.name)} ${key} ${done?'達成済み':'未達成'}" aria-pressed="${done}" data-oura-auto="${done&&(state.ouraAutoKeys||[]).includes(key+'|'+h.id)}">✓</button></div>`}).join('')}</div><div class="rate ${window.HabitQuestLifecycle.configOn(h,isoToday()).mission&&count>=h.target?'done':''}">${window.HabitQuestLifecycle.configOn(h,isoToday()).mission?count+'/'+h.target:count+'日'}</div></div>`}
 $('tracker').classList.toggle('auto-open',mobileAutoExpanded);$('tracker').innerHTML=html;const percentage=w.target?Math.min(100,Math.round(100*w.done/w.target)):0;$('ring').style.background=`conic-gradient(var(--mint) ${percentage}%,#323851 ${percentage}%)`;$('weekRate').textContent=percentage+'%';$('weekCount').textContent=`${w.done} / ${w.target} 回`;const earned=state.rewardedWeeks.includes(dayKey(start));$('chest').classList.toggle('unlocked',earned);$('chestEmoji').innerHTML=habitIconSvg(earned?'trophy':'gift');$('chestTitle').textContent=earned?'週間ミッションクリア！':'ウィークリー宝箱';$('chestText').textContent=earned?'+100 XP を獲得済み':'全目標達成で +100 XP';const keyMilestones=[EVO[stageNo],EVO[stageNo+1],EVO[EVO.length-1]].filter(Boolean);
 $('evoList').innerHTML=[...new Map(keyMilestones.map(e=>[e.lv,e])).values()].map(e=>`<div class="evo-item ${s.level<e.lv?'locked':''} ${e.lv===EVO[stageNo].lv?'current':''}"><div class="evo-emoji">${s.level<e.lv?'◆':e.emoji}</div><div><strong>Lv.${e.lv} ${e.name}</strong><small>${e.desc}</small></div></div>`).join('');
 $('evoAllList').innerHTML=LEVEL_ATLAS.map(item=>`<div class="evo-level ${item.lv<=s.level?'unlocked':'locked'} ${item.major?'milestone':''} ${item.lv===s.level?'current':''}"><span class="evo-level-num">Lv.${item.lv}</span><span class="evo-level-name">${item.major?(item.lv<=s.level?EVO.find(e=>e.lv===item.lv).emoji:'◆')+' '+esc(item.label):esc(item.label)}</span><span class="evo-level-state">${item.lv<=s.level?'達成':'未解放'}</span></div>`).join('');
-renderAnalytics();renderArt();renderOura();updateOuraAutoStatus();}
+renderAnalytics();renderArchivedHabits();renderArt();renderOura();updateOuraAutoStatus();}
+function renderArchivedHabits(){
+ const archived=state.habits.filter(h=>window.HabitQuestLifecycle.archived(h));
+ $('archiveCount').textContent=String(archived.length);
+ $('archivedHabitList').innerHTML=archived.length?archived.map(h=>
+   `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;padding:10px 0;border-bottom:1px solid rgba(180,190,220,.17)"><span>${habitIconSvg(h.icon)} <strong>${esc(h.name)}</strong><small style="display:block">以前のチェック・XPは保存済み</small></span><button type="button" class="btn" data-restore="${esc(h.id)}">再開する</button></div>`
+ ).join(''):'<p class="small-note">休止中の習慣はありません。</p>';
+}
+$('archiveJump').onclick=()=>{$('settingsDetail').open=true;$('archiveSection').open=true;$('archiveSection').scrollIntoView({behavior:'smooth',block:'start'})};
+$('archivedHabitList').addEventListener('click',e=>{
+ const button=e.target.closest('[data-restore]');if(!button)return;
+ const h=state.habits.find(x=>x.id===button.dataset.restore);
+ if(!h||!window.HabitQuestLifecycle.archived(h))return;
+ Object.assign(h,window.HabitQuestLifecycle.restore(h,isoToday()));
+ store();render();toast('習慣を再開しました。過去の履歴も保持しています',true);
+});
 function toast(message,up=false){const node=document.createElement('div');node.className='toast'+(up?' up':'');node.textContent=message;$('toasts').appendChild(node);setTimeout(()=>node.remove(),2400)}
 function particles(el){const rect=el.getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top+rect.height/2;for(let i=0;i<17;i++){const p=document.createElement('span');p.className='burst';p.style.left=x+'px';p.style.top=y+'px';p.style.background=['#a78bfa','#5eead4','#f9c66a','#fff'][i%4];p.style.setProperty('--x',((Math.random()-.5)*160)+'px');p.style.setProperty('--y',((Math.random()-.7)*150)+'px');document.body.append(p);setTimeout(()=>p.remove(),900)}}
 $('tracker').addEventListener('click',event=>{
@@ -480,16 +498,21 @@ $('tracker').addEventListener('click',event=>{
    state.ouraSuppressedKeys=(state.ouraSuppressedKeys||[]).filter(k=>k!==marker);
    if(was)state.ouraSuppressedKeys.push(marker); // User's cancellation takes precedence over automatic tracking.
  }if(!Object.keys(state.checks[date]).length)delete state.checks[date];if(!was){const wk=weekStart(parseDay(date)),key=dayKey(wk);if(date>=xpStartDate()&&weekIsXpEligible(wk)&&weeklyFor(wk).complete&&!state.rewardedWeeks.includes(key))state.rewardedWeeks.push(key)}store();render();const now=stats();if(!was){particles(b);if(now.level>prev.level)toast(`🎉 LEVEL UP! Lv.${now.level}`,true);else if(now.completedWeeks>prev.completedWeeks)toast('🏆 週間宝箱を開放！ +100 XP',true);else if(date>=xpStartDate()&&validXpStartDate(state.xpStartDate))toast('✨ +20 XP  習慣クリア！',true);else toast('過去の実績を記録しました（XP対象外）',true)}else toast('チェックを取り消しました')});
-function openModal(id){editing=id||null;const h=state.habits.find(x=>x.id===id);$('modalTitle').textContent=h?'習慣を編集':'新しい習慣';$('habitName').value=h?.name||'';$('habitIcon').value=normalizedHabitIcon(h?.icon||'sunrise');$('habitIconPreview').innerHTML=habitIconSvg($('habitIcon').value);$('habitTarget').value=h?String(h.target):'5';$('deleteHabit').hidden=!h;$('saveHabit').textContent=h?'保存する':'追加する';$('modalBackdrop').classList.add('show');setTimeout(()=>$('habitName').focus(),70)}
+function openModal(id){editing=id||null;const h=state.habits.find(x=>x.id===id);$('modalTitle').textContent=h?'習慣を編集':'新しい習慣';$('habitName').value=h?.name||'';$('habitIcon').value=normalizedHabitIcon(h?.icon||'sunrise');$('habitIconPreview').innerHTML=habitIconSvg($('habitIcon').value);$('habitTarget').value=h?String(h.target):'5';$('habitWeeklyMission').checked=h?window.HabitQuestLifecycle.configOn(h,isoToday()).mission:true;$('deleteHabit').hidden=!h;$('saveHabit').textContent=h?'保存する':'追加する';$('modalBackdrop').classList.add('show');setTimeout(()=>$('habitName').focus(),70)}
 function closeModal(){$('modalBackdrop').classList.remove('show');editing=null}
 $('addHabit').onclick=()=>openModal();$('cancelModal').onclick=closeModal;$('modalBackdrop').addEventListener('click',e=>{if(e.target===$('modalBackdrop'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 $('habitIcon').onchange=()=>{$('habitIconPreview').innerHTML=habitIconSvg($('habitIcon').value)};
-$('habitForm').addEventListener('submit',e=>{e.preventDefault();const name=$('habitName').value.trim(),icon=$('habitIcon').value,target=Number($('habitTarget').value);if(!name||!Number.isInteger(target)||target<1||target>7)return;const h=state.habits.find(x=>x.id===editing);if(h){Object.assign(h,{name,icon,target,ouraTrackingOnly:false});toast('習慣を更新しました')}else{state.habits.push({id:'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,icon,target});toast('新しい習慣が追加されました',true)}store();closeModal();render()});
-$('deleteHabit').onclick=()=>{if(!editing)return;const h=state.habits.find(x=>x.id===editing);if(!confirm(`「${h?.name||'この習慣'}」を削除しますか？\n過去のチェック記録と獲得したXPは残ります。`))return;if(editing.startsWith('oura_')){
-  state.ouraIgnoredTypes=state.ouraIgnoredTypes||[];
-  if(!state.ouraIgnoredTypes.includes(editing))state.ouraIgnoredTypes.push(editing);
- }
- state.habits=state.habits.filter(x=>x.id!==editing);store();closeModal();render();toast('習慣を削除しました')};
+$('habitForm').addEventListener('submit',e=>{e.preventDefault();const name=$('habitName').value.trim(),icon=$('habitIcon').value,target=Number($('habitTarget').value);if(!name||!Number.isInteger(target)||target<1||target>7)return;const h=state.habits.find(x=>x.id===editing),mission=$('habitWeeklyMission').checked;
+if(h){Object.assign(h,window.HabitQuestLifecycle.edit(h,isoToday(),target,mission),{name,icon});toast('習慣を更新しました')}
+else {const id='h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+state.habits.push(window.HabitQuestLifecycle.create({id,name,icon,target,ouraTrackingOnly:false,missionEnabled:mission},isoToday()));toast('新しい習慣が追加されました',true)}
+store();closeModal();render()});
+$('deleteHabit').onclick=()=>{if(!editing)return;const h=state.habits.find(x=>x.id===editing);
+ if(!h||!confirm(`「${h.name}」を休止しますか？\n一覧と今後の目標から外します。過去の記録・XPは保持され、設定から再開できます。`))return;
+ const today=isoToday(),preserveToday=state.checks[today]?.[h.id]===true;
+ Object.assign(h,window.HabitQuestLifecycle.archive(h,today,preserveToday));
+ store();closeModal();render();toast('習慣を休止しました。設定から再開できます',true)
+};
 $('prevWeek').onclick=()=>{offset--;render()};$('nextWeek').onclick=()=>{offset++;render()};$('thisWeek').onclick=()=>{offset=0;render()};
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({version:3,exportedAt:new Date().toISOString(),...state},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`habit-quest-${isoToday()}.json`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);toast('バックアップを保存しました',true)};
 $('importBtn').onclick=()=>$('fileInput').click();$('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(!Array.isArray(parsed.habits)||parsed.habits.some(h=>!validHabit(h))||!parsed.checks||typeof parsed.checks!=='object'||Array.isArray(parsed.checks))throw Error('形式が違います');const safeChecks={};for(const[k,v]of Object.entries(parsed.checks)){if(!/^\d{4}-\d{2}-\d{2}$/.test(k)||!v||typeof v!=='object'||Array.isArray(v))continue;safeChecks[k]={};for(const[id,ok]of Object.entries(v))if(typeof ok==='boolean'&&ok)safeChecks[k][id]=true}if(!confirm('現在の記録をバックアップの内容で置き換えますか？'))return;const restored=validateIncoming({...parsed,checks:safeChecks});restored.xpStartDate=validXpStartDate(state.xpStartDate)||validXpStartDate(restored.xpStartDate);state=restored;store();offset=0;render();toast('記録を復元しました',true)}catch(err){toast('読み込めませんでした。JSONファイルを確認してください。')}finally{e.target.value=''}});
@@ -513,37 +536,45 @@ function isOuraMissing(day,id){
 }
 function analyse(id,n){
  const today=parseDay(isoToday()),days=Array.from({length:n},(_,i)=>addDay(today,i-n+1));
- let done=0,streak=0,best=0,observed=0;
+ let done=0,streak=0,best=0,observed=0,eligible=0;
+ const h=state.habits.find(x=>x.id===id),goalDays=[];
  const weekday=Array.from({length:7},()=>({n:0,hit:0}));
  for(const d of days){
-   const yes=checked(d,id),missing=isOuraMissing(d,id);
-   if(yes){done++;streak++;best=Math.max(best,streak)}
-   else streak=0;
+   const key=dayKey(d);
+   if(!h||!eligibleHabitDay(h,key)){streak=0;continue}
+   eligible++;
+   const yes=checked(d,id),missing=isOuraMissing(d,id),config=window.HabitQuestLifecycle.configOn(h,key);
+   if(yes){done++;streak++;best=Math.max(best,streak)}else streak=0;
+   goalDays.push({observed:!missing,done:yes,target:config.target,mission:config.mission});
    if(missing)continue;
    observed++;
    const w=(d.getDay()+6)%7;weekday[w].n++;if(yes)weekday[w].hit++;
  }
- const current=weekStart(today);let metWeeks=0;
+ const goal=window.HabitQuestGoalMetrics.computeForDays(goalDays);
+ const current=weekStart(today);let metWeeks=0,fullWeeks=0;
  for(let k=1;k<=Math.ceil(n/7);k++){
    const start=addDay(current,-k*7),end=addDay(start,6);
    if(start<days[0]||end>today)break;
-   const h=state.habits.find(x=>x.id===id);
-   if(h&&!h.ouraTrackingOnly&&weekDays(start).filter(d=>checked(d,id)).length>=h.target)metWeeks++;
+   const result=window.HabitQuestLifecycle.weekProgress(h,weekDays(start).map(dayKey),
+     (key,hid)=>state.checks[key]?.[hid]===true);
+   if(result.target>0){fullWeeks++;if(result.complete)metWeeks++;}
  }
- return{days,done,observed,missing:n-observed,rate:observed?Math.round(100*done/observed):0,best,weekday,metWeeks};
+ return{days,done,observed,eligible,missing:eligible-observed,rate:observed?Math.round(100*done/observed):0,best,weekday,metWeeks,fullWeeks,goal};
 }
 function openHabitDetail(id){if(!state.habits.some(h=>h.id===id))return;const sel=$('analysisHabit');sel.value=id;renderAnalytics();$('analyticsSection').scrollIntoView({behavior:'smooth',block:'start'});}
- function renderAnalytics(){const sel=$('analysisHabit'),previous=sel.value;sel.innerHTML=displayHabits().map(h=>`<option value="${esc(h.id)}">${esc(h.name)}</option>`).join('');if(state.habits.some(h=>h.id===previous))sel.value=previous;const id=sel.value,n=Number($('analysisPeriod').value)||30,h=state.habits.find(x=>x.id===id);if(!h){$('weekBars').innerHTML='<div class="analysis-empty">まず習慣を追加してください。</div>';$('weekdayBars').innerHTML='';$('heatGrid').innerHTML='';$('habitRank').innerHTML='';return}const a=analyse(id,n);$('metricDone').textContent=`${a.done} / ${a.observed}日`;$('metricRate').textContent=a.rate+'%';$('metricRateLabel').textContent=isOuraAutoHabit(h)?'Oura取得日ベース（欠測'+a.missing+'日を除外）':'対象日数に対する達成率';$('metricRating').textContent=a.observed===0?'判定不可':a.rate>=90?'非常に良好':a.rate>=75?'良好':a.rate>=50?'改善余地あり':'要改善';$('metricStreak').textContent=`${a.best}日`;$('metricWeeks').textContent=h.ouraTrackingOnly?'—':`${a.metWeeks}週`;$('metricWeeksLabel').textContent=h.ouraTrackingOnly?'自動記録・週目標なし':'週目標を達成した週数（完了週）';$('heatLabel').textContent=`（直近${n}日）`;
+ function renderAnalytics(){const sel=$('analysisHabit'),previous=sel.value;sel.innerHTML=displayHabits().map(h=>`<option value="${esc(h.id)}">${esc(h.name)}</option>`).join('');if(state.habits.some(h=>h.id===previous))sel.value=previous;const id=sel.value,n=Number($('analysisPeriod').value)||30,h=state.habits.find(x=>x.id===id);if(!h){$('weekBars').innerHTML='<div class="analysis-empty">まず習慣を追加してください。</div>';$('weekdayBars').innerHTML='';$('heatGrid').innerHTML='';$('habitRank').innerHTML='';return}const a=analyse(id,n);$('metricDone').textContent=`${a.done} / ${a.observed}日`;$('metricRate').textContent=a.rate+'%';$('metricRateLabel').textContent=isOuraAutoHabit(h)?'実施日率（Oura欠測'+a.missing+'日を除外）':'実施日率（記録日 / 全日数）';$('metricGoal').textContent=a.goal.goalRate===null?'—':a.goal.goalRate+'%';$('metricGoalLabel').textContent=a.goal.goalCount===null?'当該期間に週目標なし':'期間換算目標：'+a.goal.counted+' / '+a.goal.goalCount+'回';$('goalMethodNote').textContent=a.goal.goalCount===null?'この期間に週間ミッション対象の日はありません。実施日率のみ表示します。':'各日の週目標を計測対象日ごとに7分の1ずつ換算（端数切り上げ）。目標変更前は当時の設定で評価します。停止期間・Oura欠測日・週ミッションOFFの日は達成率の目標分母から除外します。';const evaluation=a.goal.goalRate;$('metricRating').textContent=evaluation===null?'目標未設定':evaluation>=90?'非常に良好':evaluation>=75?'良好':evaluation>=50?'改善余地あり':'要改善';$('metricStreak').textContent=`${a.best}日`;$('metricWeeks').textContent=a.fullWeeks? `${a.metWeeks} / ${a.fullWeeks}週`:'—';$('metricWeeksLabel').textContent=a.fullWeeks?'週目標達成（完了週のみ）':'期間内に対象週なし';$('heatLabel').textContent=`（直近${n}日）`;
 const mon=weekStart(parseDay(isoToday()));
 const windows=Array.from({length:8},(_,i)=>addDay(mon,(i-7)*7));
 $('weekBars').innerHTML=windows.map(w=>{
- const hit=weekDays(w).filter(d=>checked(d,id)).length;
- const denom=h.ouraTrackingOnly?7:h.target;
- const pct=Math.min(100,100*hit/denom);
- const unit=h.ouraTrackingOnly?hit+'日':hit+'/'+h.target;
- const title=h.ouraTrackingOnly?'自動記録 '+hit+'日':'目標'+h.target+'回中 '+hit+'回';
+ const relevant=weekDays(w).filter(d=>eligibleHabitDay(h,dayKey(d)));
+ const hit=relevant.filter(d=>checked(d,id)).length;
+ const progress=window.HabitQuestLifecycle.weekProgress(h,weekDays(w).map(dayKey),
+   (key,hid)=>state.checks[key]?.[hid]===true);
+ const pct=progress.target?Math.min(100,100*progress.done/progress.target):Math.min(100,100*hit/7);
+ const unit=progress.target?progress.done+'/'+progress.target:hit+'日';
+ const title=progress.target?'当時の目標'+progress.target+'回中 '+progress.done+'回':'週目標なし・実施'+hit+'日';
  return `<div class="bar-item" title="${dayKey(w)}：${title}"><span class="bar-value">${unit}</span><div class="bar-column ${isOuraAutoHabit(h)?'auto':''}" style="height:${Math.max(hit?5:2,pct)}%"></div><span class="bar-caption">${w.getMonth()+1}/${w.getDate()}</span></div>`;
-}).join('');const names=['月','火','水','木','金','土','日'];$('weekdayBars').innerHTML=a.weekday.map((o,i)=>{const pct=o.n?Math.round(100*o.hit/o.n):0;return `<div class="weekday-row"><span>${names[i]}</span><div class="weekday-track"><i style="width:${pct}%"></i></div><span>${o.hit}/${o.n}</span></div>`}).join('');const blanks=(a.days[0].getDay()+6)%7;$('heatGrid').innerHTML='<div class="heat-square blank"></div>'.repeat(blanks)+a.days.map(d=>{const done=checked(d,id),missing=isOuraMissing(d,id);return `<div class="heat-square ${done?'done '+(isOuraAutoHabit(h)?'auto':'manual'):missing?'missing':''}" title="${dayKey(d)} ${done?'達成':missing?'Oura未取得':'未チェック'}">${d.getDate()}</div>`}).join('');const ranks=displayHabits().map(h=>{const t=analyse(h.id,n);return{h,...t}}).sort((x,y)=>Number(isOuraAutoHabit(x.h))-Number(isOuraAutoHabit(y.h))||y.rate-x.rate);$('habitRank').innerHTML=`<table class="habit-ranking"><thead><tr><th>習慣</th><th>実績</th><th>記録率</th><th>比較</th></tr></thead><tbody>${ranks.map(r=>`<tr><td><span class="rank-habit-icon">${habitIconSvg(r.h.icon)}</span>${esc(r.h.name)}</td><td>${r.done}/${r.observed}日</td><td>${r.rate}%</td><td><div class="rank-track"><i style="width:${r.rate}%"></i></div></td></tr>`).join('')}</tbody></table>`}
+}).join('');const names=['月','火','水','木','金','土','日'];$('weekdayBars').innerHTML=a.weekday.map((o,i)=>{const pct=o.n?Math.round(100*o.hit/o.n):0;return `<div class="weekday-row"><span>${names[i]}</span><div class="weekday-track"><i style="width:${pct}%"></i></div><span>${o.hit}/${o.n}</span></div>`}).join('');const blanks=(a.days[0].getDay()+6)%7;$('heatGrid').innerHTML='<div class="heat-square blank"></div>'.repeat(blanks)+a.days.map(d=>{const active=eligibleHabitDay(h,dayKey(d)),done=active&&checked(d,id),missing=active&&isOuraMissing(d,id);return `<div class="heat-square ${!active?'blank':done?'done '+(isOuraAutoHabit(h)?'auto':'manual'):missing?'missing':''}" title="${dayKey(d)} ${!active?'習慣開始前（対象外）':done?'達成':missing?'Oura未取得':'未チェック'}">${active?d.getDate():'—'}</div>`}).join('');const ranks=displayHabits().map(h=>{const t=analyse(h.id,n);return{h,...t}}).sort((x,y)=>Number(isOuraAutoHabit(x.h))-Number(isOuraAutoHabit(y.h))||y.rate-x.rate);$('habitRank').innerHTML=`<table class="habit-ranking"><thead><tr><th>習慣</th><th>実績</th><th>実施日率</th><th>目標達成率</th></tr></thead><tbody>${ranks.map(r=>`<tr><td><span class="rank-habit-icon">${habitIconSvg(r.h.icon)}</span>${esc(r.h.name)}</td><td>${r.done}/${r.observed}日</td><td>${r.rate}%</td><td>${r.goal.goalRate===null?'—':r.goal.goalRate+'%'}</td></tr>`).join('')}</tbody></table>`}
 $('analysisHabit').addEventListener('change',()=>{renderAnalytics();renderOura()});$('analysisPeriod').addEventListener('change',renderAnalytics);
 $('exportCsv').addEventListener('click',()=>{const rows=[['date',...state.habits.map(x=>x.name)]];const keys=Object.keys(state.checks).filter(dayIsoOk).sort();const first=keys[0]?parseDay(keys[0]):parseDay(isoToday()),today=parseDay(isoToday());for(let d=first;d<=today;d=addDay(d,1))rows.push([dayKey(d),...state.habits.map(h=>checked(d,h.id)?1:0)]);const q=s=>'"'+String(s).replace(/"/g,'""')+'"';downloadText('\ufeff'+rows.map(r=>r.map(q).join(',')).join('\r\n'),`habit-quest-records-${isoToday()}.csv`,'text/csv;charset=utf-8');toast('CSVを出力しました',true)});
 function ingestOuraPayload(obj,assumedType='auto'){const collections=[];if(Array.isArray(obj))collections.push([assumedType==='auto'?'generic':assumedType,obj]);if(obj&&typeof obj==='object'){if(Array.isArray(obj.data))collections.push([obj.type||obj.kind||(assumedType==='auto'?'generic':assumedType),obj.data]);for(const [type,val]of Object.entries(obj)){if(Array.isArray(val))collections.push([type,val]);else if(val&&Array.isArray(val.data))collections.push([type,val.data])}}let added=0;for(const [kind,items] of collections){for(const raw of items.slice(0,11000)){if(!raw||typeof raw!=='object')continue;const day=raw.day||raw.date||raw.timestamp?.slice?.(0,10);if(!dayIsoOk(day))continue;const dest=state.ouraData[day]||{};let touched=false;const score=Number(raw.score);if(Number.isFinite(score)&&score>=0&&score<=100){if(/readiness/i.test(kind)||/readiness/i.test(raw.type||'')){dest.readiness=score;touched=true}else if(/sleep/i.test(kind)||/sleep/i.test(raw.type||'')){dest.sleep=score;touched=true}}
@@ -655,13 +686,17 @@ function reconcileOuraHabits(daily,workouts){
  for(const id of types){
    if(ignored.has(id)||state.habits.some(h=>h.id===id))continue;
    const definition=Object.values(OURA_ACTIVITY_HABITS).find(h=>h.id===id);
-   if(definition){state.habits.push({...definition,ouraTrackingOnly:true});modified=true}
+   if(definition){
+     const first=[...unique.values()].filter(r=>r.id===id).map(r=>r.day).sort()[0]||isoToday();
+     state.habits.push(window.HabitQuestLifecycle.create({...definition,ouraTrackingOnly:true,missionEnabled:false},first));
+     modified=true;
+   }
  }
- const activeIds=new Set(state.habits.map(h=>h.id));
+ const activeIds=new Map(state.habits.map(h=>[h.id,h]));
  const days=new Set();
  let added=0;
  for(const [key,record] of unique){
-   if(!activeIds.has(record.id)||suppressed.has(key)||state.checks[record.day]?.[record.id])continue;
+   if(!activeIds.has(record.id)||!window.HabitQuestLifecycle.activeOn(activeIds.get(record.id),record.day)||suppressed.has(key)||state.checks[record.day]?.[record.id])continue;
    state.checks[record.day] ||= {};
    state.checks[record.day][record.id]=true;
    if(!state.ouraAutoKeys.includes(key))state.ouraAutoKeys.push(key);
@@ -814,13 +849,19 @@ let cloudSdkPromise=null;
 function loadCloudSdk(){if(window.supabase?.createClient)return Promise.resolve();if(cloudSdkPromise)return cloudSdkPromise;cloudSdkPromise=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=sdkUrl;s.onload=()=>window.supabase?.createClient?resolve():reject(Error('SDKの読み込みに失敗'));s.onerror=()=>reject(Error('CDNに接続できません'));document.head.append(s)});return cloudSdkPromise}
 function stableStringify(x){if(Array.isArray(x))return '['+x.map(stableStringify).join(',')+']';if(x&&typeof x==='object')return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+stableStringify(x[k])).join(',')+'}';return JSON.stringify(x)}
 function validateIncoming(raw){if(!raw||!Array.isArray(raw.habits)||raw.habits.some(x=>!validHabit(x))||!raw.checks||Array.isArray(raw.checks)||typeof raw.checks!=='object')throw Error('不正なクラウドデータ');const checks={};for(const[day,values]of Object.entries(raw.checks)){if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!values||typeof values!=='object'||Array.isArray(values))continue;checks[day]={};for(const [id,yes] of Object.entries(values))if(yes===true&&id.length<=80)checks[day][id]=true;if(!Object.keys(checks[day]).length)delete checks[day]}
-return normalizeHabitState({habits:raw.habits.map(h=>({id:h.id.slice(0,80),name:h.name.slice(0,28),icon:h.icon.slice(0,24),target:Number(h.target),ouraTrackingOnly:h.ouraTrackingOnly===true})),checks,rewardedWeeks:Array.isArray(raw.rewardedWeeks)?[...new Set(raw.rewardedWeeks.filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)))]:[],avatarImages:validAvatarImages(raw.avatarImages),ouraData:validOuraData(raw.ouraData),ouraAutoEnabled:raw.ouraAutoEnabled===true,ouraAutoDays:safeOuraDates(raw.ouraAutoDays),ouraAutoSuppressed:safeOuraDates(raw.ouraAutoSuppressed),xpStartDate:raw.xpStartDate,ouraTrackingVersion:raw.ouraTrackingVersion,ouraAutoKeys:raw.ouraAutoKeys,ouraSuppressedKeys:raw.ouraSuppressedKeys,ouraIgnoredTypes:raw.ouraIgnoredTypes})}
-function cloudSnapshot(s){return {xpStartDate:validXpStartDate(s.xpStartDate),habits:s.habits,checks:s.checks,rewardedWeeks:s.rewardedWeeks,ouraAutoEnabled:true,ouraTrackingVersion:3,ouraAutoKeys:safeOuraAutoKeys(s.ouraAutoKeys),ouraSuppressedKeys:safeOuraAutoKeys(s.ouraSuppressedKeys),ouraIgnoredTypes:safeOuraIgnoredTypes(s.ouraIgnoredTypes),avatarImages:{},ouraData:{}}}
+return normalizeHabitState({habits:raw.habits.map(h=>({id:h.id.slice(0,80),name:h.name.slice(0,28),icon:h.icon.slice(0,24),target:Number(h.target),ouraTrackingOnly:h.ouraTrackingOnly===true,missionEnabled:typeof h.missionEnabled==='boolean'?h.missionEnabled:undefined,createdOn:validXpStartDate(h.createdOn),targetHistory:h.targetHistory,activeIntervals:h.activeIntervals})),checks,rewardedWeeks:Array.isArray(raw.rewardedWeeks)?[...new Set(raw.rewardedWeeks.filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)))]:[],avatarImages:validAvatarImages(raw.avatarImages),ouraData:validOuraData(raw.ouraData),ouraAutoEnabled:raw.ouraAutoEnabled===true,ouraAutoDays:safeOuraDates(raw.ouraAutoDays),ouraAutoSuppressed:safeOuraDates(raw.ouraAutoSuppressed),xpStartDate:raw.xpStartDate,ouraTrackingVersion:raw.ouraTrackingVersion,ouraAutoKeys:raw.ouraAutoKeys,ouraSuppressedKeys:raw.ouraSuppressedKeys,ouraIgnoredTypes:raw.ouraIgnoredTypes})}
+function cloudSnapshot(s){return {habitSchemaVersion:2,xpStartDate:validXpStartDate(s.xpStartDate),habits:s.habits,checks:s.checks,rewardedWeeks:s.rewardedWeeks,ouraAutoEnabled:true,ouraTrackingVersion:3,ouraAutoKeys:safeOuraAutoKeys(s.ouraAutoKeys),ouraSuppressedKeys:safeOuraAutoKeys(s.ouraSuppressedKeys),ouraIgnoredTypes:safeOuraIgnoredTypes(s.ouraIgnoredTypes),avatarImages:{},ouraData:{}}}
+function missingLifecycleFrom(previous,next){return window.HabitQuestSyncGuard.losses(previous,next)}
 function choiceVisible(on,hasRemote=true){$('cloudChoice').classList.toggle('show',on);$('cloudUseRemote').hidden=!hasRemote}
 async function cloudFetch(){const {data,error}=await cloud.client.from('habit_states').select('data,revision,updated_at').eq('user_id',cloud.user.id).maybeSingle();if(error)throw error;return data}
 async function attachCloudUser(user){if(!cloud.client||cloud.user?.id===user.id&&cloud.loadPromise)return cloud.loadPromise;cloud.user=user;cloud.ready=false;cloud.blocked=true;$('cloudLogout').hidden=false;$('cloudEmail').value=user.email||'';$('cloudLogin').hidden=true;$('cloudAuthPanel').hidden=true;$('cloudPasswordPanel').hidden=false;cloudMessage(`${user.email} でログイン済み。クラウドの記録を確認しています…`);
 cloud.loadPromise=(async()=>{try{cloud.remote=await cloudFetch();
 if(cloud.remote){
+ if(missingLifecycleFrom(state,cloud.remote.data).length){
+  choiceVisible(true,true);
+  cloudMessage('⚠ クラウド側に習慣の休止・目標履歴が欠けています。端末の履歴を保護するため、自動同期を止めました。JSONバックアップを保存し、上書き前に内容を確認してください。','warning');
+  return;
+ }
  const validated=validateIncoming(cloud.remote.data);
  // Cloud start date is canonical and never resets on new device or later login.
  validated.xpStartDate=validXpStartDate(validated.xpStartDate)||isoToday();
@@ -898,11 +939,25 @@ $('cloudSetPassword').onclick=async()=>{
 };
 $('cloudLogout').onclick=async()=>{if(!cloud.client)return;if(!confirm('クラウドからログアウトしますか？ この端末の記録は残ります。'))return;const {error}=await cloud.client.auth.signOut();if(error)cloudMessage('ログアウト失敗：'+error.message,'warning')};
 function scheduleCloudSave(){clearTimeout(cloud.timer);cloud.timer=setTimeout(()=>saveCloud(false),550)}
-async function saveCloud(force){if(!cloud.client||!cloud.user||cloud.saving||cloud.blocked)return;if(!force&&cloud.seq===cloud.syncedSeq)return;cloud.saving=true;const capturedSeq=cloud.seq,snapshot=cloudSnapshot(state);try{const {data,error}=await cloud.client.rpc('save_habit_state',{p_data:snapshot,p_expected_revision:cloud.revision});if(error)throw error;const row=Array.isArray(data)?data[0]:data;if(!row||row.is_conflict){cloud.ready=false;cloud.blocked=true;cloud.remote=await cloudFetch();choiceVisible(true,!!cloud.remote);cloudMessage('⚠ 他の端末でデータが更新されました。クラウド版か端末版を選んでください。自動上書きは停止しています。','warning');return}cloud.revision=Number(row.new_revision);cloud.syncedSeq=capturedSeq;cloudMessage(`☁ 保存完了：${new Date().toLocaleTimeString('ja-JP')}（改訂 ${cloud.revision}）`,'good');if(cloud.seq!==capturedSeq)scheduleCloudSave()}catch(e){cloudMessage('⚠ 同期できません：'+e.message+'。記録は端末内に保存されています。「今すぐ同期」で再試行できます。','warning')}finally{cloud.saving=false}}
-$('cloudUseRemote').onclick=async()=>{if(!cloud.client||!cloud.user)return;if(!confirm('この端末の現在の記録をクラウドの記録に置き換えますか？ 必要なら先に「バックアップ」を保存してください。'))return;try{cloud.remote=await cloudFetch();if(!cloud.remote)throw Error('クラウド記録が見つかりません');const safe=validateIncoming(cloud.remote.data);safe.xpStartDate=validXpStartDate(safe.xpStartDate)||isoToday();state={...safe,avatarImages:state.avatarImages||{},ouraData:state.ouraData||{}};localStorage.setItem(KEY,JSON.stringify(state));cloud.seq++;cloud.syncedSeq=cloud.seq;cloud.revision=Number(cloud.remote.revision);cloud.ready=true;cloud.blocked=false;choiceVisible(false);offset=0;render();cloudMessage('☁ クラウドの記録を取得しました。以降は自動同期します。','good');
+async function saveCloud(force){if(!cloud.client||!cloud.user||cloud.saving||cloud.blocked)return;if(!force&&cloud.seq===cloud.syncedSeq)return;
+ const capturedSeq=cloud.seq,snapshot=cloudSnapshot(state);
+ if(cloud.remote?.data&&missingLifecycleFrom(cloud.remote.data,snapshot).length){
+  cloud.ready=false;cloud.blocked=true;choiceVisible(true,true);
+  cloudMessage('⚠ この保存内容では既存の習慣履歴が失われます。書き込みを停止しました。','warning');return;
+ }
+ cloud.saving=true;try{const {data,error}=await cloud.client.rpc('save_habit_state',{p_data:snapshot,p_expected_revision:cloud.revision});if(error)throw error;const row=Array.isArray(data)?data[0]:data;if(!row||row.is_conflict){cloud.ready=false;cloud.blocked=true;cloud.remote=await cloudFetch();choiceVisible(true,!!cloud.remote);cloudMessage('⚠ 他の端末でデータが更新されました。クラウド版か端末版を選んでください。自動上書きは停止しています。','warning');return}cloud.revision=Number(row.new_revision);cloud.remote={data:snapshot,revision:cloud.revision};cloud.syncedSeq=capturedSeq;cloudMessage(`☁ 保存完了：${new Date().toLocaleTimeString('ja-JP')}（改訂 ${cloud.revision}）`,'good');if(cloud.seq!==capturedSeq)scheduleCloudSave()}catch(e){cloudMessage('⚠ 同期できません：'+e.message+'。記録は端末内に保存されています。「今すぐ同期」で再試行できます。','warning')}finally{cloud.saving=false}}
+$('cloudUseRemote').onclick=async()=>{if(!cloud.client||!cloud.user)return;if(!confirm('この端末の現在の記録をクラウドの記録に置き換えますか？ 必要なら先に「バックアップ」を保存してください。'))return;try{cloud.remote=await cloudFetch();if(!cloud.remote)throw Error('クラウド記録が見つかりません');
+ if(missingLifecycleFrom(state,cloud.remote.data).length){
+  cloudMessage('⚠ クラウド版にはこの端末にある休止・目標履歴が欠けています。安全のためクラウド版への置き換えを禁止しました。端末データをバックアップしてください。','warning');return;
+ }
+ const safe=validateIncoming(cloud.remote.data);safe.xpStartDate=validXpStartDate(safe.xpStartDate)||isoToday();state={...safe,avatarImages:state.avatarImages||{},ouraData:state.ouraData||{}};localStorage.setItem(KEY,JSON.stringify(state));cloud.seq++;cloud.syncedSeq=cloud.seq;cloud.revision=Number(cloud.remote.revision);cloud.ready=true;cloud.blocked=false;choiceVisible(false);offset=0;render();cloudMessage('☁ クラウドの記録を取得しました。以降は自動同期します。','good');
  if(stableStringify(cloudSnapshot(cloud.remote.data))!==stableStringify(cloudSnapshot(safe)))store();
  setTimeout(()=>checkOuraConnection(),0)}catch(e){cloudMessage('取り込み失敗：'+e.message,'warning')}};
-$('cloudUseLocal').onclick=async()=>{if(!cloud.client||!cloud.user)return;const willOverwrite=!!cloud.remote;if(willOverwrite&&!confirm('⚠ クラウドの既存記録を、この端末の記録で上書きします。続けますか？（先にバックアップ推奨）'))return;if(willOverwrite)state.xpStartDate=validXpStartDate(cloud.remote.data?.xpStartDate)||validXpStartDate(state.xpStartDate)||isoToday();else markFirstLoginDate(cloud.user);cloud.revision=willOverwrite?Number(cloud.remote.revision):null;cloud.ready=true;cloud.blocked=false;choiceVisible(false);cloud.seq++;cloudMessage('クラウドへアップロードしています…');await saveCloud(true);if(cloud.ready)setTimeout(()=>checkOuraConnection(),0)};
+$('cloudUseLocal').onclick=async()=>{if(!cloud.client||!cloud.user)return;const willOverwrite=!!cloud.remote;
+ if(willOverwrite&&missingLifecycleFrom(cloud.remote.data,cloudSnapshot(state)).length){
+  cloudMessage('⚠ この端末のデータはクラウド側の休止・目標履歴を失わせます。上書きを禁止しました。','warning');return;
+ }
+ if(willOverwrite&&!confirm('⚠ クラウドの既存記録を、この端末の記録で上書きします。続けますか？（先にバックアップ推奨）'))return;if(willOverwrite)state.xpStartDate=validXpStartDate(cloud.remote.data?.xpStartDate)||validXpStartDate(state.xpStartDate)||isoToday();else markFirstLoginDate(cloud.user);cloud.revision=willOverwrite?Number(cloud.remote.revision):null;cloud.ready=true;cloud.blocked=false;choiceVisible(false);cloud.seq++;cloudMessage('クラウドへアップロードしています…');await saveCloud(true);if(cloud.ready)setTimeout(()=>checkOuraConnection(),0)};
 async function cloudPollLatest(){
  if(cloud.polling||!cloud.client||!cloud.user||!cloud.ready||cloud.blocked||cloud.saving||document.visibilityState!=='visible')return;
  cloud.polling=true;
@@ -911,6 +966,11 @@ async function cloudPollLatest(){
    if(cloud.seq!==cloud.syncedSeq){await saveCloud(true);return}
    const latest=await cloudFetch();
    if(!latest||Number(latest.revision)===Number(cloud.revision))return;
+   if(missingLifecycleFrom(state,latest.data).length){
+     cloud.remote=latest;cloud.blocked=true;cloud.ready=false;choiceVisible(true,true);
+     cloudMessage('⚠ 別端末の変更で休止・目標履歴が欠落した可能性があります。自動置き換えを停止しました。端末のJSONバックアップを保存してください。','warning');
+     return;
+   }
    if(cloud.seq!==cloud.syncedSeq||cloud.saving){
      cloud.remote=latest;cloud.blocked=true;cloud.ready=false;choiceVisible(true,true);
      cloudMessage('⚠ 別端末からの更新を検出。どちらの記録を使うか選んでください。','warning');

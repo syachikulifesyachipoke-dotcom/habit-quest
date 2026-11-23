@@ -38,9 +38,9 @@ test('weekly matrix and all automatic habit rows remain accessible', () => {
 });
 
 test('today counts every registered habit, but streak is explicitly manual', () => {
-  assert.match(html, /state\.habits\.filter\(h=>checked\(t,h\.id\)\)\.length/);
+  assert.match(html, /displayHabits\(\)\.filter\(h=>checked\(t,h\.id\)\)\.length/);
   assert.match(html, /連続記録日数（手動1項目以上）/);
-  assert.match(html, /手動習慣の週目標合計/);
+  assert.match(html, /週間ミッションONの習慣の目標合計/);
 });
 
 test('individual habit drill-down and all five analysis periods exist', () => {
@@ -61,7 +61,7 @@ test('Oura missing days are not counted as observed', () => {
 
 test('XP excludes pre-first-login check marks and has level 50 cap', () => {
   assert.match(html, /if\(begin&&day>=begin\)xpChecks\+\+/);
-  assert.match(html, /const planned=state\.habits\.filter\(h=>!h\.ouraTrackingOnly\)/);
+  assert.match(html, /HabitQuestLifecycle\.weekProgress/);
   assert.match(html, /MAX_LEVEL=50/);
 });
 
@@ -90,4 +90,30 @@ test('offline cache names are explicitly versioned', () => {
 test('PWA manifest is valid JSON', () => {
   const manifest=JSON.parse(read('manifest.webmanifest'));
   assert.ok(manifest.name && manifest.icons?.length);
+});
+
+test('goal metric module is loaded before app and in offline cache', () => {
+  assert.match(html, /<script src="\.\/goal-metrics\.js"><\/script>\s*<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script src="\.\/sync-guard\.js"><\/script>\s*<script>/);
+  assert.match(html, /id="metricGoal"/);
+  assert.match(html, /window\.HabitQuestGoalMetrics\.compute/);
+  assert.match(sw, /\.\/goal-metrics\.js/);
+});
+
+test('phase A-2 lifecycle module is loaded and cached offline',()=>{
+ assert.match(html, /<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script src="\.\/sync-guard\.js"><\/script>\s*<script>/);
+ assert.match(sw, /\.\/habit-lifecycle\.js/);
+ assert.match(html, /id="archiveJump"/);
+ assert.match(html, /id="archiveCount"/);
+});
+
+test('streak remains a manual-habit metric even when mission setting changes',()=>{
+ assert.match(html,/const anyDone=k=>state\.habits\.some\(h=>\{const day=dayKey\(k\);return !isOuraAutoHabit\(h\)&&eligibleHabitDay\(h,day\)/);
+ assert.match(html,/手動習慣を1項目以上達成した連続日数/);
+});
+
+test('sync safety guard is loaded and refuses downgrades before auto-replacement',()=>{
+ assert.match(html, /function missingLifecycleFrom\(previous,next\)/);
+ assert.match(html, /missingLifecycleFrom\(state,latest\.data\)/);
+ assert.match(html, /missingLifecycleFrom\(cloud\.remote\.data,snapshot\)/);
+ assert.match(sw, /\.\/sync-guard\.js/);
 });
