@@ -43,6 +43,11 @@ const injection=`<script>
   requireOk(document.querySelectorAll('.game-screen:not([hidden])').length===1,'multiple screens visible');
  }
  requireOk(document.getElementById('settingsDetail').closest('#screen-options'),'settings were not moved into options');
+ requireOk(document.querySelectorAll('.group-streak').length===3,'three group streak indicators missing');
+ requireOk(document.getElementById('homeStepsValue'),'home daily steps indicator missing');
+ requireOk(document.getElementById('weeklyBoss'),'weekly boss encounter missing');
+ requireOk(document.querySelectorAll('.tracker-group-heading').length>=1,'tracker category headings missing');
+
  requireOk(!!document.getElementById('optionsExportBtn')&&!!document.getElementById('optionsImportBtn'),'backup shortcuts missing');
  document.getElementById('characterPat').click();
  requireOk(document.getElementById('characterReactionText').textContent.includes('ありがとう'),'companion pet reaction failed');
@@ -194,6 +199,11 @@ test('headless Chrome: lifecycle and JSON backup/import preserve checks and XP',
    ['/coin-shop.js',fs.readFileSync(path.join(root,'coin-shop.js'),'utf8')],
    ['/coin-shop.css',fs.readFileSync(path.join(root,'coin-shop.css'),'utf8')],
    ['/resource-hud.css',fs.readFileSync(path.join(root,'resource-hud.css'),'utf8')],
+   ['/habit-groups.js',fs.readFileSync(path.join(root,'habit-groups.js'),'utf8')],
+   ['/weekly-boss.js',fs.readFileSync(path.join(root,'weekly-boss.js'),'utf8')],
+   ['/oura-steps.js',fs.readFileSync(path.join(root,'oura-steps.js'),'utf8')],
+   ['/reminder-calendar.js',fs.readFileSync(path.join(root,'reminder-calendar.js'),'utf8')],
+   ['/g6-gameplay.css',fs.readFileSync(path.join(root,'g6-gameplay.css'),'utf8')],
    ['/game-shell.css',fs.readFileSync(path.join(root,'game-shell.css'),'utf8')],
    ['/cloud-config.js','window.HABIT_QUEST_CLOUD={url:"",anonKey:""};']
  ]);
