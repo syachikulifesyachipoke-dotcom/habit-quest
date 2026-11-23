@@ -69,7 +69,9 @@ test('mission toggle changes future days only, including Oura automatic item',()
  const edited=L.edit(original,'2026-11-23',2,true);
  assert.equal(L.configOn(edited,'2026-11-22').mission,false);
  assert.equal(L.configOn(edited,'2026-11-23').mission,true);
- assert.equal(edited.ouraTrackingOnly,false);
+ assert.equal(edited.ouraTrackingOnly,true); // auto record source never changes
+ assert.equal(edited.missionEnabled,true);
+ assert.equal(again.missionEnabled,false);
  const again=L.edit(edited,'2026-11-23',3,false);
  assert.equal(again.targetHistory.length,2);
  assert.equal(L.configOn(again,'2026-11-22').mission,false);
@@ -114,4 +116,24 @@ test('archive does not remove checks or award data and backend schema is unchang
  const block=source.match(/\$\('deleteHabit'\)\.onclick=\(\)=>\{[\s\S]*?\n\};/);
  assert.ok(block,'archive click handler exists');
  assert.doesNotMatch(block[0],/state\.habits=state\.habits\.filter|delete state\.checks|ouraIgnoredTypes/);
+});
+
+test('manual habit can opt out of mission without being reclassified as Oura',()=>{
+ const manual=L.create({id:'manual-run',name:'自分でランニング',target:2,ouraTrackingOnly:false,missionEnabled:true},'2026-11-23');
+ const turnedOff=L.edit(manual,'2026-11-24',2,false);
+ assert.equal(turnedOff.ouraTrackingOnly,false);
+ assert.equal(turnedOff.missionEnabled,false);
+ assert.equal(L.configOn(turnedOff,'2026-11-23').mission,true);
+ assert.equal(L.configOn(turnedOff,'2026-11-24').mission,false);
+ const restored=JSON.parse(JSON.stringify(turnedOff));
+ assert.equal(L.normalize(restored).missionEnabled,false);
+});
+test('Oura habit opt-in to weekly mission does not change its origin',()=>{
+ const h=L.create({id:'oura_strengthtraining',target:3,ouraTrackingOnly:true,missionEnabled:false},'2026-11-23');
+ const edited=L.edit(h,'2026-11-24',4,true);
+ assert.equal(edited.ouraTrackingOnly,true);
+ assert.equal(edited.missionEnabled,true);
+ assert.equal(L.configOn(edited,'2026-11-23').mission,false);
+ assert.equal(L.configOn(edited,'2026-11-24').mission,true);
+ assert.match(source,/missionEnabled:typeof h\.missionEnabled==='boolean'/);
 });
