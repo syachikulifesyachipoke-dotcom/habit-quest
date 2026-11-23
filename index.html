@@ -903,13 +903,26 @@ function particles(el){const rect=el.getBoundingClientRect(),x=rect.left+rect.wi
 $('tracker').addEventListener('click',event=>{
  const toggle=event.target.closest('[data-toggle-auto]');
  if(toggle){mobileAutoExpanded=!mobileAutoExpanded;render();return}
- const detail=event.target.closest('[data-detail]');if(detail){openHabitDetail(detail.dataset.detail);return}const edit=event.target.closest('[data-edit]');if(edit){openModal(edit.dataset.edit);return}const b=event.target.closest('[data-day][data-habit]');if(!b||b.disabled)return;const prev=stats(),date=b.dataset.day,hid=b.dataset.habit;state.checks[date]??={};const was=!!state.checks[date][hid];if(was)delete state.checks[date][hid];else state.checks[date][hid]=true;
+ const detail=event.target.closest('[data-detail]');if(detail){openHabitDetail(detail.dataset.detail);return}const edit=event.target.closest('[data-edit]');if(edit){openModal(edit.dataset.edit);return}const b=event.target.closest('[data-day][data-habit]');if(!b||b.disabled)return;const prev=stats(),date=b.dataset.day,hid=b.dataset.habit;
+ const manualCheck=date===isoToday()&&state.habits.some(h=>h.id===hid&&!isOuraAutoHabit(h));
+ const priorGame=manualCheck?gameProgress():null;
+ state.checks[date]??={};const was=!!state.checks[date][hid];if(was)delete state.checks[date][hid];else state.checks[date][hid]=true;
  if(hid==='wake'||hid.startsWith('oura_')){
    const marker=date+'|'+hid;
    state.ouraAutoKeys=(state.ouraAutoKeys||[]).filter(k=>k!==marker);
    state.ouraSuppressedKeys=(state.ouraSuppressedKeys||[]).filter(k=>k!==marker);
    if(was)state.ouraSuppressedKeys.push(marker); // User's cancellation takes precedence over automatic tracking.
- }if(!Object.keys(state.checks[date]).length)delete state.checks[date];if(!was){const wk=weekStart(parseDay(date)),key=dayKey(wk);if(date>=xpStartDate()&&weekIsXpEligible(wk)&&weeklyFor(wk).complete&&!state.rewardedWeeks.includes(key))state.rewardedWeeks.push(key)}store();render();const now=stats();if(!was){particles(b);if(now.level>prev.level)toast(`🎉 LEVEL UP! Lv.${now.level}`,true);else if(now.completedWeeks>prev.completedWeeks)toast('🏆 週間宝箱を開放！ +100 XP',true);else if(date>=xpStartDate()&&validXpStartDate(state.xpStartDate))toast('✨ +20 XP  習慣クリア！',true);else toast('過去の実績を記録しました（XP対象外）',true)}else toast('チェックを取り消しました')});
+ }if(!Object.keys(state.checks[date]).length)delete state.checks[date];if(!was){const wk=weekStart(parseDay(date)),key=dayKey(wk);if(date>=xpStartDate()&&weekIsXpEligible(wk)&&weeklyFor(wk).complete&&!state.rewardedWeeks.includes(key))state.rewardedWeeks.push(key) }
+ if(!was&&manualCheck)selectedEventChapter=null;
+ store();render();
+ if(!was&&manualCheck){
+  cheerCompanion();
+  const updated=gameProgress();
+  if(priorGame&&updated.world.index>priorGame.world.index)showGameUnlock(updated.world.current);
+  else if(priorGame&&updated.shell.completedChapters>priorGame.shell.completedChapters)
+   toast('📖 冒険の第'+updated.shell.completedChapters+'話を解放しました！',true);
+ }
+ const now=stats();if(!was){particles(b);if(now.level>prev.level)toast(`🎉 LEVEL UP! Lv.${now.level}`,true);else if(now.completedWeeks>prev.completedWeeks)toast('🏆 週間宝箱を開放！ +100 XP',true);else if(date>=xpStartDate()&&validXpStartDate(state.xpStartDate))toast('✨ +20 XP  習慣クリア！',true);else toast('過去の実績を記録しました（XP対象外）',true)}else toast('チェックを取り消しました')});
 function openModal(id){editing=id||null;const h=state.habits.find(x=>x.id===id);$('modalTitle').textContent=h?'習慣を編集':'新しい習慣';$('habitName').value=h?.name||'';$('habitIcon').value=normalizedHabitIcon(h?.icon||'sunrise');$('habitIconPreview').innerHTML=habitIconSvg($('habitIcon').value);$('habitTarget').value=h?String(h.target):'5';$('habitWeeklyMission').checked=h?window.HabitQuestLifecycle.configOn(h,isoToday()).mission:true;$('deleteHabit').hidden=!h;$('saveHabit').textContent=h?'保存する':'追加する';$('modalBackdrop').classList.add('show');setTimeout(()=>$('habitName').focus(),70)}
 function closeModal(){$('modalBackdrop').classList.remove('show');editing=null}
 $('addHabit').onclick=()=>openModal();$('cancelModal').onclick=closeModal;$('modalBackdrop').addEventListener('click',e=>{if(e.target===$('modalBackdrop'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
@@ -1254,6 +1267,15 @@ function cloudMessage(message,kind=''){
    :kind==='warning'||cloud.blocked?'☁ 要確認'
    :cloud.ready&&cloud.seq===cloud.syncedSeq?'☁ 保存済'
    :cloud.ready?'☁ 同期待ち':'☁ 接続中';
+ const banner=$('syncBanner'),label=$('syncBannerText'),options=$('optionsSyncStatus');
+ const needsHelp=!!cloud.user&&cloud.blocked&&kind==='warning';
+ if(banner){
+  banner.hidden=!needsHelp;
+  if(needsHelp)label.textContent='⚠ スマホとクラウドで記録が異なります。自動上書きせず保護しています。「同期を確認」から、どちらを使うか確認してください。';
+ }
+ if(options)options.textContent=b.textContent+' · '+message;
+ const optionsNav=document.querySelector('#gameBottomNav [data-game-tab="options"]');
+ if(optionsNav)optionsNav.dataset.syncAttention=String(needsHelp);
 }
 function getCloudConfig(){let stored={};try{stored=JSON.parse(localStorage.getItem(CFG_KEY)||'{}')}catch(_){}const fixed=window.HABIT_QUEST_CLOUD||{};return{url:fixed.url||stored.url||'',anonKey:fixed.anonKey||stored.anonKey||''}}
 function isPublicKey(key){if(typeof key!=='string'||key.startsWith('sb_secret_'))return false;if(key.startsWith('sb_publishable_'))return true;try{const parts=key.split('.');if(parts.length!==3)return false;const json=JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));return json.role==='anon'}catch(e){return false}}
