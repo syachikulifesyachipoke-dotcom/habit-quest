@@ -18,6 +18,8 @@
  function groupFor(h){
   if(!h||typeof h!=='object')return 'other';
   if(known[h.id])return known[h.id];
+  if(GROUPS.some(g=>g.id===h.groupId))return h.groupId;
+  if(h.groupId==='other')return 'other';
   const name=cleanName(h);
   if(/(ビオフェルミン|biofermin|no酒|禁酒|断酒|飲酒しない)/i.test(name))return 'wellbeing';
   if(/(ジャーナル|日記|振り返り|読書|勉強|学習)/.test(name))return 'investment';
