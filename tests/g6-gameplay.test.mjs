@@ -67,6 +67,18 @@ test('weekly boss shares the weekly chest completed count and never awards extra
  assert.equal(boss.describe('2026-11-23',{done:0,target:0}).state,'no-mission');
  assert.doesNotMatch(fs.readFileSync(path.join(root,'weekly-boss.js'),'utf8'),/localStorage|fetch\(|\.rpc\(|XP_CHECK|coins=/);
 });
+test('once-earned weekly chest XP keeps boss defeated even if check is later undone',()=>{
+ const before=boss.describe('2026-11-23',{done:5,target:5},true);
+ const afterUndo=boss.describe('2026-11-23',{done:4,target:5},true);
+ const noRecord=boss.describe('2026-11-23',{done:4,target:5},false);
+ assert.equal(before.isDefeated,true);
+ assert.equal(afterUndo.isDefeated,true);
+ assert.equal(afterUndo.hp,0);
+ assert.equal(afterUndo.awardRetained,true);
+ assert.equal(afterUndo.done,4); // show actual current progress, do not fabricate check history
+ assert.equal(noRecord.isDefeated,false);
+ assert.equal(noRecord.hp,20);
+});
 test('same week boss is deterministic across browser and week rollover',()=>{
  assert.deepEqual(boss.describe('2026-11-23',{done:2,target:3}),boss.describe('2026-11-23',{done:2,target:3}));
  assert.equal(boss.BOSSES.length,4);
