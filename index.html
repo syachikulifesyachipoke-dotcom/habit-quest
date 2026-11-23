@@ -123,11 +123,40 @@
 (()=>{'use strict';
 const KEY='habit-quest-v1', XP_CHECK=20, XP_WEEK=100;
 const $=id=>document.getElementById(id);
-const defaultHabits=[{id:'wake',name:'5:40に早起き',icon:'🌅',target:5},{id:'train',name:'筋トレ・運動',icon:'💪',target:4},{id:'study',name:'学習する',icon:'📚',target:6},{id:'read',name:'読書をする',icon:'📖',target:5},{id:'journal',name:'朝の振り返り',icon:'✍️',target:7}];
+const defaultHabits=[{id:'wake',name:'5〜6時台に起床',icon:'sunrise',target:5},{id:'oura_strengthtraining',name:'筋トレ',icon:'dumbbell',target:3},{id:'oura_cycling',name:'サイクリング',icon:'bike',target:2},{id:'study',name:'学習する',icon:'book',target:6},{id:'read',name:'読書をする',icon:'bookopen',target:5},{id:'journal',name:'朝の振り返り',icon:'pen',target:7}];
 const EVO=[{lv:1,name:'星のたまご',desc:'冒険のはじまり',emoji:'🥚',tag:'進化のたまご',color:'#c6a9fe'},{lv:3,name:'ちびドラゴン',desc:'小さな相棒が誕生',emoji:'🐣',tag:'見習いドラゴン',color:'#84e4d3'},{lv:5,name:'そらとびドラゴン',desc:'翼を広げて空へ',emoji:'🐉',tag:'空の冒険者',color:'#87adff'},{lv:9,name:'炎のドラゴン',desc:'力強く進化する',emoji:'🔥',tag:'炎の守護者',color:'#ffad7d'},{lv:14,name:'星界のドラゴン',desc:'伝説の姿に到達',emoji:'🌟',tag:'伝説の相棒',color:'#e7bcff'}];
+
+const AUTO_CORE_HABITS=[
+ {id:'oura_strengthtraining',name:'筋トレ',icon:'dumbbell',target:3},
+ {id:'oura_cycling',name:'サイクリング',icon:'bike',target:2}
+];
+function normalizeHabitState(input){
+ const s={...input,habits:(input.habits||[]).map(h=>({...h})),checks:Object.fromEntries(Object.entries(input.checks||{}).map(([day,v])=>[day,{...v}]))};
+ if(Number(input.ouraTrackingVersion||0)<3){
+   // Legacy version marked multiple exercise types together as "train".
+   // Remove only those 8-style Oura-sourced checks; keep any manual exercise checks.
+   for(const day of safeOuraDates(input.ouraAutoDays)){
+     if(s.checks[day]?.train)delete s.checks[day].train;
+     if(s.checks[day]&&!Object.keys(s.checks[day]).length)delete s.checks[day];
+   }
+   const hasManualTrain=Object.values(s.checks).some(x=>x?.train===true);
+   if(!hasManualTrain)s.habits=s.habits.filter(h=>h.id!=='train');
+   else s.habits=s.habits.map(h=>h.id==='train'&&h.name==='筋トレ・運動'?{...h,name:'その他の運動（手動）'}:h);
+   s.ouraAutoKeys=[];s.ouraSuppressedKeys=[];
+   s.ouraTrackingVersion=3;
+ }
+ for(const h of AUTO_CORE_HABITS)if(!s.habits.some(x=>x.id===h.id))s.habits.push({...h});
+ s.habits=s.habits.map(h=>h.id==='wake'?{...h,name:['5:40に早起き','5〜6時台に起床'].includes(h.name)?'5〜6時台に起床':h.name,icon:h.icon==='🌅'?'sunrise':h.icon}:h);
+ s.ouraAutoEnabled=true;
+ s.ouraAutoKeys=safeOuraAutoKeys(s.ouraAutoKeys);
+ s.ouraSuppressedKeys=safeOuraAutoKeys(s.ouraSuppressedKeys);
+ return s;
+}
+function safeOuraAutoKeys(v){return Array.isArray(v)?[...new Set(v.filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}\|[a-z0-9_]{2,40}$/.test(x)))].slice(-3000):[]}
+
 let state=load(),offset=0,editing=null,artStage=0;
 const cloud={client:null,user:null,ready:false,blocked:true,remote:null,revision:null,seq:0,syncedSeq:0,saving:false,timer:null,loadPromise:null};
-function load(){try{const a=JSON.parse(localStorage.getItem(KEY)||'null');if(a&&Array.isArray(a.habits)&&a.checks&&typeof a.checks==='object'){return {habits:a.habits.filter(validHabit),checks:a.checks,rewardedWeeks:Array.isArray(a.rewardedWeeks)?a.rewardedWeeks.filter(k=>typeof k==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(k)):[],avatarImages:validAvatarImages(a.avatarImages),ouraData:validOuraData(a.ouraData),ouraAutoEnabled:a.ouraAutoEnabled===true,ouraAutoDays:safeOuraDates(a.ouraAutoDays),ouraAutoSuppressed:safeOuraDates(a.ouraAutoSuppressed)}}}catch(e){}return{habits:defaultHabits.map(x=>({...x})),checks:{},rewardedWeeks:[],avatarImages:{},ouraData:{},ouraAutoEnabled:false,ouraAutoDays:[],ouraAutoSuppressed:[]}}
+function load(){try{const a=JSON.parse(localStorage.getItem(KEY)||'null');if(a&&Array.isArray(a.habits)&&a.checks&&typeof a.checks==='object'){return normalizeHabitState({habits:a.habits.filter(validHabit),checks:a.checks,rewardedWeeks:Array.isArray(a.rewardedWeeks)?a.rewardedWeeks.filter(k=>typeof k==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(k)):[],avatarImages:validAvatarImages(a.avatarImages),ouraData:validOuraData(a.ouraData),ouraAutoEnabled:a.ouraAutoEnabled===true,ouraAutoDays:safeOuraDates(a.ouraAutoDays),ouraAutoSuppressed:safeOuraDates(a.ouraAutoSuppressed),ouraTrackingVersion:a.ouraTrackingVersion,ouraAutoKeys:a.ouraAutoKeys,ouraSuppressedKeys:a.ouraSuppressedKeys})}}catch(e){}return normalizeHabitState({habits:defaultHabits.map(x=>({...x})),checks:{},rewardedWeeks:[],avatarImages:{},ouraData:{},ouraTrackingVersion:3,ouraAutoEnabled:true,ouraAutoKeys:[],ouraSuppressedKeys:[]})}
 function validAvatarImages(a){const o={};if(a&&typeof a==='object')for(const [k,v] of Object.entries(a))if(/^[0-4]$/.test(k)&&typeof v==='string'&&/^data:image\/(webp|png|jpeg);base64,/.test(v)&&v.length<1200000)o[k]=v;return o}
 function validOuraData(a){const o={};if(a&&typeof a==='object')for(const [day,row] of Object.entries(a)){if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!row||typeof row!=='object')continue;const safe={};for(const k of ['sleep','readiness','steps'])if(row[k]!==null&&Number.isFinite(Number(row[k])))safe[k]=Math.round(Number(row[k]));if(Object.keys(safe).length)o[day]=safe}return o}
 function safeOuraDates(raw){return Array.isArray(raw)?[...new Set(raw.filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)))].slice(-1000):[]}
@@ -468,8 +497,8 @@ let cloudSdkPromise=null;
 function loadCloudSdk(){if(window.supabase?.createClient)return Promise.resolve();if(cloudSdkPromise)return cloudSdkPromise;cloudSdkPromise=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=sdkUrl;s.onload=()=>window.supabase?.createClient?resolve():reject(Error('SDKの読み込みに失敗'));s.onerror=()=>reject(Error('CDNに接続できません'));document.head.append(s)});return cloudSdkPromise}
 function stableStringify(x){if(Array.isArray(x))return '['+x.map(stableStringify).join(',')+']';if(x&&typeof x==='object')return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+stableStringify(x[k])).join(',')+'}';return JSON.stringify(x)}
 function validateIncoming(raw){if(!raw||!Array.isArray(raw.habits)||raw.habits.some(x=>!validHabit(x))||!raw.checks||Array.isArray(raw.checks)||typeof raw.checks!=='object')throw Error('不正なクラウドデータ');const checks={};for(const[day,values]of Object.entries(raw.checks)){if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!values||typeof values!=='object'||Array.isArray(values))continue;checks[day]={};for(const [id,yes] of Object.entries(values))if(yes===true&&id.length<=80)checks[day][id]=true;if(!Object.keys(checks[day]).length)delete checks[day]}
-return{habits:raw.habits.map(h=>({id:h.id.slice(0,80),name:h.name.slice(0,28),icon:h.icon.slice(0,8),target:Number(h.target)})),checks,rewardedWeeks:Array.isArray(raw.rewardedWeeks)?[...new Set(raw.rewardedWeeks.filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)))]:[],avatarImages:validAvatarImages(raw.avatarImages),ouraData:validOuraData(raw.ouraData),ouraAutoEnabled:raw.ouraAutoEnabled===true,ouraAutoDays:safeOuraDates(raw.ouraAutoDays),ouraAutoSuppressed:safeOuraDates(raw.ouraAutoSuppressed)}}
-function cloudSnapshot(s){return {habits:s.habits,checks:s.checks,rewardedWeeks:s.rewardedWeeks,ouraAutoEnabled:s.ouraAutoEnabled===true,ouraAutoDays:safeOuraDates(s.ouraAutoDays),ouraAutoSuppressed:safeOuraDates(s.ouraAutoSuppressed),avatarImages:{},ouraData:{}}}
+return normalizeHabitState({habits:raw.habits.map(h=>({id:h.id.slice(0,80),name:h.name.slice(0,28),icon:h.icon.slice(0,24),target:Number(h.target)})),checks,rewardedWeeks:Array.isArray(raw.rewardedWeeks)?[...new Set(raw.rewardedWeeks.filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)))]:[],avatarImages:validAvatarImages(raw.avatarImages),ouraData:validOuraData(raw.ouraData),ouraAutoEnabled:raw.ouraAutoEnabled===true,ouraAutoDays:safeOuraDates(raw.ouraAutoDays),ouraAutoSuppressed:safeOuraDates(raw.ouraAutoSuppressed),ouraTrackingVersion:raw.ouraTrackingVersion,ouraAutoKeys:raw.ouraAutoKeys,ouraSuppressedKeys:raw.ouraSuppressedKeys})}
+function cloudSnapshot(s){return {habits:s.habits,checks:s.checks,rewardedWeeks:s.rewardedWeeks,ouraAutoEnabled:true,ouraTrackingVersion:3,ouraAutoKeys:safeOuraAutoKeys(s.ouraAutoKeys),ouraSuppressedKeys:safeOuraAutoKeys(s.ouraSuppressedKeys),avatarImages:{},ouraData:{}}}
 function choiceVisible(on,hasRemote=true){$('cloudChoice').classList.toggle('show',on);$('cloudUseRemote').hidden=!hasRemote}
 async function cloudFetch(){const {data,error}=await cloud.client.from('habit_states').select('data,revision,updated_at').eq('user_id',cloud.user.id).maybeSingle();if(error)throw error;return data}
 async function attachCloudUser(user){if(!cloud.client||cloud.user?.id===user.id&&cloud.loadPromise)return cloud.loadPromise;cloud.user=user;cloud.ready=false;cloud.blocked=true;$('cloudLogout').hidden=false;$('cloudEmail').value=user.email||'';$('cloudLogin').hidden=true;$('cloudAuthPanel').hidden=true;$('cloudPasswordPanel').hidden=false;cloudMessage(`${user.email} でログイン済み。クラウドの記録を確認しています…`);setTimeout(()=>checkOuraConnection(),100);
