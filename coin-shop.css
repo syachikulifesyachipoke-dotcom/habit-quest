@@ -138,3 +138,7 @@
  .coin-equipped-home{right:11px;bottom:67px}
 }
 @media(prefers-reduced-motion:reduce){.game-nav-svg{transition:none}.coin-result-item-icon{animation:none}}
+
+.coin-gacha-rates{margin:0 0 13px;max-width:420px}
+.coin-gacha-rates summary{color:#d0bbff;font-size:11px;font-weight:800;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.coin-gacha-rates p{font-size:10px!important;line-height:1.75!important;color:#cacbe3!important;margin:6px 0!important}
