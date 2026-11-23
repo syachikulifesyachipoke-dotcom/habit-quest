@@ -101,7 +101,7 @@ test('offline check stays locally and syncs on reconnect without losing the othe
  l.server.networkDown=false;
  phone.check('2026-11-24');
  await phone.send();
- await pc.send(); // conflict, auto-merge
+ await pc.poll(); // online/visible recovery path retries pending save, auto-merging on conflict
  assert.equal(pc.cloud.blocked,false);
  await pc.send();
  assert.equal(l.server.revision,3);
