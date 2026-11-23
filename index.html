@@ -217,6 +217,12 @@ async function fetchOuraMetrics(){
 }
 
 let ouraAutoEligibleCount=0,ouraAutoPendingCount=0;
+function awardCompletedOuraWeeks(days){
+ const weeks=new Set(days.map(day=>dayKey(weekStart(parseDay(day)))));
+ for(const week of weeks){
+   if(weeklyFor(parseDay(week)).complete&&!state.rewardedWeeks.includes(week))state.rewardedWeeks.push(week);
+ }
+}
 const OURA_AUTO_SPORTS=new Set(['strengthtraining','cycling','running','swimming','pilates','dance','yoga','rowing','elliptical','hiking']);
 function qualifiesOuraWorkout(w){
  if(!w?.start_time||!w?.end_time)return false;
@@ -251,7 +257,7 @@ function applyOuraWorkoutsToHabits(workouts){
    if(!state.ouraAutoDays.includes(day))state.ouraAutoDays.push(day);
    added++;
  }
- if(added){store();render();toast('Ouraの運動実績 '+added+'日分をゲームに反映しました',true)}
+ if(added){awardCompletedOuraWeeks([...dates]);store();render();toast('Ouraの運動実績 '+added+'日分をゲームに反映しました',true)}
  return added;
 }
 $('ouraAutoToggle').onclick=async()=>{
@@ -337,13 +343,14 @@ $('ouraBulkWake').onclick=async()=>{
    state.checks[c.date].wake=true;added++;
  }
  if(!added)return;
+ awardCompletedOuraWeeks(candidates.map(c=>c.date));
  store();render();
  try{await fetchOuraMetrics()}catch(e){$('ouraStatus').textContent='早起きは記録しましたが、Oura表示の更新に失敗: '+e.message}
  toast('早起き '+added+'日分を記録しました',true);
 };
 $('ouraCandidates')?.addEventListener('click',async e=>{const b=e.target.closest('[data-oura-confirm]');if(!b)return;const day=b.dataset.ouraDate,id=b.dataset.ouraConfirm;if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!['wake','train'].includes(id))return;if(!confirm(day+' の「'+(id==='wake'?'早起き':'運動')+'」を実施した記録として確定しますか？'))return;state.checks[day] ||= {};state.checks[day][id]=true;
  if(id==='train'){state.ouraAutoSuppressed=(state.ouraAutoSuppressed||[]).filter(x=>x!==day);state.ouraAutoDays=(state.ouraAutoDays||[]).filter(x=>x!==day)}
- store();render();await fetchOuraMetrics();toast('過去の実績に記録しました',true)});
+ awardCompletedOuraWeeks([day]);store();render();await fetchOuraMetrics();toast('過去の実績に記録しました',true)});
 async function checkOuraConnection(preserveStatus=false){
  $('ouraConnect').disabled=true;$('ouraSync').disabled=true;$('ouraBackfill').disabled=true;$('ouraDisconnect').hidden=true;
  if(!cloud.user){if(!preserveStatus)$('ouraStatus').textContent='先にクラウドへログインしてください。';return}
