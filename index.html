@@ -726,6 +726,76 @@ function stats(){
 function esc(str){return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function avatarSvg(stage){const palette=[['#c5a0ff','#6b4ac9'],['#7aead6','#28ae9f'],['#87bbff','#4b65c9'],['#ffba87','#f07969'],['#ecc7ff','#9e6fef']][stage];if(stage===0)return `<svg class="avatar-svg" viewBox="0 0 300 240" role="img" aria-label="星のたまご"><defs><radialGradient id="eg" cx="35%" cy="25%"><stop stop-color="#fff4ff"/><stop offset=".54" stop-color="#c2a5ff"/><stop offset="1" stop-color="#7163c8"/></radialGradient></defs><g opacity=".6" fill="#d6c6ff"><path d="M63 62l4 10 10 4-10 4-4 10-4-10-10-4 10-4z"/><path d="M238 50l4 9 9 4-9 4-4 9-4-9-9-4 9-4z"/><circle cx="55" cy="147" r="3"/><circle cx="249" cy="155" r="3"/></g><ellipse cx="150" cy="218" rx="74" ry="13" fill="#7663bd" opacity=".18"/><path d="M150 24C105 24 73 91 73 145c0 49 36 78 77 78s77-29 77-78c0-54-32-121-77-121Z" fill="url(#eg)" stroke="#e0d2ff" stroke-width="4"/><ellipse cx="120" cy="83" rx="20" ry="42" fill="white" opacity=".23" transform="rotate(28 120 83)"/><path d="M137 119l13 9-10 13 17 10-12 16" fill="none" stroke="#f3e8ff" stroke-width="5" stroke-linecap="round"/><circle cx="104" cy="157" r="6" fill="#9b80ee" opacity=".65"/><circle cx="190" cy="118" r="8" fill="#f1ddff" opacity=".8"/><circle cx="181" cy="181" r="5" fill="#9477d9" opacity=".65"/></svg>`;
 const [light,dark]=palette[stage%palette.length], wings=stage>=2, fire=stage>=3, star=stage>=4;return `<svg class="avatar-svg" viewBox="0 0 300 250" role="img" aria-label="${EVO[stage].name}"><defs><linearGradient id="bodyG" x1="0" x2="1" y1="0" y2="1"><stop stop-color="${light}"/><stop offset="1" stop-color="${dark}"/></linearGradient><linearGradient id="wingG" x1="0" x2="0" y1="0" y2="1"><stop stop-color="${light}"/><stop offset="1" stop-color="${dark}"/></linearGradient></defs><g opacity=".9" fill="#f4d9ff"><path d="M47 45l4 9 9 4-9 4-4 9-4-9-9-4 9-4z"/><path d="M249 30l5 12 12 5-12 5-5 12-5-12-12-5 12-5z"/></g>${wings?`<path d="M118 125C72 103 67 54 34 76c6 22-4 45-15 63 30-8 65 4 98 35Z" fill="url(#wingG)" stroke="${dark}" stroke-width="5"/><path d="M181 125c47-22 52-71 84-49-5 22 5 45 16 63-30-8-65 4-98 35Z" fill="url(#wingG)" stroke="${dark}" stroke-width="5"/><path d="M37 78l45 57M264 78l-45 57" fill="none" stroke="#fff" opacity=".36" stroke-width="3"/>`:''}<path d="M184 173c54-31 75-15 78 13-23-11-43 36-90 13" fill="${dark}" stroke="#34335c" stroke-width="4"/><ellipse cx="148" cy="168" rx="64" ry="64" fill="url(#bodyG)" stroke="#2b365a" stroke-width="5"/><ellipse cx="149" cy="181" rx="42" ry="43" fill="#fff2dc" opacity=".84"/><path d="M109 210c-28-3-35 24-7 27h28l4-25M171 212l4 25h28c27-2 21-30-7-27" fill="${dark}" stroke="#364164" stroke-width="4" stroke-linejoin="round"/><path d="M90 91 70 46q37 6 53 44M176 88l40-43q-6 42-23 62" fill="${dark}" stroke="#2c3559" stroke-width="5"/><ellipse cx="150" cy="114" rx="71" ry="59" fill="url(#bodyG)" stroke="#2b365a" stroke-width="5"/><ellipse cx="150" cy="139" rx="46" ry="25" fill="${light}" opacity=".85"/><ellipse cx="122" cy="112" rx="14" ry="17" fill="#fff"/><ellipse cx="177" cy="112" rx="14" ry="17" fill="#fff"/><ellipse cx="126" cy="114" rx="6" ry="9" fill="#222b4b"/><ellipse cx="174" cy="114" rx="6" ry="9" fill="#222b4b"/><circle cx="129" cy="110" r="2.5" fill="#fff"/><circle cx="176" cy="110" r="2.5" fill="#fff"/><ellipse cx="105" cy="139" rx="12" ry="7" fill="#e87593" opacity=".43"/><ellipse cx="195" cy="139" rx="12" ry="7" fill="#e87593" opacity=".43"/><path d="M139 150q11 11 22 0" fill="none" stroke="#323656" stroke-width="3" stroke-linecap="round"/><circle cx="138" cy="135" r="3" fill="#59556f"/><circle cx="163" cy="135" r="3" fill="#59556f"/>${fire?`<path d="M232 143c20-25 3-37 15-59 23 29 34 44 19 64 15-5 19-13 22-22 18 34-14 58-43 47 20-13 9-25 4-31-1 17-9 17-17 1" fill="#ffae65" stroke="#ff7568" stroke-width="4"/>`:''}${star?`<path d="M149 13l9 23 23 2-19 15 6 22-19-14-20 14 6-22-18-15 23-2Z" fill="#ffe6a7" stroke="#f3b6ff" stroke-width="4"/>`:''}</svg>`}
+/* G6 derived UI only: one underlying weekly mission for chest and boss. */
+let stepsHistoryOffset=0;
+function renderWeeklyBoss(){
+ const wk=weekStart(parseDay(isoToday())),start=dayKey(wk);
+ const data=window.HabitQuestWeeklyBoss.describe(start,weeklyFor(wk));
+ const container=$('weeklyBoss');if(!data)return;
+ container.dataset.state=data.state;container.dataset.tone=data.tone;
+ $('bossCreature').dataset.state=data.state;
+ $('bossName').textContent=data.name;
+ $('bossSubtitle').textContent=data.subtitle;
+ $('bossWeekLabel').textContent=(wk.getMonth()+1)+'/'+wk.getDate()+' 週';
+ $('bossHp').textContent=data.hp+' / '+data.totalHp;
+ $('bossHpFill').style.width=(100-data.percent)+'%';
+ $('bossHpTrack').setAttribute('aria-valuenow',String(100-data.percent));
+ $('bossHits').textContent='今週の達成：'+data.done+' / '+data.target+' 回 · 1達成＝20ダメージ';
+ $('bossOutcome').textContent=data.state==='no-mission'?'週間ミッションの対象を1件以上設定してください。':
+  data.isDefeated?'討伐成功！ ウィークリー宝箱と同じ達成条件をクリアしました。':
+  data.state==='waiting'?'最初の習慣達成が、初めての攻撃になります。':
+  '残り'+(data.target-data.done)+'回の週間目標達成で討伐！';
+ $('bossHomeSummary').textContent=data.isDefeated?'今週のボスを討伐済み':
+  data.target>0?'HP '+data.hp+' / '+data.totalHp+' · 残り'+(data.target-data.done)+'回':'週間目標が未設定です';
+}
+function animateWeeklyBossHit(amount){
+ if(amount<=0)return;
+ const el=$('weeklyBoss');$('bossDamage').textContent='−'+amount;
+ el.classList.remove('is-attacking');void el.offsetWidth;el.classList.add('is-attacking');
+ setTimeout(()=>el.classList.remove('is-attacking'),850);
+}
+function renderStepsPanel(){
+ const steps=window.HabitQuestOuraSteps,day=isoToday();
+ const count=steps.stepsForDay(state.ouraData,day),status=steps.status(count);
+ $('homeStepsValue').textContent=count===null?'—':count.toLocaleString('ja-JP');
+ $('homeStepsStatus').dataset.state=status;
+ $('homeStepsStatus').textContent=status==='achieved'?'達成':status==='under'?'目標まであと'+(steps.MIN_STEPS-count).toLocaleString('ja-JP')+'歩':'未取得';
+ $('homeStepsProgress').style.width=count===null?'0%':Math.min(100,Math.round(100*count/steps.MIN_STEPS))+'%';
+ if(!$('stepsHistory').hidden)renderStepsHistory();
+}
+function monthFromOffset(n){
+ const now=isoToday(),y=Number(now.slice(0,4)),m=Number(now.slice(5,7));
+ return new Date(Date.UTC(y,m-1+n,1));
+}
+function renderStepsHistory(){
+ const steps=window.HabitQuestOuraSteps,month=monthFromOffset(stepsHistoryOffset);
+ const year=month.getUTCFullYear(),m=month.getUTCMonth()+1;
+ const prefix=year+'-'+String(m).padStart(2,'0');
+ $('stepsHistoryMonth').textContent=year+'年'+m+'月';
+ const days=new Date(Date.UTC(year,m,0)).getUTCDate(),list=[];
+ for(let i=1;i<=days;i++){
+  const key=prefix+'-'+String(i).padStart(2,'0');if(key>isoToday())break;
+  const num=steps.stepsForDay(state.ouraData,key),status=steps.status(num);
+  list.push({day:key,steps:num,status});
+ }
+ const observed=list.filter(x=>x.steps!==null).length,achieved=list.filter(x=>x.status==='achieved').length;
+ $('stepsHistorySummary').textContent=observed+'日分のOura記録中 '+achieved+'日が8,001歩以上';
+ $('stepsHistoryList').innerHTML=list.length?list.map(x=>
+  '<div class="step-day" data-state="'+x.status+'"><time datetime="'+x.day+'">'+x.day.slice(5).replace('-','/')+'</time><strong>'+
+  (x.steps===null?'未取得':x.steps.toLocaleString('ja-JP')+'歩')+'</strong><span>'+
+  (x.status==='achieved'?'達成':x.status==='under'?'未達成':'—')+'</span></div>'
+ ).join(''):'<div class="step-history-empty">この月のデータはありません。</div>';
+ const history=steps.allHistory(state.ouraData,isoToday());
+ const first=history.at(-1)?.day?.slice(0,7)||isoToday().slice(0,7);
+ $('stepsOlder').disabled=monthFromOffset(stepsHistoryOffset-1).toISOString().slice(0,7)<first;
+ $('stepsNewer').disabled=stepsHistoryOffset>=0;
+}
+function openStepsHistory(){
+ const panel=$('stepsHistory');panel.hidden=!panel.hidden;
+ $('homeStepsOpen').textContent=panel.hidden?'履歴を見る':'履歴を閉じる';
+ if(!panel.hidden)renderStepsHistory();
+}
+
 function renderGroupStreaks(){
  const data=window.HabitQuestGroups.streak({
   habits:state.habits,checks:state.checks,today:isoToday(),
@@ -758,7 +828,7 @@ for(const spec of orderedGroups){
 $('tracker').classList.toggle('auto-open',mobileAutoExpanded);$('tracker').innerHTML=html;const percentage=w.target?Math.min(100,Math.round(100*w.done/w.target)):0;$('ring').style.background=`conic-gradient(var(--mint) ${percentage}%,#323851 ${percentage}%)`;$('weekRate').textContent=percentage+'%';$('weekCount').textContent=`${w.done} / ${w.target} 回`;const earned=state.rewardedWeeks.includes(dayKey(start));$('chest').classList.toggle('unlocked',earned);$('chestEmoji').innerHTML=habitIconSvg(earned?'trophy':'gift');$('chestTitle').textContent=earned?'週間ミッションクリア！':'ウィークリー宝箱';$('chestText').textContent=earned?'+100 XP を獲得済み':'全目標達成で +100 XP';const keyMilestones=[EVO[stageNo],EVO[stageNo+1],EVO[EVO.length-1]].filter(Boolean);
 $('evoList').innerHTML=[...new Map(keyMilestones.map(e=>[e.lv,e])).values()].map(e=>`<div class="evo-item ${s.level<e.lv?'locked':''} ${e.lv===EVO[stageNo].lv?'current':''}"><div class="evo-emoji">${s.level<e.lv?'◆':e.emoji}</div><div><strong>Lv.${e.lv} ${e.name}</strong><small>${e.desc}</small></div></div>`).join('');
 $('evoAllList').innerHTML=LEVEL_ATLAS.map(item=>`<div class="evo-level ${item.lv<=s.level?'unlocked':'locked'} ${item.major?'milestone':''} ${item.lv===s.level?'current':''}"><span class="evo-level-num">Lv.${item.lv}</span><span class="evo-level-name">${item.major?(item.lv<=s.level?EVO.find(e=>e.lv===item.lv).emoji:'◆')+' '+esc(item.label):esc(item.label)}</span><span class="evo-level-state">${item.lv<=s.level?'達成':'未解放'}</span></div>`).join('');
-renderDailyAdventure(today);renderAnalytics();renderArchivedHabits();renderArt();renderOura();updateOuraAutoStatus();renderGamePanels();}
+renderDailyAdventure(today);renderAnalytics();renderArchivedHabits();renderArt();renderOura();updateOuraAutoStatus();renderGamePanels();renderWeeklyBoss();renderStepsPanel();}
 
 /* G3: five real screens, a free cosmetics collection and a gentle first-week story. */
 let activeGameScreen='home',selectedEventChapter=null,unlockNextView='events';
@@ -987,6 +1057,21 @@ function initGameShell(){
   if(homeCompanion)homeCompanion.dataset.mood='petted';
   cheerCompanion();
   setTimeout(()=>{if(activeGameScreen==='character')renderGamePanels()},2200);
+ };
+ $('bossHomeOpen').onclick=()=>{setGameScreen('events');$('weeklyBoss').scrollIntoView({behavior:'smooth',block:'start'})};
+ $('homeStepsOpen').onclick=openStepsHistory;
+ $('stepsOlder').onclick=()=>{stepsHistoryOffset--;renderStepsHistory()};
+ $('stepsNewer').onclick=()=>{if(stepsHistoryOffset<0)stepsHistoryOffset++;renderStepsHistory()};
+ $('reminderExport').onclick=()=>{
+  const time=$('reminderTime').value;
+  if(!window.HabitQuestReminder.validTime(time)){toast('通知時刻を確認してください');return}
+  const file=window.HabitQuestReminder.calendarFile(time,Date.now());
+  const b=new Blob([file],{type:'text/calendar;charset=utf-8'});
+  const u=URL.createObjectURL(b),a=document.createElement('a');
+  a.href=u;a.download='habit-quest-daily-'+time.replace(':','')+'.ics';
+  document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),2000);
+  $('reminderHelp').textContent='カレンダー用ファイルを作成しました。端末で予定を取り込み、通知が有効か確認してください。自動起動はできません。';
  };
  $('characterGoHome').onclick=()=>setGameScreen('home');
  $('eventGoHome').onclick=()=>{setGameScreen('home');$('dailyQuestJump').click()};
