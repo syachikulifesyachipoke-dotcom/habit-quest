@@ -730,7 +730,7 @@ const [light,dark]=palette[stage%palette.length], wings=stage>=2, fire=stage>=3,
 let stepsHistoryOffset=0;
 function renderWeeklyBoss(){
  const wk=addDay(weekStart(parseDay(isoToday())),offset*7),start=dayKey(wk);
- const data=window.HabitQuestWeeklyBoss.describe(start,weeklyFor(wk));
+ const data=window.HabitQuestWeeklyBoss.describe(start,weeklyFor(wk),state.rewardedWeeks.includes(start));
  const container=$('weeklyBoss');if(!data)return;
  container.dataset.state=data.state;container.dataset.tone=data.tone;
  $('bossCreature').dataset.state=data.state;
@@ -742,6 +742,7 @@ function renderWeeklyBoss(){
  $('bossHpTrack').setAttribute('aria-valuenow',String(100-data.percent));
  $('bossHits').textContent='今週の達成：'+data.done+' / '+data.target+' 回 · 1達成＝20ダメージ';
  $('bossOutcome').textContent=data.state==='no-mission'?'週間ミッションの対象を1件以上設定してください。':
+  data.awardRetained?'討伐済みの記録を保持しています。現在のチェックは変更されていますが、以前に開けた宝箱と討伐実績は消えません。':
   data.isDefeated?'討伐成功！ ウィークリー宝箱と同じ達成条件をクリアしました。':
   data.state==='waiting'?'最初の習慣達成が、初めての攻撃になります。':
   '残り'+(data.target-data.done)+'回の週間目標達成で討伐！';
@@ -1231,7 +1232,7 @@ $('tracker').addEventListener('click',event=>{
   toast('ウォーキングはOuraの日別歩数8,001歩以上でのみ自動チェックされます。');return;
  }
  const shownWeek=addDay(weekStart(parseDay(isoToday())),offset*7),shownWeekKey=dayKey(shownWeek);
- const beforeBoss=window.HabitQuestWeeklyBoss.describe(shownWeekKey,weeklyFor(shownWeek));
+ const beforeBoss=window.HabitQuestWeeklyBoss.describe(shownWeekKey,weeklyFor(shownWeek),state.rewardedWeeks.includes(shownWeekKey));
  const manualCheck=date===isoToday()&&state.habits.some(h=>h.id===hid&&!isOuraAutoHabit(h));
  const priorGame=manualCheck?gameProgress():null;
  state.checks[date]??={};const was=!!state.checks[date][hid];if(was)delete state.checks[date][hid];else state.checks[date][hid]=true;
@@ -1251,7 +1252,7 @@ $('tracker').addEventListener('click',event=>{
    toast('📖 冒険の第'+updated.shell.completedChapters+'話を解放しました！',true);
  }
  if(!was&&beforeBoss&&date>=shownWeekKey&&date<=dayKey(addDay(shownWeek,6))){
-  const afterBoss=window.HabitQuestWeeklyBoss.describe(shownWeekKey,weeklyFor(shownWeek));
+  const afterBoss=window.HabitQuestWeeklyBoss.describe(shownWeekKey,weeklyFor(shownWeek),state.rewardedWeeks.includes(shownWeekKey));
   if(afterBoss&&afterBoss.damage>beforeBoss.damage)animateWeeklyBossHit(afterBoss.damage-beforeBoss.damage);
  }
  const now=stats();if(!was){particles(b);if(now.level>prev.level)toast(`🎉 LEVEL UP! Lv.${now.level}`,true);else if(now.completedWeeks>prev.completedWeeks)toast('🏆 週間宝箱を開放！ +100 XP',true);else if(date>=xpStartDate()&&validXpStartDate(state.xpStartDate))toast('✨ +20 XP  習慣クリア！',true);else toast('過去の実績を記録しました（XP対象外）',true)}else toast('チェックを取り消しました')});
