@@ -269,6 +269,7 @@
 @media(max-width:580px){.world-peek{padding:10px;margin-top:10px}.world-peek-top{gap:7px}.world-peek-icon{font-size:24px;min-width:28px}.world-map-open{padding:8px;font-size:10px}.world-map-dialog{padding:15px;max-height:92vh}.world-map-list{grid-template-columns:1fr}.world-dialog-head h2{font-size:18px}.world-dialog-head p{font-size:11px}.world-area{padding:10px}.world-diary-head{flex-direction:column;gap:4px}}
 @media(prefers-reduced-motion:reduce){.world-progress-bar{transition:none}.world-map-dialog::backdrop{backdrop-filter:none}}
 </style>
+<link rel="stylesheet" href="./game-shell.css">
 </head>
 <body>
 <div class="wrap">
@@ -299,7 +300,8 @@
  <p class="cloud-note">既存のメールアドレスをそのまま使用できます。初回パスワード設定はメールを1通だけ申請してください。<a href="https://supabase.com/dashboard/project/kpiqktibvzymgzwxiajv/auth/url-configuration" target="_blank" rel="noopener noreferrer">Supabaseの認証URL設定</a>でSite URLとRedirect URLsがこのアプリのURLになっていることを事前に確認してください。ログイン後、端末とクラウドの記録を選択します。</p>
  <details class="cloud-advanced"><summary>バックアップ・復元</summary><div class="cloud-backup-actions"><button class="btn ghost" id="exportBtn">↧ バックアップ</button><button class="btn ghost" id="importBtn">↥ 復元</button><input id="fileInput" type="file" accept="application/json,.json" hidden></div></details>
 </section>
-<main>
+<div class="sync-banner" id="syncBanner" role="status" hidden><span id="syncBannerText">クラウドの同期を確認してください。</span><button type="button" id="syncBannerOpen">同期を確認</button></div>
+<main id="screen-home" class="game-screen is-active" aria-label="ホーム画面">
 <section class="intro">
  <div class="hero"><div class="eyebrow">YOUR DAILY ADVENTURE</div><h2>今日の一歩で、<br><em>未来の自分を進化させる。</em></h2><p class="hero-sub">小さな習慣が経験値になる。1日ずつ積み重ねて、<br>あなただけの相棒を育てていこう。</p><div class="hero-counters"><div class="counter"><strong id="todayDone">0/0</strong><label>今日の達成（進行中の全項目）</label></div><div class="counter"><strong id="streak">0<span style="font-size:14px"> 日</span></strong><label title="手動習慣を1項目以上達成した連続日数（当日未記録なら昨日まで）">連続記録日数（手動1項目以上）ⓘ</label></div><div class="counter"><strong id="totalXp">0</strong><label>開始日以降の XP</label></div></div>
  <div class="daily-quest" id="dailyQuest" aria-live="polite"><div class="daily-quest-icon" aria-hidden="true">⚔️</div><div class="daily-quest-main"><strong id="dailyQuestTitle">今日の冒険</strong><small id="dailyQuestText">小さな一歩から始めましょう</small></div><button type="button" class="daily-quest-action" id="dailyQuestJump">習慣へ</button></div>
@@ -346,7 +348,86 @@
  <div id="ouraInsight" class="pill-note">睡眠・コンディション・歩数のデータを取り込むと、習慣の記録と同じ画面で見られます。現時点ではOuraへの認証前です。</div>
  <p class="small-note spaced">Oura OAuthはSupabase Edge Functionsで処理します。必要な認証情報はSupabaseのSecretsに設定し、ブラウザやGitHubには保存しません。</p>
 </section></details></div></details>
-</main><footer class="bottom-foot">HABIT QUEST · 習慣を冒険に変える</footer>
+</main>
+
+<section id="screen-character" class="game-screen game-panel" aria-label="キャラ画面" hidden>
+ <div class="game-panel-heading"><h2>🐲 相棒の部屋</h2><p>頑張った日には笑顔で、休む日はそっと寄り添う相棒。毎日の冒険が成長につながります。</p></div>
+ <div class="char-layout">
+  <section class="char-stage">
+   <div class="char-name" id="characterName">星のたまご</div><div class="char-level" id="characterLevel">Lv.1</div>
+   <div class="char-avatar" id="characterPortrait" aria-label="現在の相棒の姿"></div>
+   <div class="char-reaction" id="characterReaction" role="status"><strong>相棒の気持ち</strong><span id="characterReactionText">一緒に冒険を始めよう！</span></div>
+   <div class="char-actions">
+    <button type="button" class="char-action primary" id="characterPat">相棒をなでる</button>
+    <button type="button" class="char-action" id="characterGoHome">今日の冒険へ</button>
+   </div>
+  </section>
+  <section class="char-details">
+   <h3>相棒と歩んだ日々</h3><p>XPと進化はこれまでどおり。お休みしても累計の冒険記録は失われません。</p>
+   <div class="char-metrics">
+    <div class="char-metric"><strong id="characterTotalDays">0</strong><small>冒険した日</small></div>
+    <div class="char-metric"><strong id="characterXp">0</strong><small>獲得XP</small></div>
+    <div class="char-metric"><strong id="characterStage">1</strong><small>現在の進化段階</small></div>
+   </div>
+   <p id="characterNextStage">次の進化まで、毎日の習慣を積み重ねましょう。</p>
+   <div id="characterEvoHost"></div>
+  </section>
+ </div>
+ <div class="character-analytics-host" id="characterAnalyticsHost"></div>
+</section>
+<section id="screen-events" class="game-screen game-panel" aria-label="イベント画面" hidden>
+ <div class="game-panel-heading"><h2>🎪 イベント・冒険</h2><p>最初の7つの冒険日を、物語とともに進めましょう。連続記録は必要ありません。</p></div>
+ <div class="event-hero">
+  <h3 id="eventProgressTitle">第1章 · 最初の一歩</h3>
+  <div id="eventWeekProgress" class="event-progress" role="progressbar" aria-label="最初の7日間の冒険進捗" aria-valuemin="0" aria-valuemax="7" aria-valuenow="0"><i id="eventWeekBar"></i></div>
+  <p id="eventProgressDescription">手動習慣をひとつ達成すると最初の章が始まります。</p>
+  <div class="event-hero-actions">
+   <button type="button" class="char-action primary" id="eventGoHome">今日の習慣をチェック</button>
+   <button type="button" class="char-action" id="eventMapOpen">世界地図を開く</button>
+  </div>
+ </div>
+ <div class="event-chapters" id="eventChapters" aria-label="七日間の冒険の章"></div>
+ <div class="event-story" id="eventStoryDetail" aria-live="polite"><h3 id="eventStoryTitle">はじまりの章</h3><p id="eventStoryText">初めての手動習慣を達成すると、物語が解放されます。</p></div>
+</section>
+<section id="screen-shop" class="game-screen game-panel" aria-label="ショップ画面" hidden>
+ <div class="game-panel-heading"><h2>🛍️ 冒険ショップ</h2><p>習慣を達成して集めた装飾品で相棒を飾りましょう。すべて無料で、課金やXP消費はありません。</p></div>
+ <section class="shop-panel">
+  <h3>✨ 無料の着せ替え装飾</h3>
+  <p class="small-note">冒険した累計日数で解放されます。着せ替えの選択はこの端末にだけ保存されます。</p>
+  <div id="shopFrames" class="shop-grid"></div>
+ </section>
+ <section class="shop-panel" style="margin-top:16px">
+  <h3>🧳 旅の宝物コレクション</h3>
+  <p class="small-note">探索エリアで発見した宝物は、いつでもここで見返せます。</p>
+  <div id="shopRelics" class="shop-relics"></div>
+ </section>
+</section>
+<section id="screen-options" class="game-screen game-panel" aria-label="オプション画面" hidden>
+ <div class="game-panel-heading"><h2>⚙️ オプション</h2><p>クラウド同期、習慣の休止・再開、Oura連携、相棒画像、バックアップを管理します。</p></div>
+ <div class="option-sync-card">
+  <div><strong>☁ アカウントと同期</strong><small id="optionsSyncStatus">ログイン状態を確認しています。</small></div>
+  <button type="button" class="char-action primary" id="optionsCloudOpen">ログイン・同期を開く</button>
+ </div>
+ <div class="options-settings-host" id="optionsSettingsHost"></div>
+</section>
+<nav class="game-bottom-nav" id="gameBottomNav" aria-label="ゲームのメインメニュー">
+ <button type="button" class="game-nav-button" data-game-tab="home" aria-current="page" aria-controls="screen-home"><span class="game-nav-icon" aria-hidden="true">🏠</span><span class="game-nav-label">ホーム</span></button>
+ <button type="button" class="game-nav-button" data-game-tab="character" aria-controls="screen-character"><span class="game-nav-icon" aria-hidden="true">🐲</span><span class="game-nav-label">キャラ</span></button>
+ <button type="button" class="game-nav-button" data-game-tab="events" aria-controls="screen-events"><span class="game-nav-icon" aria-hidden="true">🎪</span><span class="game-nav-label">イベント</span></button>
+ <button type="button" class="game-nav-button" data-game-tab="shop" aria-controls="screen-shop"><span class="game-nav-icon" aria-hidden="true">🛍️</span><span class="game-nav-label">ショップ</span></button>
+ <button type="button" class="game-nav-button" data-game-tab="options" aria-controls="screen-options"><span class="game-nav-icon" aria-hidden="true">⚙️</span><span class="game-nav-label">オプション</span></button>
+</nav>
+<dialog class="unlock-dialog" id="gameUnlockDialog" aria-labelledby="gameUnlockTitle">
+ <div class="unlock-symbol" id="gameUnlockIcon" aria-hidden="true">🌟</div>
+ <div class="unlock-eyebrow" id="gameUnlockEyebrow">NEW AREA</div>
+ <h2 id="gameUnlockTitle">新しいエリアを発見！</h2>
+ <p id="gameUnlockText">相棒と一緒に新たな景色に出会いました。</p>
+ <div class="unlock-actions">
+  <button type="button" class="secondary" id="gameUnlockClose">あとで見る</button>
+  <button type="button" id="gameUnlockAction">冒険を見る</button>
+ </div>
+</dialog>
+<footer class="bottom-foot">HABIT QUEST · 習慣を冒険に変える</footer>
 <div class="site-links"><a href="./privacy.html">プライバシー</a> · <a href="./terms.html">利用規約</a></div>
 </div>
 <dialog class="world-map-dialog" id="worldMapDialog" aria-labelledby="worldMapTitle">
@@ -369,6 +450,7 @@
 <script src="./daily-adventure.js"></script>
 <script src="./adventure-world.js"></script>
 <script src="./cloud-onboarding.js"></script>
+<script src="./game-shell.js"></script>
 <script>
 (()=>{'use strict';
 const KEY='habit-quest-v1', XP_CHECK=20, XP_WEEK=100;
