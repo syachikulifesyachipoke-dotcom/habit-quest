@@ -150,6 +150,7 @@ test('headless Chrome: lifecycle and JSON backup/import preserve checks and XP',
    ['/sync-merge.js',fs.readFileSync(path.join(root,'sync-merge.js'),'utf8')],
    ['/daily-adventure.js',fs.readFileSync(path.join(root,'daily-adventure.js'),'utf8')],
    ['/adventure-world.js',fs.readFileSync(path.join(root,'adventure-world.js'),'utf8')],
+   ['/cloud-onboarding.js',fs.readFileSync(path.join(root,'cloud-onboarding.js'),'utf8')],
    ['/cloud-config.js','window.HABIT_QUEST_CLOUD={url:"",anonKey:""};']
  ]);
  const server=http.createServer((req,res)=>{
