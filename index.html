@@ -334,10 +334,17 @@ function validXpStartDate(day){
 function xpStartDate(){return validXpStartDate(state.xpStartDate)||isoToday()}
 function weekIsXpEligible(start){return dayKey(addDay(start,6))>=xpStartDate()&&!!validXpStartDate(state.xpStartDate)}
 function markFirstLoginDate(user){
- // Successful authenticated login is the start line; never infer it from old Oura history.
- if(state.xpStartDate)return;
- state.xpStartDate=isoToday();
- try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){}
+ // A reused browser must not give another account the previous account's XP start.
+ const ownerKey=KEY+'-xp-owner';
+ try{
+   const oldOwner=localStorage.getItem(ownerKey);
+   if(oldOwner&&oldOwner!==user.id)state.xpStartDate=null;
+   if(!validXpStartDate(state.xpStartDate))state.xpStartDate=isoToday();
+   localStorage.setItem(ownerKey,user.id);
+   localStorage.setItem(KEY,JSON.stringify(state));
+ }catch(_){
+   if(!validXpStartDate(state.xpStartDate))state.xpStartDate=isoToday();
+ }
 }
 function normalizeHabitState(input){
  const s={...input,xpStartDate:validXpStartDate(input.xpStartDate),habits:(input.habits||[]).map(h=>({...h})),checks:Object.fromEntries(Object.entries(input.checks||{}).map(([day,v])=>[day,{...v}]))};
@@ -806,6 +813,7 @@ if(cloud.remote){
  // Cloud start date is canonical and never resets on new device or later login.
  validated.xpStartDate=validXpStartDate(validated.xpStartDate)||isoToday();
  state.xpStartDate=validated.xpStartDate;
+ try{localStorage.setItem(KEY+'-xp-owner',user.id)}catch(_){}
  if(stableStringify(cloudSnapshot(validated))===stableStringify(cloudSnapshot(state))){cloud.revision=cloud.remote.revision;cloud.ready=true;cloud.blocked=false;cloud.syncedSeq=cloud.seq;choiceVisible(false);cloudMessage('☁ クラウドから記録を読み込みました','good');
  if(stableStringify(cloudSnapshot(cloud.remote.data))!==stableStringify(cloudSnapshot(validated))){
    // Write only the normalized v3 migration; the original data stays in GitHub/DB history.
