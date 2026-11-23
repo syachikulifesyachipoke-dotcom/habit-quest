@@ -25,7 +25,7 @@ jobs:
       - name: Validate all local PWA assets and references
         run: node scripts/deployment-audit.mjs --local
       - name: Check app syntax and contracts
-        run: node --test tests/*.test.mjs
+        run: node --test --test-concurrency=1 tests/*.test.mjs
   published-site:
     # Only test the deployed main branch on a schedule or manual main run;
     # a PR is not yet deployed and must not be compared with production.
