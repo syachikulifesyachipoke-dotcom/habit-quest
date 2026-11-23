@@ -20,6 +20,9 @@ const remote={
  ouraAutoKeys:[],ouraSuppressedKeys:[],ouraIgnoredTypes:['oura_dance','oura_pilates']
 };
 const fakeCloudScript=`<script>
+window.__testErrors=[];
+window.addEventListener('error',e=>window.__testErrors.push('error: '+e.message));
+window.addEventListener('unhandledrejection',e=>window.__testErrors.push('rejection: '+e.reason?.message));
 window.supabase={
  createClient(){return{
   auth:{
@@ -53,7 +56,7 @@ const check=`<script>
  const verify=(yes,msg)=>{if(!yes)throw Error(msg)};
  const blocked=new URLSearchParams(location.search).has('conflictingPhone');
  const saved=JSON.parse(localStorage.getItem('habit-quest-v1'));
- verify(!!saved,'phone local state absent; mock SDK: '+Boolean(window.supabase?.createClient)+'; status: '+document.getElementById('cloudStatus').textContent);
+ verify(!!saved,'phone local state absent; mock SDK: '+Boolean(window.supabase?.createClient)+'; config: '+window.HABIT_QUEST_CLOUD?.url+'; game date: '+document.getElementById('nowDate').textContent+'; status: '+document.getElementById('cloudStatus').textContent+'; errors: '+JSON.stringify(window.__testErrors));
  const reading=saved.habits.find(h=>h.id==='read');
  verify(!!reading,'reading habit disappeared');
  if(blocked){
