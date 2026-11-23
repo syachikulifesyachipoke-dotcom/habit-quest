@@ -1,27 +1,42 @@
 name: Habit Quest smoke checks
 on:
   workflow_dispatch:
+  # 02:37 JST each day (17:37 UTC on the preceding day).
+  # GitHub schedules are best-effort and may be delayed or skipped.
+  schedule:
+    - cron: '37 17 * * *'
   pull_request:
     branches: [main]
+  # Every main push is tested, including standalone JS/CSS modules.
+  # Previously a paths filter skipped many runtime files.
   push:
     branches: [main]
-    paths:
-      - 'index.html'
-      - 'sw.js'
-      - 'cloud-config.js'
-      - 'manifest.webmanifest'
-      - 'tests/**'
-      - '.github/workflows/smoke.yml'
 permissions:
   contents: read
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 7
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Validate all local PWA assets and references
+        run: node scripts/deployment-audit.mjs --local
       - name: Check app syntax and contracts
         run: node --test tests/*.test.mjs
+  published-site:
+    # Only test the deployed main branch on a schedule or manual main run;
+    # a PR is not yet deployed and must not be compared with production.
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    needs: smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compare published files with the main branch
+        run: node scripts/deployment-audit.mjs
