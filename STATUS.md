@@ -151,3 +151,12 @@
 - PWAキャッシュをv13に更新。Chrome（PC相当／スマホ相当）でマップの開閉、初日の物語、取り消し、JSONバックアップ復元を検査する回帰テストを追加。
 - 最新のテスト結果はPR #5のGitHub Actions終了後に確定する。実機スマホと実ユーザーの継続率改善は未検証。
 - 設計：[WORLD_EXPLORATION.md](./WORLD_EXPLORATION.md)。
+
+## G2：世界探索をmainへ統合（2026-11-23）
+
+- GitHub PR #5をmainに統合：merge commit `921bafb8601a9c479035f57ee0da1c0799eb007a`。
+- `adventure-world.js` の10エリア、専用の旅の宝物・毎日の出会い・直近5日分の冒険日誌を公開用コードへ統合。`index.html` には現在地カードとマップの詳細ダイアログ、`sw.js` にはキャッシュv13を導入。
+- GitHub Actions run #53：**98件成功・失敗0・スキップ0**。PC幅・スマホ相当幅のChromeで、新しいマップの開閉、初日の物語、チェック取消、JSON復元、XP維持を検証。
+- 本番用mainで新しい4ファイルの存在と新モジュールの読込順を確認。既存のDBデータ、XP起算日・報酬計算、Auth、Ouraには変更なし。
+- GitHub Pagesの公開URLは外部HTTPツールから取得できなかったため、**配信された画面のライブ検証、スマホ実機の操作、実利用での習慣継続率改善は未検証**。main統合とライブ受入は区別する。
+- 設計：[WORLD_EXPLORATION.md](./WORLD_EXPLORATION.md)。当面の優先順位はゲームUX改善、一般公開前にOura/Auth/実機同期の受入を行う。
