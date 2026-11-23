@@ -300,6 +300,7 @@
  <p class="cloud-note">既存のメールアドレスをそのまま使用できます。初回パスワード設定はメールを1通だけ申請してください。<a href="https://supabase.com/dashboard/project/kpiqktibvzymgzwxiajv/auth/url-configuration" target="_blank" rel="noopener noreferrer">Supabaseの認証URL設定</a>でSite URLとRedirect URLsがこのアプリのURLになっていることを事前に確認してください。ログイン後、端末とクラウドの記録を選択します。</p>
  <details class="cloud-advanced"><summary>バックアップ・復元</summary><div class="cloud-backup-actions"><button class="btn ghost" id="exportBtn">↧ バックアップ</button><button class="btn ghost" id="importBtn">↥ 復元</button><input id="fileInput" type="file" accept="application/json,.json" hidden></div></details>
 </section>
+<div class="sync-banner" id="appUpdateBanner" role="status" hidden><span>🆕 ゲームの新しいバージョンが利用できます。記録は保持したまま更新できます。</span><button type="button" id="appUpdateApply">更新する</button></div>
 <div class="sync-banner" id="syncBanner" role="status" hidden><span id="syncBannerText">クラウドの同期を確認してください。</span><button type="button" id="syncBannerOpen">同期を確認</button></div>
 <main id="screen-home" class="game-screen is-active" aria-label="ホーム画面">
 <section class="intro">
@@ -1528,7 +1529,24 @@ function showOuraAuthResult(){
  setTimeout(()=>$('ouraDetail').scrollIntoView({behavior:'smooth',block:'start'}),50);
 }
 
-if('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js').catch(()=>{});
+function showGameUpdateNotice(){const banner=$('appUpdateBanner');if(banner)banner.hidden=false}
+$('appUpdateApply').onclick=()=>{
+ if(cloud.user&&cloud.ready&&cloud.seq!==cloud.syncedSeq
+   &&!confirm('クラウドにまだ送っていない変更があります。端末内の記録は保持されますが、先に同期することを推奨します。今すぐ更新しますか？'))return;
+ location.reload();
+};
+if('serviceWorker' in navigator && location.protocol !== 'file:'){
+ navigator.serviceWorker.addEventListener('controllerchange',showGameUpdateNotice);
+ navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>{
+  if(reg.waiting&&navigator.serviceWorker.controller)showGameUpdateNotice();
+  reg.addEventListener('updatefound',()=>{
+   const worker=reg.installing;if(!worker)return;
+   worker.addEventListener('statechange',()=>{
+    if(worker.state==='installed'&&navigator.serviceWorker.controller)showGameUpdateNotice();
+   });
+  });
+ }).catch(()=>{});
+}
 render();
 showOuraAuthResult();
 })();
