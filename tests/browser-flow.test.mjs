@@ -22,7 +22,7 @@ const prelude=`<script>
   xpStartDate:today,
   habits:[{id:'baseline',name:'既存の習慣',icon:'book',target:7,ouraTrackingOnly:false}],
   checks:{'2026-01-01':{baseline:true}},
-  rewardedWeeks:[],avatarImages:{},ouraData:{},ouraTrackingVersion:3,
+  rewardedWeeks:[],avatarImages:{},ouraData:{[today]:{steps:8000}},ouraTrackingVersion:3,
   ouraAutoEnabled:true,ouraAutoKeys:[],ouraSuppressedKeys:[]
  }));
 })();
@@ -44,7 +44,14 @@ const injection=`<script>
  }
  requireOk(document.getElementById('settingsDetail').closest('#screen-options'),'settings were not moved into options');
  requireOk(document.querySelectorAll('.group-streak').length===3,'three group streak indicators missing');
- requireOk(document.getElementById('homeStepsValue'),'home daily steps indicator missing');
+ requireOk(document.getElementById('homeStepsValue').textContent==='8,000','home steps did not display imported Oura count');
+ requireOk(document.getElementById('homeStepsStatus').dataset.state==='under','exactly 8,000 must NOT qualify');
+ requireOk(document.getElementById('homeStepsSync'),'one-click Oura refresh absent');
+ document.getElementById('homeStepsOpen').click();
+ requireOk(!document.getElementById('stepsHistory').hidden,'history not open');
+ requireOk(document.getElementById('stepsHistoryList').textContent.includes('8,000歩'),'today missing from historical steps');
+ requireOk(document.getElementById('stepsHistoryList').textContent.includes('未達成'),'8,000 walking should be under threshold in history');
+ document.getElementById('homeStepsOpen').click();
  requireOk(document.getElementById('weeklyBoss'),'weekly boss encounter missing');
  requireOk(document.querySelectorAll('.tracker-group-heading').length>=1,'tracker category headings missing');
 
@@ -66,11 +73,13 @@ const injection=`<script>
  requireOk(document.getElementById('headerCoins').textContent==='—','offline coin HUD should show unavailable state');
  requireOk(/^\\d{4}-\\d{2}-\\d{2}$/.test(h.createdOn),'creation date missing');
  requireOk(h.ouraTrackingOnly===false&&h.missionEnabled===true,'manual category');
+ const bossHpBefore=Number(document.getElementById('bossHp').textContent.split('/')[0]);
  const currentButton=[...document.querySelectorAll('[data-habit="'+h.id+'"][data-day]')].find(x=>!x.disabled);
  requireOk(!!currentButton,'no available check button');
  currentButton.click();
  const day=currentButton.dataset.day;
  requireOk(state().checks[day]?.[h.id]===true,'check missing');
+ requireOk(Number(document.getElementById('bossHp').textContent.split('/')[0])===bossHpBefore-20,'weekly boss damage is not aligned with checkbox');
  requireOk(document.getElementById('headerXp').textContent===document.getElementById('totalXp').textContent,'XP HUD did not update with daily check');
  requireOk(document.getElementById('journeyCount').textContent.includes('/ 7日'),'adventure map did not render');
  requireOk(document.getElementById('dailyQuestTitle').textContent.includes('達成'),'daily adventure did not celebrate a manual check');
