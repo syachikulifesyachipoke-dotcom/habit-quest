@@ -887,13 +887,14 @@ async function attachCloudUser(user){if(!cloud.client||cloud.user?.id===user.id&
 cloud.baseSnapshot=restoreCloudBase(user.id)?.data||null;
 cloud.baseRevision=restoreCloudBase(user.id)?.revision??null;
 cloud.loadPromise=(async()=>{try{cloud.remote=await cloudFetch();
+let validated=null;
 if(cloud.remote){
  if(missingLifecycleFrom(state,cloud.remote.data).length){
   choiceVisible(true,true);
   cloudMessage('⚠ クラウド側に習慣の休止・目標履歴が欠けています。端末の履歴を保護するため、自動同期を止めました。JSONバックアップを保存し、上書き前に内容を確認してください。','warning');
   return;
  }
- const validated=validateIncoming(cloud.remote.data);
+ validated=validateIncoming(cloud.remote.data);
  // Cloud start date is canonical and never resets on new device or later login.
  validated.xpStartDate=validXpStartDate(validated.xpStartDate)||isoToday();
  state.xpStartDate=validated.xpStartDate;
