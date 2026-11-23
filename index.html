@@ -269,6 +269,7 @@
 @media(max-width:580px){.world-peek{padding:10px;margin-top:10px}.world-peek-top{gap:7px}.world-peek-icon{font-size:24px;min-width:28px}.world-map-open{padding:8px;font-size:10px}.world-map-dialog{padding:15px;max-height:92vh}.world-map-list{grid-template-columns:1fr}.world-dialog-head h2{font-size:18px}.world-dialog-head p{font-size:11px}.world-area{padding:10px}.world-diary-head{flex-direction:column;gap:4px}}
 @media(prefers-reduced-motion:reduce){.world-progress-bar{transition:none}.world-map-dialog::backdrop{backdrop-filter:none}}
 </style>
+<link rel="stylesheet" href="./game-shell.css">
 </head>
 <body>
 <div class="wrap">
@@ -299,7 +300,9 @@
  <p class="cloud-note">既存のメールアドレスをそのまま使用できます。初回パスワード設定はメールを1通だけ申請してください。<a href="https://supabase.com/dashboard/project/kpiqktibvzymgzwxiajv/auth/url-configuration" target="_blank" rel="noopener noreferrer">Supabaseの認証URL設定</a>でSite URLとRedirect URLsがこのアプリのURLになっていることを事前に確認してください。ログイン後、端末とクラウドの記録を選択します。</p>
  <details class="cloud-advanced"><summary>バックアップ・復元</summary><div class="cloud-backup-actions"><button class="btn ghost" id="exportBtn">↧ バックアップ</button><button class="btn ghost" id="importBtn">↥ 復元</button><input id="fileInput" type="file" accept="application/json,.json" hidden></div></details>
 </section>
-<main>
+<div class="sync-banner" id="appUpdateBanner" role="status" hidden><span>🆕 ゲームの新しいバージョンが利用できます。記録は保持したまま更新できます。</span><button type="button" id="appUpdateApply">更新する</button></div>
+<div class="sync-banner" id="syncBanner" role="status" hidden><span id="syncBannerText">クラウドの同期を確認してください。</span><button type="button" id="syncBannerOpen">同期を確認</button></div>
+<main id="screen-home" class="game-screen is-active" aria-label="ホーム画面">
 <section class="intro">
  <div class="hero"><div class="eyebrow">YOUR DAILY ADVENTURE</div><h2>今日の一歩で、<br><em>未来の自分を進化させる。</em></h2><p class="hero-sub">小さな習慣が経験値になる。1日ずつ積み重ねて、<br>あなただけの相棒を育てていこう。</p><div class="hero-counters"><div class="counter"><strong id="todayDone">0/0</strong><label>今日の達成（進行中の全項目）</label></div><div class="counter"><strong id="streak">0<span style="font-size:14px"> 日</span></strong><label title="手動習慣を1項目以上達成した連続日数（当日未記録なら昨日まで）">連続記録日数（手動1項目以上）ⓘ</label></div><div class="counter"><strong id="totalXp">0</strong><label>開始日以降の XP</label></div></div>
  <div class="daily-quest" id="dailyQuest" aria-live="polite"><div class="daily-quest-icon" aria-hidden="true">⚔️</div><div class="daily-quest-main"><strong id="dailyQuestTitle">今日の冒険</strong><small id="dailyQuestText">小さな一歩から始めましょう</small></div><button type="button" class="daily-quest-action" id="dailyQuestJump">習慣へ</button></div>
@@ -312,7 +315,7 @@
    <div class="world-progress-track" aria-label="次のエリアへの進捗"><div class="world-progress-bar" id="worldPeekProgress"></div></div>
    <p class="world-today" id="worldTodayText">今日の習慣を達成すると新しい出会いが待っています。</p>
  </div></div>
- <div class="companion-card"><div class="companion-top"><span class="tag" id="evoTag">✦ 進化のたまご</span><div class="level" id="levelLabel">Lv. 1</div></div><div class="avatar-box" id="avatar"></div><div class="companion-bottom"><div><div class="companion-title" id="stageName">星のたまご</div><div class="companion-next" id="nextEvolution">Lv.3で次の姿に進化</div></div><div><div class="xp-val" id="xpLabel">0 / 40 XP</div><div class="xp-start-line" id="xpStartLine">XP開始日：ログイン時に確定</div></div></div><div class="progress"><i id="xpBar"></i></div></div>
+ <div class="companion-card"><div class="companion-top"><span class="tag" id="evoTag">✦ 進化のたまご</span><div class="level" id="levelLabel">Lv. 1</div></div><div class="avatar-box" id="avatar"></div><span class="companion-mood-chip" id="homeCompanionMood" aria-hidden="true">🙂</span><div class="companion-bottom"><div><div class="companion-title" id="stageName">星のたまご</div><div class="companion-next" id="nextEvolution">Lv.3で次の姿に進化</div></div><div><div class="xp-val" id="xpLabel">0 / 40 XP</div><div class="xp-start-line" id="xpStartLine">XP開始日：ログイン時に確定</div></div></div><div class="progress"><i id="xpBar"></i></div></div>
 </section>
 <section class="content">
  <div class="panel"><div class="panel-heading"><div><h3 class="hq-section-heading"><span data-hq-icon="calendar"></span>週間トラッカー</h3><div class="subheading">今日からの達成に +20 XP <span class="mobile-grid-hint">・スマホは1行で7日をチェック</span></div></div><div class="week-nav"><span class="week-range" id="weekRange"></span><button class="btn icon-btn" id="prevWeek" aria-label="前の週">‹</button><button class="btn" id="thisWeek">今週</button><button class="btn icon-btn" id="nextWeek" aria-label="次の週">›</button></div></div><div id="tracker" class="tracker"></div><div class="tracker-footer"><div class="legend"><span><i class="dot dot-manual"></i>手動チェック</span><span><i class="dot dot-oura"></i>Oura自動</span><span><i class="dot empty"></i>未チェック</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" id="archiveJump">休止中の習慣 <span id="archiveCount">0</span></button><button class="btn primary" id="addHabit">＋ 習慣を追加</button></div></div></div>
@@ -346,7 +349,90 @@
  <div id="ouraInsight" class="pill-note">睡眠・コンディション・歩数のデータを取り込むと、習慣の記録と同じ画面で見られます。現時点ではOuraへの認証前です。</div>
  <p class="small-note spaced">Oura OAuthはSupabase Edge Functionsで処理します。必要な認証情報はSupabaseのSecretsに設定し、ブラウザやGitHubには保存しません。</p>
 </section></details></div></details>
-</main><footer class="bottom-foot">HABIT QUEST · 習慣を冒険に変える</footer>
+</main>
+
+<section id="screen-character" class="game-screen game-panel" aria-label="キャラ画面" hidden>
+ <div class="game-panel-heading"><h2>🐲 相棒の部屋</h2><p>頑張った日には笑顔で、休む日はそっと寄り添う相棒。毎日の冒険が成長につながります。</p></div>
+ <div class="char-layout">
+  <section class="char-stage">
+   <div class="char-name" id="characterName">星のたまご</div><div class="char-level" id="characterLevel">Lv.1</div>
+   <div class="char-avatar" id="characterPortrait" aria-label="現在の相棒の姿"></div><span class="char-mood-face" id="characterMoodFace" aria-hidden="true">🙂</span>
+   <div class="char-reaction" id="characterReaction" role="status"><strong>相棒の気持ち</strong><span id="characterReactionText">一緒に冒険を始めよう！</span></div>
+   <div class="char-actions">
+    <button type="button" class="char-action primary" id="characterPat">相棒をなでる</button>
+    <button type="button" class="char-action" id="characterGoHome">今日の冒険へ</button>
+   </div>
+  </section>
+  <section class="char-details">
+   <h3>相棒と歩んだ日々</h3><p>XPと進化はこれまでどおり。お休みしても累計の冒険記録は失われません。</p>
+   <div class="char-metrics">
+    <div class="char-metric"><strong id="characterTotalDays">0</strong><small>冒険した日</small></div>
+    <div class="char-metric"><strong id="characterXp">0</strong><small>獲得XP</small></div>
+    <div class="char-metric"><strong id="characterStage">1</strong><small>現在の進化段階</small></div>
+   </div>
+   <p id="characterNextStage">次の進化まで、毎日の習慣を積み重ねましょう。</p>
+   <div id="characterEvoHost"></div>
+  </section>
+ </div>
+ <div class="character-analytics-host" id="characterAnalyticsHost"></div>
+</section>
+<section id="screen-events" class="game-screen game-panel" aria-label="イベント画面" hidden>
+ <div class="game-panel-heading"><h2>🎪 イベント・冒険</h2><p>最初の7つの冒険日を、物語とともに進めましょう。連続記録は必要ありません。</p></div>
+ <div class="event-hero">
+  <h3 id="eventProgressTitle">第1章 · 最初の一歩</h3>
+  <div id="eventWeekProgress" class="event-progress" role="progressbar" aria-label="最初の7日間の冒険進捗" aria-valuemin="0" aria-valuemax="7" aria-valuenow="0"><i id="eventWeekBar"></i></div>
+  <p id="eventProgressDescription">手動習慣をひとつ達成すると最初の章が始まります。</p>
+  <div class="event-hero-actions">
+   <button type="button" class="char-action primary" id="eventGoHome">今日の習慣をチェック</button>
+   <button type="button" class="char-action" id="eventMapOpen">世界地図を開く</button>
+  </div>
+ </div>
+ <div class="event-chapters" id="eventChapters" aria-label="七日間の冒険の章"></div>
+ <div class="event-story" id="eventStoryDetail" aria-live="polite"><h3 id="eventStoryTitle">はじまりの章</h3><p id="eventStoryText">初めての手動習慣を達成すると、物語が解放されます。</p></div>
+</section>
+<section id="screen-shop" class="game-screen game-panel" aria-label="ショップ画面" hidden>
+ <div class="game-panel-heading"><h2>🛍️ 冒険ショップ</h2><p>習慣を達成して集めた装飾品で相棒を飾りましょう。すべて無料で、課金やXP消費はありません。</p></div>
+ <section class="shop-panel">
+  <h3>✨ 無料の着せ替え装飾</h3>
+  <p class="small-note">冒険した累計日数で解放されます。着せ替えの選択はこの端末にだけ保存されます。</p>
+  <div id="shopFrames" class="shop-grid"></div>
+ </section>
+ <section class="shop-panel" style="margin-top:16px">
+  <h3>🧳 旅の宝物コレクション</h3>
+  <p class="small-note">探索エリアで発見した宝物は、いつでもここで見返せます。</p>
+  <div id="shopRelics" class="shop-relics"></div>
+ </section>
+</section>
+<section id="screen-options" class="game-screen game-panel" aria-label="オプション画面" hidden>
+ <div class="game-panel-heading"><h2>⚙️ オプション</h2><p>クラウド同期、習慣の休止・再開、Oura連携、相棒画像、バックアップを管理します。</p></div>
+ <div class="option-sync-card">
+  <div><strong>☁ アカウントと同期</strong><small id="optionsSyncStatus">ログイン状態を確認しています。</small></div>
+  <button type="button" class="char-action primary" id="optionsCloudOpen">ログイン・同期を開く</button>
+ </div>
+ <div class="option-sync-card">
+  <div><strong>💾 記録のバックアップ</strong><small>端末を変更する前やクラウド競合時に保存しておくと安全です。</small></div>
+  <div class="event-hero-actions"><button type="button" class="char-action" id="optionsExportBtn">JSONを保存</button><button type="button" class="char-action" id="optionsImportBtn">バックアップを復元</button></div>
+ </div>
+ <div class="options-settings-host" id="optionsSettingsHost"></div>
+</section>
+<nav class="game-bottom-nav" id="gameBottomNav" aria-label="ゲームのメインメニュー">
+ <button type="button" class="game-nav-button" data-game-tab="home" aria-current="page" aria-controls="screen-home"><span class="game-nav-icon" aria-hidden="true">🏠</span><span class="game-nav-label">ホーム</span></button>
+ <button type="button" class="game-nav-button" data-game-tab="character" aria-controls="screen-character"><span class="game-nav-icon" aria-hidden="true">🐲</span><span class="game-nav-label">キャラ</span></button>
+ <button type="button" class="game-nav-button" data-game-tab="events" aria-controls="screen-events"><span class="game-nav-icon" aria-hidden="true">🎪</span><span class="game-nav-label">イベント</span></button>
+ <button type="button" class="game-nav-button" data-game-tab="shop" aria-controls="screen-shop"><span class="game-nav-icon" aria-hidden="true">🛍️</span><span class="game-nav-label">ショップ</span></button>
+ <button type="button" class="game-nav-button" data-game-tab="options" aria-controls="screen-options"><span class="game-nav-icon" aria-hidden="true">⚙️</span><span class="game-nav-label">オプション</span></button>
+</nav>
+<dialog class="unlock-dialog" id="gameUnlockDialog" aria-labelledby="gameUnlockTitle">
+ <div class="unlock-symbol" id="gameUnlockIcon" aria-hidden="true">🌟</div>
+ <div class="unlock-eyebrow" id="gameUnlockEyebrow">NEW AREA</div>
+ <h2 id="gameUnlockTitle">新しいエリアを発見！</h2>
+ <p id="gameUnlockText">相棒と一緒に新たな景色に出会いました。</p>
+ <div class="unlock-actions">
+  <button type="button" class="secondary" id="gameUnlockClose">あとで見る</button>
+  <button type="button" id="gameUnlockAction">冒険を見る</button>
+ </div>
+</dialog>
+<footer class="bottom-foot">HABIT QUEST · 習慣を冒険に変える</footer>
 <div class="site-links"><a href="./privacy.html">プライバシー</a> · <a href="./terms.html">利用規約</a></div>
 </div>
 <dialog class="world-map-dialog" id="worldMapDialog" aria-labelledby="worldMapTitle">
@@ -368,6 +454,8 @@
 <script src="./sync-merge.js"></script>
 <script src="./daily-adventure.js"></script>
 <script src="./adventure-world.js"></script>
+<script src="./cloud-onboarding.js"></script>
+<script src="./game-shell.js"></script>
 <script>
 (()=>{'use strict';
 const KEY='habit-quest-v1', XP_CHECK=20, XP_WEEK=100;
@@ -568,7 +656,161 @@ for(const h of displayHabits()){
 $('tracker').classList.toggle('auto-open',mobileAutoExpanded);$('tracker').innerHTML=html;const percentage=w.target?Math.min(100,Math.round(100*w.done/w.target)):0;$('ring').style.background=`conic-gradient(var(--mint) ${percentage}%,#323851 ${percentage}%)`;$('weekRate').textContent=percentage+'%';$('weekCount').textContent=`${w.done} / ${w.target} 回`;const earned=state.rewardedWeeks.includes(dayKey(start));$('chest').classList.toggle('unlocked',earned);$('chestEmoji').innerHTML=habitIconSvg(earned?'trophy':'gift');$('chestTitle').textContent=earned?'週間ミッションクリア！':'ウィークリー宝箱';$('chestText').textContent=earned?'+100 XP を獲得済み':'全目標達成で +100 XP';const keyMilestones=[EVO[stageNo],EVO[stageNo+1],EVO[EVO.length-1]].filter(Boolean);
 $('evoList').innerHTML=[...new Map(keyMilestones.map(e=>[e.lv,e])).values()].map(e=>`<div class="evo-item ${s.level<e.lv?'locked':''} ${e.lv===EVO[stageNo].lv?'current':''}"><div class="evo-emoji">${s.level<e.lv?'◆':e.emoji}</div><div><strong>Lv.${e.lv} ${e.name}</strong><small>${e.desc}</small></div></div>`).join('');
 $('evoAllList').innerHTML=LEVEL_ATLAS.map(item=>`<div class="evo-level ${item.lv<=s.level?'unlocked':'locked'} ${item.major?'milestone':''} ${item.lv===s.level?'current':''}"><span class="evo-level-num">Lv.${item.lv}</span><span class="evo-level-name">${item.major?(item.lv<=s.level?EVO.find(e=>e.lv===item.lv).emoji:'◆')+' '+esc(item.label):esc(item.label)}</span><span class="evo-level-state">${item.lv<=s.level?'達成':'未解放'}</span></div>`).join('');
-renderDailyAdventure(today);renderAnalytics();renderArchivedHabits();renderArt();renderOura();updateOuraAutoStatus();}
+renderDailyAdventure(today);renderAnalytics();renderArchivedHabits();renderArt();renderOura();updateOuraAutoStatus();renderGamePanels();}
+
+/* G3: five real screens, a free cosmetics collection and a gentle first-week story. */
+let activeGameScreen='home',selectedEventChapter=null,unlockNextView='events';
+const gameScreenIds={home:'screen-home',character:'screen-character',events:'screen-events',
+ shop:'screen-shop',options:'screen-options'};
+function setGameScreen(screen){
+ if(!Object.hasOwn(gameScreenIds,screen))return;
+ activeGameScreen=screen;
+ for(const [name,id] of Object.entries(gameScreenIds))$(id).hidden=name!==screen;
+ document.querySelectorAll('#gameBottomNav [data-game-tab]').forEach(button=>{
+  if(button.dataset.gameTab===screen)button.setAttribute('aria-current','page');
+  else button.removeAttribute('aria-current');
+ });
+ window.scrollTo({top:0,behavior:'auto'});
+}
+function gameProgress(){
+ const daily=window.HabitQuestDailyAdventure.describe({
+  habits:state.habits,checks:state.checks,today:isoToday(),xpStartDate:validXpStartDate(state.xpStartDate),
+  activeOn:window.HabitQuestLifecycle.activeOn,
+  archived:window.HabitQuestLifecycle.archived,
+  configOn:window.HabitQuestLifecycle.configOn
+ });
+ const world=window.HabitQuestWorld.describe(daily);
+ return {daily,world,shell:window.HabitQuestGameShell.describe(daily,world,stats().level)};
+}
+function gameCosmeticKey(){return KEY+'-cosmetic-'+(cloud.user?.id||'guest')}
+function selectedCosmetic(days){
+ let choice='classic';
+ try{choice=localStorage.getItem(gameCosmeticKey())||'classic'}catch(_){}
+ return window.HabitQuestGameShell.FRAMES.some(item=>item.id===choice&&days>=item.days)?choice:'classic';
+}
+function setCosmetic(id){
+ const g=gameProgress();
+ if(!window.HabitQuestGameShell.FRAMES.some(item=>item.id===id&&g.daily.activeDays>=item.days))return;
+ try{localStorage.setItem(gameCosmeticKey(),id)}catch(_){toast('装飾の保存に失敗しました。端末の空き容量を確認してください。');return}
+ renderGamePanels();
+ toast('✨ 相棒の装飾を変更しました',true);
+}
+function cheerCompanion(){
+ for(const node of [$('characterPortrait'),document.querySelector('.companion-card')]){
+  if(!node)continue;
+  node.classList.remove('is-cheering');
+  void node.offsetWidth;node.classList.add('is-cheering');
+  setTimeout(()=>node.classList.remove('is-cheering'),950);
+ }
+}
+function renderGamePanels(){
+ const g=gameProgress(),d=g.daily,w=g.world,shell=g.shell,level=stats().level;
+ const stage=[...EVO].reverse().find(e=>level>=e.lv);
+ const stageNo=EVO.indexOf(stage),next=EVO[stageNo+1];
+ $('characterName').textContent=stage.name;
+ $('characterLevel').textContent='Lv.'+level+' · '+stage.tag;
+ $('characterTotalDays').textContent=String(shell.activeDays);
+ $('characterXp').textContent=String(stats().xp);
+ $('characterStage').textContent=String(stageNo+1)+' / '+EVO.length;
+ $('characterNextStage').textContent=next?'次の進化「'+next.name+'」はLv.'+next.lv:'最高進化「'+stage.name+'」に到達';
+ $('characterReactionText').textContent=shell.reaction;
+ const faces={ready:'🙂',happy:'😄',celebrate:'🥳',rest:'😴'};
+ $('homeCompanionMood').textContent=faces[shell.mood]||'🙂';
+ $('characterMoodFace').textContent=faces[shell.mood]||'🙂';
+ const portrait=$('characterPortrait');
+ const custom=state.avatarImages?.[stageNo];
+ if(custom)portrait.innerHTML='<img alt="'+esc(stage.name)+'" src="'+custom+'">';
+ else{
+  portrait.innerHTML=avatarSvg(stageNo);
+  const image=new Image();
+  image.onload=()=>{
+   if(stats().level===level&&!state.avatarImages?.[stageNo])
+    portrait.innerHTML='<img alt="'+esc(stage.name)+'" src="'+image.src+'">';
+  };
+  image.src='./images/characters/stage-'+(stageNo+1)+'.png';
+ }
+ const cosmetic=selectedCosmetic(d.activeDays);
+ portrait.dataset.cosmetic=cosmetic;
+ const companion=document.querySelector('.companion-card');
+ if(companion)companion.dataset.cosmetic=cosmetic;
+ $('eventWeekProgress').setAttribute('aria-valuenow',String(shell.completedChapters));
+ $('eventWeekBar').style.width=shell.chapterProgress+'%';
+ $('eventProgressTitle').textContent=shell.allSevenComplete?'第1章 完結！ 新しい冒険へ':'最初の7日間 · '+shell.completedChapters+' / 7章';
+ $('eventProgressDescription').textContent=shell.allSevenComplete?
+  '七つの足跡がそろいました！ この先も相棒と新しいエリアを探検しましょう。':
+  'あと'+(7-shell.completedChapters)+'日分の冒険で最初の物語が完成します。連続でなくても大丈夫です。';
+ if(selectedEventChapter===null||selectedEventChapter>shell.completedChapters)
+  selectedEventChapter=shell.completedChapters||null;
+ $('eventChapters').innerHTML=shell.chapters.map(ch=>{
+  const ready=shell.activeDays>=ch.day,chosen=ready&&selectedEventChapter===ch.day;
+  return '<button type="button" class="event-chapter'+(ready?' is-unlocked':'')+(chosen?' is-selected':'')+'" data-story-day="'+ch.day+'"'+(ready?'':' disabled')+
+   ' aria-pressed="'+chosen+'"><span class="event-chapter-icon" aria-hidden="true">'+(ready?ch.icon:'🔒')+'</span><span class="event-chapter-name"><strong>第'+ch.day+'話 '+esc(ch.title)+'</strong><small>'+(ready?'物語を読む':'冒険 '+ch.day+'日目に解放')+'</small></span></button>';
+ }).join('');
+ const chosen=shell.chapters.find(ch=>ch.day===selectedEventChapter&&shell.activeDays>=ch.day);
+ $('eventStoryTitle').textContent=chosen?'第'+chosen.day+'話 · '+chosen.title:'物語のはじまり';
+ $('eventStoryText').textContent=chosen?chosen.story:'最初の手動習慣を達成すると、相棒との物語が解放されます。';
+ $('shopFrames').innerHTML=shell.frames.map(item=>{
+  const ready=d.activeDays>=item.days,equipped=ready&&cosmetic===item.id;
+  return '<article class="shop-item'+(ready?'':' is-locked')+(equipped?' is-equipped':'')+'">'+
+   '<span class="shop-icon" aria-hidden="true">'+(ready?item.icon:'🔒')+'</span><strong>'+esc(item.name)+'</strong>'+
+   '<small>'+esc(item.description)+'</small><small>'+(ready?'無料で解放済み':'累計'+item.days+'日で解放')+'</small>'+
+   '<button type="button" data-shop-frame="'+item.id+'"'+(!ready||equipped?' disabled':'')+'>'+(!ready?'未解放':equipped?'装備中':'装備する')+'</button></article>';
+ }).join('');
+ $('shopRelics').innerHTML=w.unlocked.map(area=>
+  '<div class="shop-relic'+(area.unlocked?'':' is-locked')+'" title="'+(area.unlocked?esc(area.relic):'未発見')+'">'+
+  '<span aria-hidden="true">'+(area.unlocked?area.relicIcon:'🔒')+'</span>'+(area.unlocked?esc(area.relic):'未発見')+'</div>'
+ ).join('');
+}
+function showGameUnlock(region){
+ const dialog=$('gameUnlockDialog');
+ if(!dialog||dialog.open)return;
+ unlockNextView='events';
+ $('gameUnlockIcon').textContent=region.icon;
+ $('gameUnlockEyebrow').textContent='NEW AREA UNLOCKED';
+ $('gameUnlockTitle').textContent=region.name+'に到達！';
+ $('gameUnlockText').textContent=region.story+' 新しい宝物「'+region.relic+'」を見つけました。';
+ $('gameUnlockAction').textContent='地図を見る';
+ unlockNextView='map';
+ dialog.showModal();
+}
+function initGameShell(){
+ $('characterEvoHost').append($('evoCatalog').closest('.panel'));
+ $('characterAnalyticsHost').append($('analyticsSection'));
+ $('optionsSettingsHost').append($('settingsDetail'));
+ document.querySelectorAll('#gameBottomNav [data-game-tab]').forEach(button=>
+  button.addEventListener('click',()=>setGameScreen(button.dataset.gameTab)));
+ $('characterPat').onclick=()=>{
+  $('characterReactionText').textContent='なでてくれてありがとう！ 今日も一緒に冒険しよう！';
+  $('characterMoodFace').textContent='🥰';$('homeCompanionMood').textContent='🥰';
+  cheerCompanion();
+  setTimeout(()=>{if(activeGameScreen==='character')renderGamePanels()},2200);
+ };
+ $('characterGoHome').onclick=()=>setGameScreen('home');
+ $('eventGoHome').onclick=()=>{setGameScreen('home');$('dailyQuestJump').click()};
+ $('eventMapOpen').onclick=()=>$('worldMapOpen').click();
+ $('eventChapters').addEventListener('click',e=>{
+  const button=e.target.closest('[data-story-day]');if(!button||button.disabled)return;
+  selectedEventChapter=Number(button.dataset.storyDay);
+  renderGamePanels();
+  $('eventStoryDetail').scrollIntoView({behavior:'smooth',block:'nearest'});
+ });
+ $('shopFrames').addEventListener('click',e=>{
+  const button=e.target.closest('[data-shop-frame]');if(!button||button.disabled)return;
+  setCosmetic(button.dataset.shopFrame);
+ });
+ $('optionsCloudOpen').onclick=()=>toggleCloudMenu(true);
+ $('optionsExportBtn').onclick=()=>$('exportBtn').click();
+ $('optionsImportBtn').onclick=()=>$('importBtn').click();
+ $('syncBannerOpen').onclick=()=>toggleCloudMenu(true);
+ $('gameUnlockClose').onclick=()=>$('gameUnlockDialog').close();
+ $('gameUnlockAction').onclick=()=>{
+  $('gameUnlockDialog').close();
+  setGameScreen('events');
+  if(unlockNextView==='map')$('worldMapOpen').click();
+ };
+ setGameScreen('home');
+}
+
 function renderDailyAdventure(today){
  const data=window.HabitQuestDailyAdventure.describe({
   habits:state.habits,checks:state.checks,today,xpStartDate:validXpStartDate(state.xpStartDate),
@@ -660,7 +902,7 @@ function renderArchivedHabits(){
    `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;padding:10px 0;border-bottom:1px solid rgba(180,190,220,.17)"><span>${habitIconSvg(h.icon)} <strong>${esc(h.name)}</strong><small style="display:block">以前のチェック・XPは保存済み</small></span><button type="button" class="btn" data-restore="${esc(h.id)}">再開する</button></div>`
  ).join(''):'<p class="small-note">休止中の習慣はありません。</p>';
 }
-$('archiveJump').onclick=()=>{$('settingsDetail').open=true;$('archiveSection').open=true;$('archiveSection').scrollIntoView({behavior:'smooth',block:'start'})};
+$('archiveJump').onclick=()=>{setGameScreen('options');$('settingsDetail').open=true;$('archiveSection').open=true;$('archiveSection').scrollIntoView({behavior:'smooth',block:'start'})};
 $('archivedHabitList').addEventListener('click',e=>{
  const button=e.target.closest('[data-restore]');if(!button)return;
  const h=state.habits.find(x=>x.id===button.dataset.restore);
@@ -673,13 +915,26 @@ function particles(el){const rect=el.getBoundingClientRect(),x=rect.left+rect.wi
 $('tracker').addEventListener('click',event=>{
  const toggle=event.target.closest('[data-toggle-auto]');
  if(toggle){mobileAutoExpanded=!mobileAutoExpanded;render();return}
- const detail=event.target.closest('[data-detail]');if(detail){openHabitDetail(detail.dataset.detail);return}const edit=event.target.closest('[data-edit]');if(edit){openModal(edit.dataset.edit);return}const b=event.target.closest('[data-day][data-habit]');if(!b||b.disabled)return;const prev=stats(),date=b.dataset.day,hid=b.dataset.habit;state.checks[date]??={};const was=!!state.checks[date][hid];if(was)delete state.checks[date][hid];else state.checks[date][hid]=true;
+ const detail=event.target.closest('[data-detail]');if(detail){openHabitDetail(detail.dataset.detail);return}const edit=event.target.closest('[data-edit]');if(edit){openModal(edit.dataset.edit);return}const b=event.target.closest('[data-day][data-habit]');if(!b||b.disabled)return;const prev=stats(),date=b.dataset.day,hid=b.dataset.habit;
+ const manualCheck=date===isoToday()&&state.habits.some(h=>h.id===hid&&!isOuraAutoHabit(h));
+ const priorGame=manualCheck?gameProgress():null;
+ state.checks[date]??={};const was=!!state.checks[date][hid];if(was)delete state.checks[date][hid];else state.checks[date][hid]=true;
  if(hid==='wake'||hid.startsWith('oura_')){
    const marker=date+'|'+hid;
    state.ouraAutoKeys=(state.ouraAutoKeys||[]).filter(k=>k!==marker);
    state.ouraSuppressedKeys=(state.ouraSuppressedKeys||[]).filter(k=>k!==marker);
    if(was)state.ouraSuppressedKeys.push(marker); // User's cancellation takes precedence over automatic tracking.
- }if(!Object.keys(state.checks[date]).length)delete state.checks[date];if(!was){const wk=weekStart(parseDay(date)),key=dayKey(wk);if(date>=xpStartDate()&&weekIsXpEligible(wk)&&weeklyFor(wk).complete&&!state.rewardedWeeks.includes(key))state.rewardedWeeks.push(key)}store();render();const now=stats();if(!was){particles(b);if(now.level>prev.level)toast(`🎉 LEVEL UP! Lv.${now.level}`,true);else if(now.completedWeeks>prev.completedWeeks)toast('🏆 週間宝箱を開放！ +100 XP',true);else if(date>=xpStartDate()&&validXpStartDate(state.xpStartDate))toast('✨ +20 XP  習慣クリア！',true);else toast('過去の実績を記録しました（XP対象外）',true)}else toast('チェックを取り消しました')});
+ }if(!Object.keys(state.checks[date]).length)delete state.checks[date];if(!was){const wk=weekStart(parseDay(date)),key=dayKey(wk);if(date>=xpStartDate()&&weekIsXpEligible(wk)&&weeklyFor(wk).complete&&!state.rewardedWeeks.includes(key))state.rewardedWeeks.push(key) }
+ if(!was&&manualCheck)selectedEventChapter=null;
+ store();render();
+ if(!was&&manualCheck){
+  cheerCompanion();
+  const updated=gameProgress();
+  if(priorGame&&updated.world.index>priorGame.world.index)showGameUnlock(updated.world.current);
+  else if(priorGame&&updated.shell.completedChapters>priorGame.shell.completedChapters)
+   toast('📖 冒険の第'+updated.shell.completedChapters+'話を解放しました！',true);
+ }
+ const now=stats();if(!was){particles(b);if(now.level>prev.level)toast(`🎉 LEVEL UP! Lv.${now.level}`,true);else if(now.completedWeeks>prev.completedWeeks)toast('🏆 週間宝箱を開放！ +100 XP',true);else if(date>=xpStartDate()&&validXpStartDate(state.xpStartDate))toast('✨ +20 XP  習慣クリア！',true);else toast('過去の実績を記録しました（XP対象外）',true)}else toast('チェックを取り消しました')});
 function openModal(id){editing=id||null;const h=state.habits.find(x=>x.id===id);$('modalTitle').textContent=h?'習慣を編集':'新しい習慣';$('habitName').value=h?.name||'';$('habitIcon').value=normalizedHabitIcon(h?.icon||'sunrise');$('habitIconPreview').innerHTML=habitIconSvg($('habitIcon').value);$('habitTarget').value=h?String(h.target):'5';$('habitWeeklyMission').checked=h?window.HabitQuestLifecycle.configOn(h,isoToday()).mission:true;$('deleteHabit').hidden=!h;$('saveHabit').textContent=h?'保存する':'追加する';$('modalBackdrop').classList.add('show');setTimeout(()=>$('habitName').focus(),70)}
 function closeModal(){$('modalBackdrop').classList.remove('show');editing=null}
 $('addHabit').onclick=()=>openModal();$('cancelModal').onclick=closeModal;$('modalBackdrop').addEventListener('click',e=>{if(e.target===$('modalBackdrop'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
@@ -743,7 +998,7 @@ function analyse(id,n){
  }
  return{days,done,observed,eligible,missing:eligible-observed,rate:observed?Math.round(100*done/observed):0,best,weekday,metWeeks,fullWeeks,goal};
 }
-function openHabitDetail(id){if(!state.habits.some(h=>h.id===id))return;const sel=$('analysisHabit');sel.value=id;renderAnalytics();$('analyticsSection').scrollIntoView({behavior:'smooth',block:'start'});}
+function openHabitDetail(id){if(!state.habits.some(h=>h.id===id))return;setGameScreen('character');const sel=$('analysisHabit');sel.value=id;renderAnalytics();$('analyticsSection').scrollIntoView({behavior:'smooth',block:'start'});}
  function renderAnalytics(){const sel=$('analysisHabit'),previous=sel.value;sel.innerHTML=displayHabits().map(h=>`<option value="${esc(h.id)}">${esc(h.name)}</option>`).join('');if(state.habits.some(h=>h.id===previous))sel.value=previous;const id=sel.value,n=Number($('analysisPeriod').value)||30,h=state.habits.find(x=>x.id===id);if(!h){$('weekBars').innerHTML='<div class="analysis-empty">まず習慣を追加してください。</div>';$('weekdayBars').innerHTML='';$('heatGrid').innerHTML='';$('habitRank').innerHTML='';return}const a=analyse(id,n);$('metricDone').textContent=`${a.done} / ${a.observed}日`;$('metricRate').textContent=a.rate+'%';$('metricRateLabel').textContent=isOuraAutoHabit(h)?'実施日率（Oura欠測'+a.missing+'日を除外）':'実施日率（記録日 / 全日数）';$('metricGoal').textContent=a.goal.goalRate===null?'—':a.goal.goalRate+'%';$('metricGoalLabel').textContent=a.goal.goalCount===null?'当該期間に週目標なし':'期間換算目標：'+a.goal.counted+' / '+a.goal.goalCount+'回';$('goalMethodNote').textContent=a.goal.goalCount===null?'この期間に週間ミッション対象の日はありません。実施日率のみ表示します。':'各日の週目標を計測対象日ごとに7分の1ずつ換算（端数切り上げ）。目標変更前は当時の設定で評価します。停止期間・Oura欠測日・週ミッションOFFの日は達成率の目標分母から除外します。';const evaluation=a.goal.goalRate;$('metricRating').textContent=evaluation===null?'目標未設定':evaluation>=90?'非常に良好':evaluation>=75?'良好':evaluation>=50?'改善余地あり':'要改善';$('metricStreak').textContent=`${a.best}日`;$('metricWeeks').textContent=a.fullWeeks? `${a.metWeeks} / ${a.fullWeeks}週`:'—';$('metricWeeksLabel').textContent=a.fullWeeks?'週目標達成（完了週のみ）':'期間内に対象週なし';$('heatLabel').textContent=`（直近${n}日）`;
 const mon=weekStart(parseDay(isoToday()));
 const windows=Array.from({length:8},(_,i)=>addDay(mon,(i-7)*7));
@@ -1003,7 +1258,7 @@ $('cloudToggle').onclick=()=>toggleCloudMenu($('cloudSection').hidden);
 $('cloudClose').onclick=()=>toggleCloudMenu(false);
 $('cloudBackdrop').onclick=()=>toggleCloudMenu(false);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('cloudSection').hidden)toggleCloudMenu(false)});
-$('settingsJump').onclick=()=>{$('settingsDetail').open=true;$('settingsDetail').scrollIntoView({behavior:'smooth',block:'start'})};
+$('settingsJump').onclick=()=>{setGameScreen('options');$('settingsDetail').open=true;$('settingsDetail').scrollIntoView({behavior:'smooth',block:'start'})};
 
 function readRecoveryLanding(href){
   // Read the email link *before* Supabase removes its one-use URL hash.
@@ -1024,6 +1279,15 @@ function cloudMessage(message,kind=''){
    :kind==='warning'||cloud.blocked?'☁ 要確認'
    :cloud.ready&&cloud.seq===cloud.syncedSeq?'☁ 保存済'
    :cloud.ready?'☁ 同期待ち':'☁ 接続中';
+ const banner=$('syncBanner'),label=$('syncBannerText'),options=$('optionsSyncStatus');
+ const needsHelp=!!cloud.user&&cloud.blocked&&kind==='warning';
+ if(banner){
+  banner.hidden=!needsHelp;
+  if(needsHelp)label.textContent='⚠ スマホとクラウドで記録が異なります。自動上書きせず保護しています。「同期を確認」から、どちらを使うか確認してください。';
+ }
+ if(options)options.textContent=b.textContent+' · '+message;
+ const optionsNav=document.querySelector('#gameBottomNav [data-game-tab="options"]');
+ if(optionsNav)optionsNav.dataset.syncAttention=String(needsHelp);
 }
 function getCloudConfig(){let stored={};try{stored=JSON.parse(localStorage.getItem(CFG_KEY)||'{}')}catch(_){}const fixed=window.HABIT_QUEST_CLOUD||{};return{url:fixed.url||stored.url||'',anonKey:fixed.anonKey||stored.anonKey||''}}
 function isPublicKey(key){if(typeof key!=='string'||key.startsWith('sb_secret_'))return false;if(key.startsWith('sb_publishable_'))return true;try{const parts=key.split('.');if(parts.length!==3)return false;const json=JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));return json.role==='anon'}catch(e){return false}}
@@ -1067,10 +1331,13 @@ async function cloudFetch(){const {data,error}=await cloud.client.from('habit_st
 async function attachCloudUser(user){if(!cloud.client||cloud.user?.id===user.id&&cloud.loadPromise)return cloud.loadPromise;cloud.user=user;cloud.ready=false;cloud.blocked=true;$('cloudLogout').hidden=false;$('cloudEmail').value=user.email||'';$('cloudLogin').hidden=true;$('cloudAuthPanel').hidden=true;$('cloudPasswordPanel').hidden=false;cloudMessage(`${user.email} でログイン済み。クラウドの記録を確認しています…`);
 cloud.baseSnapshot=restoreCloudBase(user.id)?.data||null;
 cloud.baseRevision=restoreCloudBase(user.id)?.revision??null;
+const freshLocal=window.HabitQuestCloudOnboard.canAdopt(
+ localStorage.getItem(KEY),defaultHabits,user.id,localStorage.getItem(KEY+'-xp-owner')
+);
 cloud.loadPromise=(async()=>{try{cloud.remote=await cloudFetch();
 let validated=null;
 if(cloud.remote){
- if(missingLifecycleFrom(state,cloud.remote.data).length){
+ if(!freshLocal&&missingLifecycleFrom(state,cloud.remote.data).length){
   choiceVisible(true,true);
   cloudMessage('⚠ クラウド側に習慣の休止・目標履歴が欠けています。端末の履歴を保護するため、自動同期を止めました。JSONバックアップを保存し、上書き前に内容を確認してください。','warning');
   return;
@@ -1078,6 +1345,17 @@ if(cloud.remote){
  validated=validateIncoming(cloud.remote.data);
  // Cloud start date is canonical and never resets on new device or later login.
  validated.xpStartDate=validXpStartDate(validated.xpStartDate)||isoToday();
+ if(freshLocal){
+   // A truly untouched phone may safely import existing cloud history on login.
+   state={...validated,avatarImages:state.avatarImages||{},ouraData:state.ouraData||{}};
+   try{localStorage.setItem(KEY,JSON.stringify(state));localStorage.setItem(KEY+'-xp-owner',user.id)}
+   catch(_){cloudMessage('端末の保存容量を確認してください。クラウドの自動読込を保留しました。','warning');return}
+   cloud.revision=Number(cloud.remote.revision);cloud.ready=true;cloud.blocked=false;
+   cloud.syncedSeq=cloud.seq;rememberCloudBase(validated,cloud.revision);
+   choiceVisible(false);render();
+   cloudMessage('☁ クラウドの習慣と過去記録をこの端末へ自動反映しました（改訂 '+cloud.revision+'）','good');
+   setTimeout(()=>checkOuraConnection(),0);return;
+ }
  state.xpStartDate=validated.xpStartDate;
  try{localStorage.setItem(KEY+'-xp-owner',user.id)}catch(_){}
  if(stableStringify(cloudSnapshot(validated))===stableStringify(cloudSnapshot(state))){cloud.revision=cloud.remote.revision;cloud.ready=true;cloud.blocked=false;cloud.syncedSeq=cloud.seq;rememberCloudBase(validated,cloud.revision);choiceVisible(false);cloudMessage('☁ クラウドから記録を読み込みました','good');
@@ -1229,10 +1507,11 @@ async function cloudPollLatest(){
    if(!cloud.saving&&cloud.ready)cloudMessage('☁ オフラインの可能性があります。記録は端末内に保持します。','warning');
  }finally{cloud.polling=false}
 }
-$('cloudRefresh').onclick=async()=>{if(!cloud.client||!cloud.user){cloudMessage('クラウド設定とログインを完了してください。','warning');return}if(cloud.blocked){cloud.loadPromise=null;await attachCloudUser(cloud.user);return}try{const current=await cloudFetch();if(current&&Number(current.revision)!==Number(cloud.revision)){cloud.remote=current;cloud.ready=false;cloud.blocked=true;choiceVisible(true,true);cloudMessage('⚠ 別端末の新しい記録を検出しました。クラウド版か端末版を選んでください。','warning');return}if(cloud.seq!==cloud.syncedSeq)await saveCloud(true);else cloudMessage('☁ クラウドと同期済みです（改訂 '+cloud.revision+'）','good')}catch(e){cloudMessage('クラウド状態の確認に失敗：'+e.message,'warning')}};
+$('cloudRefresh').onclick=async()=>{if(!cloud.client||!cloud.user){cloudMessage('クラウド設定とログインを完了してください。','warning');return}if(cloud.blocked){cloud.loadPromise=null;await attachCloudUser(cloud.user);return}try{const current=await cloudFetch();if(cloud.seq!==cloud.syncedSeq)await saveCloud(true);else if(current&&Number(current.revision)!==Number(cloud.revision))await cloudPollLatest();else cloudMessage('☁ クラウドと同期済みです（改訂 '+cloud.revision+'）','good')}catch(e){cloudMessage('クラウド状態の確認に失敗：'+e.message,'warning')}};
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&cloud.ready&&cloud.seq!==cloud.syncedSeq)saveCloud(true);if(document.visibilityState==='visible'){cloudPollLatest();if(cloud.user&&!ouraBusy)checkOuraConnection()}});
 window.addEventListener('online',()=>{cloudPollLatest();if(cloud.user&&!ouraBusy)checkOuraConnection()});
 setInterval(cloudPollLatest,120000);
+initGameShell();
 paintSectionIcons();
 initCloud();
 
@@ -1240,7 +1519,7 @@ function showOuraAuthResult(){
  const params=new URLSearchParams(location.search);
  const result=params.get('oura');
  if(!result)return;
- $('settingsDetail').open=true;$('ouraDetail').open=true;
+ setGameScreen('options');$('settingsDetail').open=true;$('ouraDetail').open=true;
  const messages={
    connected:'Oura認証が完了しました。実データを確認します。',
    denied:'Ouraのアクセス承認は行われませんでした。',
@@ -1256,7 +1535,25 @@ function showOuraAuthResult(){
  setTimeout(()=>$('ouraDetail').scrollIntoView({behavior:'smooth',block:'start'}),50);
 }
 
-if('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./sw.js').catch(()=>{});
+function showGameUpdateNotice(){const banner=$('appUpdateBanner');if(banner)banner.hidden=false}
+$('appUpdateApply').onclick=()=>{
+ if(cloud.user&&(cloud.blocked||cloud.seq!==cloud.syncedSeq)
+   &&!confirm('クラウドにまだ送っていない変更があります。端末内の記録は保持されますが、先に同期することを推奨します。今すぐ更新しますか？'))return;
+ location.reload();
+};
+if('serviceWorker' in navigator && location.protocol !== 'file:'){
+ const previousController=!!navigator.serviceWorker.controller;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(previousController)showGameUpdateNotice()});
+ navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>{
+  if(reg.waiting&&navigator.serviceWorker.controller)showGameUpdateNotice();
+  reg.addEventListener('updatefound',()=>{
+   const worker=reg.installing;if(!worker)return;
+   worker.addEventListener('statechange',()=>{
+    if(worker.state==='installed'&&navigator.serviceWorker.controller)showGameUpdateNotice();
+   });
+  });
+ }).catch(()=>{});
+}
 render();
 showOuraAuthResult();
 })();
