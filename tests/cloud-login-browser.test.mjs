@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import http from 'node:http';
+import vm from 'node:vm';
 import os from 'node:os';
 import path from 'node:path';
 import {spawn,spawnSync} from 'node:child_process';
@@ -23,20 +24,34 @@ const fakeCloudScript=`<script>
 window.__testErrors=[];
 window.addEventListener('error',e=>window.__testErrors.push('error: '+e.message));
 window.addEventListener('unhandledrejection',e=>window.__testErrors.push('rejection: '+e.reason?.message));
-window.supabase={
- createClient(){return{
-  auth:{
-   onAuthStateChange(){return{data:{subscription:{unsubscribe(){}}}}},
-   async getSession(){return{data:{session:{user:{id:'test-account',email:'test@example.invalid'}}},error:null}},
-   async getUser(){return{data:{user:{id:'test-account',email:'test@example.invalid'}}},error:null}}
-  },
-  from(){return{select(){return{eq(){return{async maybeSingle(){
-   return {data:{data:${JSON.stringify(remote)},revision:12},error:null};
-  }}}}}}},
-  functions:{async invoke(){return{data:{},error:null}}}
- }}
+window.supabase={};
+window.supabase.createClient=function(){
+ const client={};
+ client.auth={};
+ client.auth.onAuthStateChange=function(){return {data:{subscription:{unsubscribe:function(){}}}}};
+ client.auth.getSession=async function(){
+   return {data:{session:{user:{id:'test-account',email:'test@example.invalid'}}},error:null};
+ };
+ client.auth.getUser=async function(){
+   return {data:{user:{id:'test-account',email:'test@example.invalid'}}},error:null};
+ };
+ client.from=function(){
+   return {
+     select:function(){
+       return {eq:function(){
+         return {maybeSingle:async function(){
+           return {data:{data:${JSON.stringify(remote)},revision:12},error:null};
+         }};
+       }};
+     }
+   };
+ };
+ client.functions={invoke:async function(){return {data:{},error:null}}};
+ return client;
 };
 </script>`;
+// Catch fixture parsing issues before invoking headless Chrome.
+assert.doesNotThrow(()=>new vm.Script(fakeCloudScript.slice('<script>'.length,-'</script>'.length),{filename:'fake-supabase-sdk.js'}));
 const prelude=`<script>
 (()=>{
  if(!new URLSearchParams(location.search).has('conflictingPhone'))return;
