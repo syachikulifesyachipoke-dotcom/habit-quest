@@ -31,7 +31,7 @@
   const configOn=typeof input?.configOn==='function'?input.configOn:(h)=>({target:h.target,mission:!h.ouraTrackingOnly});
   const manualHabits=habits.filter(manual);
   if(!today)return {today:null,dayNodes:[],activeDays:0,todayDone:0,hasManualHabits:manualHabits.length>0,
-    focus:null,badge:null,nextBadge:BADGES[0],weekDone:0,manualToday:0,allTodayDone:false};
+    focus:null,badge:null,nextBadge:BADGES[0],weekDone:0,manualToday:0,allTodayDone:false,activityDates:[]};
   const weekDay=(dateToUTC(today).getUTCDay()+6)%7;
   const monday=addDays(today,-weekDay),sunday=addDays(monday,6);
   const hasManualDay=day=>manualHabits.some(h=>activeOn(h,day)&&checked(checks,day,h.id));
@@ -59,7 +59,7 @@
   const badge=[...BADGES].reverse().find(b=>activeDays>=b.days)||null;
   const nextBadge=BADGES.find(b=>activeDays<b.days)||null;
   return {
-   today,monday,sunday,dayNodes,activeDays,weekDone:dayNodes.filter(d=>d.done).length,
+   today,monday,sunday,dayNodes,activeDays,activityDates:[...activityDays].sort(),weekDone:dayNodes.filter(d=>d.done).length,
    todayDone,manualToday:todayHabits.length,hasManualHabits:manualHabits.length>0,
    allTodayDone:todayHabits.length>0&&todayDone===todayHabits.length,
    focus,badge,nextBadge

@@ -52,6 +52,16 @@ const injection=`<script>
  requireOk(document.getElementById('dailyQuestTitle').textContent.includes('達成'),'daily adventure did not celebrate a manual check');
  requireOk(document.getElementById('journeyBadgeTitle').textContent==='旅立ちの証','first adventure badge did not unlock');
  requireOk(document.querySelectorAll('#journeyDays .journey-day').length===7,'weekly adventure map must show seven days');
+ requireOk(document.getElementById('worldPeekName').textContent==='旅立ちの野営地','world map start region missing');
+ requireOk(document.getElementById('worldTodayText').textContent.includes('今日の出会い'),'today world scene did not unlock');
+ document.getElementById('worldMapOpen').click();
+ requireOk(document.getElementById('worldMapDialog').open,'exploration map did not open');
+ requireOk(document.querySelectorAll('#worldMapList .world-area').length===10,'world should contain ten discoverable areas');
+ requireOk(document.querySelectorAll('#worldMapList .world-area.unlocked').length===1,'world initial region should be unlocked');
+ requireOk(document.querySelectorAll('#worldDiaryList .world-diary-entry').length===1,'manual check did not generate diary entry');
+ requireOk(document.querySelector('#worldMapList .world-relic').textContent.includes('はじまりの地図'),'initial exploration relic missing');
+ document.getElementById('worldMapClose').click();
+ requireOk(!document.getElementById('worldMapDialog').open,'world map did not close');
  const xpBefore=xp();
  requireOk(Number(xpBefore.replace(/[^0-9]/g,''))===20,'XP baseline or pre-first-login exclusion failed: '+xpBefore);
  document.querySelector('[data-edit="'+h.id+'"]').click();
@@ -93,6 +103,8 @@ const injection=`<script>
  checkedButton.click();
  requireOk(state().checks[day]?.[h.id]!==true,'test did not create a changed check');
  requireOk(document.getElementById('journeyBadgeTitle').textContent==='冒険のはじまり','badge did not revert when the check was undone');
+ requireOk(!document.getElementById('worldTodayText').textContent.includes('今日の出会い'),'scene did not clear after unchecked habit');
+ requireOk(document.querySelectorAll('#worldDiaryList .world-diary-entry').length===0,'unchecked habit left phantom diary entry');
  const dt=new DataTransfer();
  dt.items.add(new File([JSON.stringify(backup)],'backup.json',{type:'application/json'}));
  const fileInput=document.getElementById('fileInput');
@@ -104,6 +116,8 @@ const injection=`<script>
  requireOk(reimported.targetHistory?.length>0&&reimported.activeIntervals?.length>0,'JSON import lost lifecycle');
  requireOk(xp()===xpBefore,'JSON import changed XP');
  requireOk(document.getElementById('journeyBadgeTitle').textContent==='旅立ちの証','restored check did not restore badge');
+ requireOk(document.getElementById('worldTodayText').textContent.includes('今日の出会い'),'restored record did not restore encounter');
+ requireOk(document.querySelectorAll('#worldDiaryList .world-diary-entry').length===1,'backup restore did not restore diary');
  if(new URLSearchParams(location.search).has('mobileTest')){
   requireOk(window.innerWidth<=580,'mobile viewport not active: '+window.innerWidth);
   requireOk(getComputedStyle(document.querySelector('main>.intro')).order==='0','mobile RPG card not first');
@@ -135,6 +149,7 @@ test('headless Chrome: lifecycle and JSON backup/import preserve checks and XP',
    ['/sync-guard.js',fs.readFileSync(path.join(root,'sync-guard.js'),'utf8')],
    ['/sync-merge.js',fs.readFileSync(path.join(root,'sync-merge.js'),'utf8')],
    ['/daily-adventure.js',fs.readFileSync(path.join(root,'daily-adventure.js'),'utf8')],
+   ['/adventure-world.js',fs.readFileSync(path.join(root,'adventure-world.js'),'utf8')],
    ['/cloud-config.js','window.HABIT_QUEST_CLOUD={url:"",anonKey:""};']
  ]);
  const server=http.createServer((req,res)=>{

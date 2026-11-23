@@ -218,6 +218,56 @@
 .journey-footnote{font-size:11px;color:var(--muted);line-height:1.55;margin:10px 0 0}
 @media(max-width:580px){.daily-quest{padding:10px;gap:9px}.daily-quest-icon{font-size:20px}.daily-quest-main strong{font-size:13px}.daily-quest-main small{font-size:11px}.daily-quest-action{padding:8px;font-size:11px}.journey-days{gap:4px}}
 @media(prefers-reduced-motion:reduce){.daily-quest-action{transition:none}}
+
+/* G2 - growing world, with the hero above the compact weekly tracker */
+.world-peek{margin-top:12px;padding:13px 14px;border:1px solid rgba(167,139,250,.35);border-radius:16px;background:linear-gradient(125deg,rgba(43,46,92,.88),rgba(22,45,64,.68));}
+.world-peek-top{display:flex;gap:11px;align-items:center;min-width:0}
+.world-peek-icon{font-size:30px;min-width:38px;text-align:center;filter:drop-shadow(0 3px 9px rgba(169,145,255,.25))}
+.world-peek-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.world-peek-info strong{font-size:14px;font-weight:850;line-height:1.3}
+.world-peek-info small{font-size:11px;color:var(--muted);line-height:1.4}
+.world-peek-eyebrow{font-size:10px!important;letter-spacing:.07em;text-transform:uppercase;color:#b2a2f9!important}
+.world-map-open{border:1px solid rgba(167,139,250,.48);background:rgba(153,123,255,.16);color:var(--text);border-radius:11px;padding:9px 10px;font-size:11px;font-weight:800;white-space:nowrap}
+.world-map-open:hover{background:rgba(153,123,255,.29)}
+.world-progress-track{height:6px;margin:11px 0 8px;border-radius:999px;background:rgba(178,188,225,.16);overflow:hidden}
+.world-progress-bar{width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#a78bfa,#5eead4);transition:width .28s ease}
+.world-today{font-size:11px;color:var(--muted);line-height:1.5;margin:0}
+.world-peek.has-world-story{border-color:rgba(94,234,212,.48)}
+.world-peek.has-world-story .world-today{color:#b7f7df}
+.world-map-dialog{color:var(--text);background:linear-gradient(150deg,#1b2039,#101a2c);border:1px solid rgba(167,139,250,.55);border-radius:22px;box-shadow:0 24px 75px rgba(0,0,0,.64);width:min(720px,calc(100vw - 24px));max-height:min(89vh,920px);padding:22px;overflow-y:auto;overscroll-behavior:contain}
+.world-map-dialog::backdrop{background:rgba(6,9,21,.84);backdrop-filter:blur(5px)}
+.world-dialog-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.world-dialog-head small{font-size:10px;letter-spacing:.13em;color:#b8a9ff}
+.world-dialog-head h2{font-size:21px;margin:5px 0 8px}
+.world-dialog-head p{font-size:12px;line-height:1.65;color:var(--muted);margin:0}
+.world-dialog-close{width:36px;height:36px;border:1px solid rgba(167,139,250,.3);border-radius:10px;background:rgba(255,255,255,.05);color:var(--text);font-size:16px;flex-shrink:0}
+.world-dialog-counter{margin:17px 0 12px;color:#b6efdf;font-size:12px;font-weight:800}
+.world-map-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.world-area{display:flex;gap:11px;border:1px solid rgba(170,184,219,.15);background:rgba(255,255,255,.025);padding:13px;border-radius:14px;min-width:0}
+.world-area.current{background:linear-gradient(125deg,rgba(114,85,225,.22),rgba(41,126,140,.15));border-color:rgba(167,139,250,.62)}
+.world-area.locked{opacity:.68}
+.world-area-icon{font-size:27px;min-width:34px;text-align:center}
+.world-area-content{min-width:0;flex:1}
+.world-area-top{display:flex;align-items:flex-start;justify-content:space-between;gap:5px}
+.world-area-top strong{font-size:12px;line-height:1.3}
+.world-area-status{border:1px solid rgba(165,179,216,.24);border-radius:99px;padding:2px 6px;font-size:9px;white-space:nowrap;color:var(--muted)}
+.world-area.current .world-area-status{color:#b7f7df;border-color:rgba(94,234,212,.37)}
+.world-area-content small{display:block;color:var(--muted);font-size:10px;margin-top:5px;line-height:1.5}
+.world-area-content p{font-size:11px;color:#c5c9dc;line-height:1.6;margin:8px 0}
+.world-relic{display:inline-block;font-size:10px;padding:5px 8px;border-radius:8px;background:rgba(249,198,106,.12);color:#f9de9e}
+.world-relic-locked{background:rgba(132,148,178,.12);color:var(--muted)}
+.world-diary-head{display:flex;align-items:baseline;gap:12px;justify-content:space-between;margin:24px 0 10px}
+.world-diary-head h3{font-size:15px;margin:0}
+.world-diary-head small{font-size:10px;color:var(--muted);line-height:1.5}
+.world-diary-list{display:grid;gap:9px}
+.world-diary-entry{display:flex;gap:12px;padding:11px 12px;background:rgba(255,255,255,.035);border:1px solid rgba(167,139,250,.12);border-radius:12px}
+.world-diary-icon{font-size:24px}
+.world-diary-entry strong{font-size:11px;color:#ded7ff}
+.world-diary-entry p{margin:5px 0 0;font-size:11px;color:#c7cde1;line-height:1.7}
+.world-diary-empty{padding:14px;border:1px dashed rgba(167,139,250,.28);border-radius:12px;font-size:12px;color:var(--muted);line-height:1.6}
+.world-dialog-footnote{color:var(--muted);font-size:10px;line-height:1.65;margin:20px 0 0}
+@media(max-width:580px){.world-peek{padding:10px;margin-top:10px}.world-peek-top{gap:7px}.world-peek-icon{font-size:24px;min-width:28px}.world-map-open{padding:8px;font-size:10px}.world-map-dialog{padding:15px;max-height:92vh}.world-map-list{grid-template-columns:1fr}.world-dialog-head h2{font-size:18px}.world-dialog-head p{font-size:11px}.world-area{padding:10px}.world-diary-head{flex-direction:column;gap:4px}}
+@media(prefers-reduced-motion:reduce){.world-progress-bar{transition:none}.world-map-dialog::backdrop{backdrop-filter:none}}
 </style>
 </head>
 <body>
@@ -252,7 +302,16 @@
 <main>
 <section class="intro">
  <div class="hero"><div class="eyebrow">YOUR DAILY ADVENTURE</div><h2>今日の一歩で、<br><em>未来の自分を進化させる。</em></h2><p class="hero-sub">小さな習慣が経験値になる。1日ずつ積み重ねて、<br>あなただけの相棒を育てていこう。</p><div class="hero-counters"><div class="counter"><strong id="todayDone">0/0</strong><label>今日の達成（進行中の全項目）</label></div><div class="counter"><strong id="streak">0<span style="font-size:14px"> 日</span></strong><label title="手動習慣を1項目以上達成した連続日数（当日未記録なら昨日まで）">連続記録日数（手動1項目以上）ⓘ</label></div><div class="counter"><strong id="totalXp">0</strong><label>開始日以降の XP</label></div></div>
- <div class="daily-quest" id="dailyQuest" aria-live="polite"><div class="daily-quest-icon" aria-hidden="true">⚔️</div><div class="daily-quest-main"><strong id="dailyQuestTitle">今日の冒険</strong><small id="dailyQuestText">小さな一歩から始めましょう</small></div><button type="button" class="daily-quest-action" id="dailyQuestJump">習慣へ</button></div></div>
+ <div class="daily-quest" id="dailyQuest" aria-live="polite"><div class="daily-quest-icon" aria-hidden="true">⚔️</div><div class="daily-quest-main"><strong id="dailyQuestTitle">今日の冒険</strong><small id="dailyQuestText">小さな一歩から始めましょう</small></div><button type="button" class="daily-quest-action" id="dailyQuestJump">習慣へ</button></div>
+ <div class="world-peek" id="worldPeek" aria-label="相棒との探索エリア">
+   <div class="world-peek-top"><span id="worldPeekIcon" class="world-peek-icon" aria-hidden="true">🏕️</span>
+    <div class="world-peek-info"><small class="world-peek-eyebrow">相棒との冒険 · 現在地</small>
+      <strong id="worldPeekName">旅立ちの野営地</strong><small id="worldPeekNext">冒険の地図を準備しています</small></div>
+    <button type="button" class="world-map-open" id="worldMapOpen" aria-haspopup="dialog">地図を見る</button>
+   </div>
+   <div class="world-progress-track" aria-label="次のエリアへの進捗"><div class="world-progress-bar" id="worldPeekProgress"></div></div>
+   <p class="world-today" id="worldTodayText">今日の習慣を達成すると新しい出会いが待っています。</p>
+ </div></div>
  <div class="companion-card"><div class="companion-top"><span class="tag" id="evoTag">✦ 進化のたまご</span><div class="level" id="levelLabel">Lv. 1</div></div><div class="avatar-box" id="avatar"></div><div class="companion-bottom"><div><div class="companion-title" id="stageName">星のたまご</div><div class="companion-next" id="nextEvolution">Lv.3で次の姿に進化</div></div><div><div class="xp-val" id="xpLabel">0 / 40 XP</div><div class="xp-start-line" id="xpStartLine">XP開始日：ログイン時に確定</div></div></div><div class="progress"><i id="xpBar"></i></div></div>
 </section>
 <section class="content">
@@ -290,6 +349,16 @@
 </main><footer class="bottom-foot">HABIT QUEST · 習慣を冒険に変える</footer>
 <div class="site-links"><a href="./privacy.html">プライバシー</a> · <a href="./terms.html">利用規約</a></div>
 </div>
+<dialog class="world-map-dialog" id="worldMapDialog" aria-labelledby="worldMapTitle">
+ <div class="world-dialog-head"><div><small>HABIT QUEST · WORLD MAP</small><h2 id="worldMapTitle">相棒と旅する世界</h2>
+ <p>1日1つ、手動習慣を達成すると新しい景色が広がります。お休みしても足跡は消えません。</p></div>
+ <button type="button" class="world-dialog-close" id="worldMapClose" aria-label="冒険マップを閉じる">✕</button></div>
+ <div class="world-dialog-counter" id="worldMapCounter">発見 1 / 10 エリア</div>
+ <div class="world-map-list" id="worldMapList" aria-label="探索できるエリアと旅の宝物"></div>
+ <div class="world-diary-head"><h3>📖 冒険日誌</h3><small>直近5回の手動習慣達成日から自動生成</small></div>
+ <div class="world-diary-list" id="worldDiaryList"></div>
+ <p class="world-dialog-footnote">日誌と宝物はチェック記録から表示します。追加の課金・アイテム消費・XP加算はありません。</p>
+</dialog>
 <div class="modal-backdrop" id="modalBackdrop" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><h3 id="modalTitle">習慣を追加</h3><p>週の目標回数を決めて、あなたの冒険を始めましょう。</p><form id="habitForm"><div class="field"><label for="habitName">習慣の名前</label><input id="habitName" maxlength="28" placeholder="例：朝の散歩" required></div><div class="inline-fields"><div class="field"><label for="habitIcon">アイコン</label><div class="habit-icon-select"><span id="habitIconPreview" class="habit-icon preview-icon"></span><select id="habitIcon"><option value="sunrise">日の出</option><option value="dumbbell">筋トレ</option><option value="bike">サイクリング</option><option value="footsteps">ウォーキング</option><option value="run">ランニング</option><option value="book">学習</option><option value="bookopen">読書</option><option value="pen">記録・日記</option><option value="yoga">ヨガ・瞑想</option><option value="waves">水泳</option><option value="music">ダンス</option><option value="droplets">水分補給</option><option value="utensils">食事</option><option value="laptop">制作</option><option value="sparkles">その他</option></select></div></div><div class="field"><label for="habitTarget">週の目標回数</label><select id="habitTarget"><option value="1">週1回</option><option value="2">週2回</option><option value="3">週3回</option><option value="4">週4回</option><option value="5">週5回</option><option value="6">週6回</option><option value="7">毎日（週7回）</option></select></div></div><div class="field"><label style="display:flex;align-items:center;gap:9px"><input type="checkbox" id="habitWeeklyMission" style="width:18px;height:18px;accent-color:#ab8afd">週間ミッションに含める</label><span class="small-note">OFFの場合もチェック・XP・個別分析は利用できます。Oura自動項目は初期状態でOFFです。</span></div><div class="modal-actions"><button type="button" class="btn danger" id="deleteHabit" hidden>休止する</button><div style="margin-left:auto"><button type="button" class="btn ghost" id="cancelModal">キャンセル</button><button type="submit" class="btn primary" id="saveHabit">追加する</button></div></div></form></div></div>
 <div class="toast-wrap" id="toasts" aria-live="polite"></div>
 <script src="./cloud-config.js"></script>
@@ -298,6 +367,7 @@
 <script src="./sync-guard.js"></script>
 <script src="./sync-merge.js"></script>
 <script src="./daily-adventure.js"></script>
+<script src="./adventure-world.js"></script>
 <script>
 (()=>{'use strict';
 const KEY='habit-quest-v1', XP_CHECK=20, XP_WEEK=100;
@@ -537,7 +607,40 @@ function renderDailyAdventure(today){
  $('journeyBadgeNext').textContent=data.nextBadge?
   '次の称号「'+data.nextBadge.name+'」まであと'+(data.nextBadge.days-data.activeDays)+'日（累計'+data.activeDays+'日）':
   '累計'+data.activeDays+'日達成！ 全称号を獲得しました';
+ renderWorldExploration(data);
 }
+function renderWorldExploration(daily){
+ const world=window.HabitQuestWorld.describe(daily);
+ $('worldPeekIcon').textContent=world.current.icon;
+ $('worldPeekName').textContent=world.current.name;
+ $('worldPeekNext').textContent=world.next?'次のエリア「'+world.next.name+'」まであと'+world.untilNext+'日':'すべてのエリアを探索しました';
+ $('worldPeekProgress').style.width=world.progress+'%';
+ $('worldTodayText').textContent=world.todayReady?
+  '今日の出会い：'+world.todayScene.text:
+  daily?.hasManualHabits?'今日の手動習慣を1つ達成すると、物語が1ページ進みます。':'手動習慣を追加すると、物語が始まります。';
+ $('worldPeek').classList.toggle('has-world-story',world.todayReady);
+ $('worldMapCounter').textContent='発見 '+world.discovered+' / '+world.total+' エリア · 冒険 '+world.days+'日';
+ $('worldMapList').innerHTML=world.unlocked.map(function(area){
+  const visible=area.unlocked||area.next;
+  const name=visible?esc(area.name):'未発見のエリア';
+  const icon=visible?area.icon:'🔒';
+  const story=area.unlocked?esc(area.story):area.next?'この先には、まだ知らない物語が待っています。':'進んだ先で明らかになります。';
+  const reward=area.unlocked?'<span class="world-relic">'+area.relicIcon+' '+esc(area.relic)+'</span>':
+   '<span class="world-relic world-relic-locked">🔒 未発見の宝物</span>';
+  const status=area.index===world.index?'現在地':area.unlocked?'探索済み':area.next?'次の目的地':'未解放';
+  return '<article class="world-area'+(area.unlocked?' unlocked':' locked')+(area.index===world.index?' current':'')+'" aria-label="'+name+' '+area.at+'日で解放">'
+   +'<span class="world-area-icon" aria-hidden="true">'+icon+'</span>'
+   +'<div class="world-area-content"><div class="world-area-top"><strong>'+name+'</strong><span class="world-area-status">'+status+'</span></div>'
+   +'<small>'+area.at+'日目から · '+(visible?esc(area.subtitle):'？？？')+'</small>'
+   +'<p>'+story+'</p>'+reward+'</div></article>';
+ }).join('');
+ $('worldDiaryList').innerHTML=world.diary.length?world.diary.map(function(scene){
+  return '<article class="world-diary-entry"><span class="world-diary-icon" aria-hidden="true">'+scene.icon+'</span><div><strong>'+esc(scene.date)+' · '+esc(scene.regionName)+'</strong><p>'+esc(scene.text)+'</p></div></article>';
+ }).join(''):'<p class="world-diary-empty">今日の手動習慣を1つ達成すると、ここに初めての物語が記録されます。</p>';
+}
+$('worldMapOpen').onclick=()=>{const dialog=$('worldMapDialog');if(!dialog.open)dialog.showModal()};
+$('worldMapClose').onclick=()=>$('worldMapDialog').close();
+$('worldMapDialog').addEventListener('click',event=>{if(event.target===$('worldMapDialog'))event.target.close()});
 $('dailyQuestJump').onclick=()=>{
  if(!state.habits.some(h=>!isOuraAutoHabit(h))){openModal();return}
  if(!state.habits.some(h=>!isOuraAutoHabit(h)&&!window.HabitQuestLifecycle.archived(h)&&window.HabitQuestLifecycle.activeOn(h,isoToday()))){
