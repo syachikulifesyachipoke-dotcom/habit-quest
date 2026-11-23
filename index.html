@@ -729,7 +729,7 @@ const [light,dark]=palette[stage%palette.length], wings=stage>=2, fire=stage>=3,
 /* G6 derived UI only: one underlying weekly mission for chest and boss. */
 let stepsHistoryOffset=0;
 function renderWeeklyBoss(){
- const wk=weekStart(parseDay(isoToday())),start=dayKey(wk);
+ const wk=addDay(weekStart(parseDay(isoToday())),offset*7),start=dayKey(wk);
  const data=window.HabitQuestWeeklyBoss.describe(start,weeklyFor(wk));
  const container=$('weeklyBoss');if(!data)return;
  container.dataset.state=data.state;container.dataset.tone=data.tone;
@@ -820,7 +820,7 @@ const orderedGroups=[...window.HabitQuestGroups.GROUPS,{id:'other',label:'その
 for(const spec of orderedGroups){
  const list=groupedHabits[spec.id]||[];
  if(!list.length)continue;
- html+='<div class="tracker-group-heading" data-group="'+spec.id+'"><strong>'+esc(spec.label)+'</strong><small>'+list.length+'項目 · 1つ以上で連続記録</small></div>';
+ html+='<div class="tracker-group-heading" data-group="'+spec.id+'"><strong>'+esc(spec.label)+'</strong><small>'+list.length+'項目 · '+(spec.id==='other'?'連続記録の対象外':'1つ以上で連続記録')+'</small></div>';
  for(const h of list){
   const group=isOuraAutoHabit(h)?'auto':'manual';
  const count=days.filter(d=>eligibleHabitDay(h,dayKey(d))&&checked(d,h.id)).length;
@@ -1216,7 +1216,8 @@ $('tracker').addEventListener('click',event=>{
  if(hid===window.HabitQuestOuraSteps.WALKING_ID&&window.HabitQuestOuraSteps.walkingEligible(date)){
   toast('ウォーキングはOuraの日別歩数8,001歩以上でのみ自動チェックされます。');return;
  }
- const beforeBoss=window.HabitQuestWeeklyBoss.describe(dayKey(weekStart(parseDay(isoToday()))),weeklyFor(weekStart(parseDay(isoToday()))));
+ const shownWeek=addDay(weekStart(parseDay(isoToday())),offset*7),shownWeekKey=dayKey(shownWeek);
+ const beforeBoss=window.HabitQuestWeeklyBoss.describe(shownWeekKey,weeklyFor(shownWeek));
  const manualCheck=date===isoToday()&&state.habits.some(h=>h.id===hid&&!isOuraAutoHabit(h));
  const priorGame=manualCheck?gameProgress():null;
  state.checks[date]??={};const was=!!state.checks[date][hid];if(was)delete state.checks[date][hid];else state.checks[date][hid]=true;
@@ -1235,8 +1236,8 @@ $('tracker').addEventListener('click',event=>{
   else if(priorGame&&updated.shell.completedChapters>priorGame.shell.completedChapters)
    toast('📖 冒険の第'+updated.shell.completedChapters+'話を解放しました！',true);
  }
- if(!was&&beforeBoss&&date>=dayKey(weekStart(parseDay(isoToday())))&&date<=isoToday()){
-  const afterBoss=window.HabitQuestWeeklyBoss.describe(dayKey(weekStart(parseDay(isoToday()))),weeklyFor(weekStart(parseDay(isoToday()))));
+ if(!was&&beforeBoss&&date>=shownWeekKey&&date<=dayKey(addDay(shownWeek,6))){
+  const afterBoss=window.HabitQuestWeeklyBoss.describe(shownWeekKey,weeklyFor(shownWeek));
   if(afterBoss&&afterBoss.damage>beforeBoss.damage)animateWeeklyBossHit(afterBoss.damage-beforeBoss.damage);
  }
  const now=stats();if(!was){particles(b);if(now.level>prev.level)toast(`🎉 LEVEL UP! Lv.${now.level}`,true);else if(now.completedWeeks>prev.completedWeeks)toast('🏆 週間宝箱を開放！ +100 XP',true);else if(date>=xpStartDate()&&validXpStartDate(state.xpStartDate))toast('✨ +20 XP  習慣クリア！',true);else toast('過去の実績を記録しました（XP対象外）',true)}else toast('チェックを取り消しました')});
