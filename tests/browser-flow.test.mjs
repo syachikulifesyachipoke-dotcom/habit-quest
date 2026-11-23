@@ -51,6 +51,12 @@ const injection=`<script>
  requireOk(!document.getElementById('stepsHistory').hidden,'history not open');
  requireOk(document.getElementById('stepsHistoryList').textContent.includes('8,000歩'),'today missing from historical steps');
  requireOk(document.getElementById('stepsHistoryList').textContent.includes('未達成'),'8,000 walking should be under threshold in history');
+ const monthBefore=document.getElementById('stepsHistoryMonth').textContent;
+ document.getElementById('stepsOlder').click();
+ requireOk(document.getElementById('stepsHistoryMonth').textContent!==monthBefore,'previous-month step history unavailable');
+ requireOk(document.getElementById('stepsHistoryList').textContent.includes('未取得'),'missing step dates should be distinguishable');
+ document.getElementById('stepsNewer').click();
+ requireOk(document.getElementById('stepsHistoryMonth').textContent===monthBefore,'step history next month did not restore current month');
  document.getElementById('homeStepsOpen').click();
  requireOk(document.getElementById('weeklyBoss'),'weekly boss encounter missing');
  requireOk(document.querySelectorAll('.tracker-group-heading').length>=1,'tracker category headings missing');
@@ -79,6 +85,8 @@ const injection=`<script>
  currentButton.click();
  const day=currentButton.dataset.day;
  requireOk(state().checks[day]?.[h.id]===true,'check missing');
+ requireOk(document.getElementById('streakInvestment').textContent==='1','investment category streak must rise after custom habit check');
+ requireOk(document.querySelector('.tracker-group-heading[data-group="investment"]'),'investment category heading missing after adding habit');
  requireOk(Number(document.getElementById('bossHp').textContent.split('/')[0])===bossHpBefore-20,'weekly boss damage is not aligned with checkbox');
  requireOk(document.getElementById('headerXp').textContent===document.getElementById('totalXp').textContent,'XP HUD did not update with daily check');
  requireOk(document.getElementById('journeyCount').textContent.includes('/ 7日'),'adventure map did not render');
