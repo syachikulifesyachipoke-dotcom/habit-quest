@@ -91,3 +91,10 @@ test('PWA manifest is valid JSON', () => {
   const manifest=JSON.parse(read('manifest.webmanifest'));
   assert.ok(manifest.name && manifest.icons?.length);
 });
+
+test('goal metric module is loaded before app and in offline cache', () => {
+  assert.match(html, /<script src="\.\/goal-metrics\.js"><\/script>\s*<script>/);
+  assert.match(html, /id="metricGoal"/);
+  assert.match(html, /window\.HabitQuestGoalMetrics\.compute/);
+  assert.match(sw, /\.\/goal-metrics\.js/);
+});
