@@ -216,6 +216,7 @@ async function fetchOuraMetrics(){
  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){}renderOura();await renderOuraCandidates(all);return all.length;
 }
 
+let ouraAutoEligibleCount=0,ouraAutoPendingCount=0;
 const OURA_AUTO_SPORTS=new Set(['strengthtraining','cycling','running','swimming','pilates','dance','yoga','rowing','elliptical','hiking']);
 function qualifiesOuraWorkout(w){
  if(!w?.start_time||!w?.end_time)return false;
@@ -228,7 +229,8 @@ function updateOuraAutoStatus(){
  const enabled=state.ouraAutoEnabled===true;
  button.textContent=enabled?'運動の自動反映：ON（停止）':'Ouraの運動を習慣に自動反映';
  button.setAttribute('aria-pressed',String(enabled));
- info.textContent=enabled?'筋トレ・自転車・ランニングなど（10分以上）を自動記録中。💍印はOura由来。歩行と早起きは本人確認式です。':'筋トレ・自転車・ランニングなど（10分以上）を自動記録。歩行と早起きは確認式。過去の記録も一括反映できます。';
+ const summary='対象の運動 '+ouraAutoEligibleCount+'日・未反映 '+ouraAutoPendingCount+'日。';
+ info.textContent=enabled?summary+' 自動記録中。💍印はOura由来。歩行と早起きは確認式です。':summary+' 有効化すると過去分もまとめて反映します。歩行と早起きは確認式です。';
 }
 function applyOuraWorkoutsToHabits(workouts){
  if(!state.ouraAutoEnabled||!cloud.ready||cloud.blocked||!state.habits.some(h=>h.id==='train'))return 0;
@@ -287,7 +289,11 @@ async function renderOuraCandidates(daily){
    const activity=String(w.activity||'種類不明').replace(/[_-]+/g,' ').slice(0,55);
    if(!byDay.get(day).includes(activity))byDay.get(day).push(activity);
  }
+ const qualifiedDates=new Set(workouts.filter(qualifiesOuraWorkout).map(w=>dateInTokyo(w.start_time)).filter(day=>day<=isoToday()));
+ ouraAutoEligibleCount=qualifiedDates.size;
  applyOuraWorkoutsToHabits(workouts);
+ ouraAutoPendingCount=[...qualifiedDates].filter(day=>!state.checks[day]?.train&&!(state.ouraAutoSuppressed||[]).includes(day)).length;
+ updateOuraAutoStatus();
  const choices=[];
  const days=new Map(daily.map(x=>[x.day,x]));
  // Workouts may exist on days without a daily sleep/activity score.
