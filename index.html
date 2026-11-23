@@ -315,7 +315,7 @@
    <div class="world-progress-track" aria-label="次のエリアへの進捗"><div class="world-progress-bar" id="worldPeekProgress"></div></div>
    <p class="world-today" id="worldTodayText">今日の習慣を達成すると新しい出会いが待っています。</p>
  </div></div>
- <div class="companion-card"><div class="companion-top"><span class="tag" id="evoTag">✦ 進化のたまご</span><div class="level" id="levelLabel">Lv. 1</div></div><div class="avatar-box" id="avatar"></div><span class="companion-mood-chip" id="homeCompanionMood" aria-hidden="true">🙂</span><div class="companion-bottom"><div><div class="companion-title" id="stageName">星のたまご</div><div class="companion-next" id="nextEvolution">Lv.3で次の姿に進化</div></div><div><div class="xp-val" id="xpLabel">0 / 40 XP</div><div class="xp-start-line" id="xpStartLine">XP開始日：ログイン時に確定</div></div></div><div class="progress"><i id="xpBar"></i></div></div>
+ <div class="companion-card"><div class="companion-top"><span class="tag" id="evoTag">✦ 進化のたまご</span><div class="level" id="levelLabel">Lv. 1</div></div><div class="avatar-box" id="avatar"></div><div class="coin-equipped-home" id="coinGearOnHome" aria-label="装備中のアイテム" hidden>✦</div><span class="companion-mood-chip" id="homeCompanionMood" aria-hidden="true">🙂</span><div class="companion-bottom"><div><div class="companion-title" id="stageName">星のたまご</div><div class="companion-next" id="nextEvolution">Lv.3で次の姿に進化</div></div><div><div class="xp-val" id="xpLabel">0 / 40 XP</div><div class="xp-start-line" id="xpStartLine">XP開始日：ログイン時に確定</div></div></div><div class="progress"><i id="xpBar"></i></div></div>
 </section>
 <section class="content">
  <div class="panel"><div class="panel-heading"><div><h3 class="hq-section-heading"><span data-hq-icon="calendar"></span>週間トラッカー</h3><div class="subheading">今日からの達成に +20 XP <span class="mobile-grid-hint">・スマホは1行で7日をチェック</span></div></div><div class="week-nav"><span class="week-range" id="weekRange"></span><button class="btn icon-btn" id="prevWeek" aria-label="前の週">‹</button><button class="btn" id="thisWeek">今週</button><button class="btn icon-btn" id="nextWeek" aria-label="次の週">›</button></div></div><div id="tracker" class="tracker"></div><div class="tracker-footer"><div class="legend"><span><i class="dot dot-manual"></i>手動チェック</span><span><i class="dot dot-oura"></i>Oura自動</span><span><i class="dot empty"></i>未チェック</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" id="archiveJump">休止中の習慣 <span id="archiveCount">0</span></button><button class="btn primary" id="addHabit">＋ 習慣を追加</button></div></div></div>
@@ -356,7 +356,7 @@
  <div class="char-layout">
   <section class="char-stage">
    <div class="char-name" id="characterName">星のたまご</div><div class="char-level" id="characterLevel">Lv.1</div>
-   <div class="char-avatar" id="characterPortrait" aria-label="現在の相棒の姿"></div><span class="char-mood-face" id="characterMoodFace" aria-hidden="true">🙂</span>
+   <div class="char-avatar" id="characterPortrait" aria-label="現在の相棒の姿"></div><div class="coin-equipped-seal" id="coinGearOnCharacter" aria-label="装備中のアイテム" hidden>✦</div><span class="char-mood-face" id="characterMoodFace" aria-hidden="true">🙂</span>
    <div class="char-reaction" id="characterReaction" role="status"><strong>相棒の気持ち</strong><span id="characterReactionText">一緒に冒険を始めよう！</span></div>
    <div class="char-actions">
     <button type="button" class="char-action primary" id="characterPat">相棒をなでる</button>
@@ -391,10 +391,22 @@
  <div class="event-story" id="eventStoryDetail" aria-live="polite"><h3 id="eventStoryTitle">はじまりの章</h3><p id="eventStoryText">初めての手動習慣を達成すると、物語が解放されます。</p></div>
 </section>
 <section id="screen-shop" class="game-screen game-panel" aria-label="ショップ画面" hidden>
- <div class="game-panel-heading"><h2>🛍️ 冒険ショップ</h2><p>習慣を達成して集めた装飾品で相棒を飾りましょう。すべて無料で、課金やXP消費はありません。</p></div>
+ <div class="game-panel-heading"><h2>冒険ショップ <span class="shop-title-coin">✦ COIN MARKET</span></h2><p>毎日の習慣をコインに変えて、相棒の装備を集めましょう。XPとは別のゲーム内通貨です。現金での購入はありません。</p></div>
+ <section class="coin-wallet-banner" aria-label="ゲーム内コイン">
+  <div class="coin-balance-main"><div class="coin-balance-icon">✦</div><div><small>COIN WALLET</small><div class="coin-total-line"><strong id="coinBalance">—</strong><span>COIN</span></div></div></div>
+  <div class="coin-wallet-side"><div id="coinDailyStatus">ログインするとコインを確認できます</div><div id="coinYesterdayStatus">前日のチェック報酬は毎朝5:40以降</div><button type="button" id="coinRefresh">残高を更新</button></div>
+ </section>
+ <div class="coin-system-note"><span>🎁 ログイン：1日 <strong>+10 C</strong></span><span>✅ 前日のチェック：1件 <strong>+5 C</strong></span><span>⏰ 日本時間 <strong>5:40</strong> 更新</span></div>
+ <section class="coin-gacha-panel">
+  <div class="coin-gacha-glow" aria-hidden="true">✧</div>
+  <div class="coin-gacha-copy"><small>DAILY FREE GACHA</small><h3>✨ 今日の運試し</h3><p>1日1回、無料でアイテムが手に入るガチャ。すでに持っているアイテムなら15コインに交換されます。</p><button type="button" id="coinFreeGacha" disabled>無料ガチャを引く</button><small id="coinGachaHint">ログインすると利用できます</small></div>
+  <div class="coin-gacha-chest" aria-hidden="true">🎁</div>
+ </section>
+ <section class="shop-panel coin-market-panel"><div class="coin-market-heading"><div><h3>⚔️ 冒険アイテム</h3><p class="small-note">所持コインで購入。購入した装備はPC・スマホで共有できます。</p></div><small>全5種類</small></div><div id="coinShopItems" class="coin-item-grid"></div></section>
+ <div id="coinShopNotice" class="coin-shop-notice" role="status" aria-live="polite">コインはクラウドに安全に保存されます。</div>
  <section class="shop-panel">
-  <h3>✨ 無料の着せ替え装飾</h3>
-  <p class="small-note">冒険した累計日数で解放されます。着せ替えの選択はこの端末にだけ保存されます。</p>
+  <h3>✨ 冒険の思い出の額縁</h3>
+  <p class="small-note">以前からある無料の額縁。累計冒険日数で解放され、この端末に選択を保存します。コインで購入する装備とは別です。</p>
   <div id="shopFrames" class="shop-grid"></div>
  </section>
  <section class="shop-panel" style="margin-top:16px">
@@ -416,12 +428,19 @@
  <div class="options-settings-host" id="optionsSettingsHost"></div>
 </section>
 <nav class="game-bottom-nav" id="gameBottomNav" aria-label="ゲームのメインメニュー">
- <button type="button" class="game-nav-button" data-game-tab="home" aria-current="page" aria-controls="screen-home"><span class="game-nav-icon" aria-hidden="true">🏠</span><span class="game-nav-label">ホーム</span></button>
- <button type="button" class="game-nav-button" data-game-tab="character" aria-controls="screen-character"><span class="game-nav-icon" aria-hidden="true">🐲</span><span class="game-nav-label">キャラ</span></button>
- <button type="button" class="game-nav-button" data-game-tab="events" aria-controls="screen-events"><span class="game-nav-icon" aria-hidden="true">🎪</span><span class="game-nav-label">イベント</span></button>
- <button type="button" class="game-nav-button" data-game-tab="shop" aria-controls="screen-shop"><span class="game-nav-icon" aria-hidden="true">🛍️</span><span class="game-nav-label">ショップ</span></button>
- <button type="button" class="game-nav-button" data-game-tab="options" aria-controls="screen-options"><span class="game-nav-icon" aria-hidden="true">⚙️</span><span class="game-nav-label">オプション</span></button>
+ <button type="button" class="game-nav-button" data-game-tab="home" aria-current="page" aria-controls="screen-home"><span class="game-nav-icon" aria-hidden="true"><svg class="game-nav-svg" width="23" height="23" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/></svg></span><span class="game-nav-label">ホーム</span></button>
+ <button type="button" class="game-nav-button" data-game-tab="character" aria-controls="screen-character"><span class="game-nav-icon" aria-hidden="true"><svg class="game-nav-svg" width="23" height="23" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 21v-2.5a7.5 7.5 0 0 1 15 0V21"/><path d="m17.5 3 1 2 2.2.4-1.6 1.6.4 2.2"/></svg></span><span class="game-nav-label">キャラ</span></button>
+ <button type="button" class="game-nav-button" data-game-tab="events" aria-controls="screen-events"><span class="game-nav-icon" aria-hidden="true"><svg class="game-nav-svg" width="23" height="23" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/><path d="m12 13 1 2 2.3.3-1.7 1.5.4 2.2-2-1-2 1 .4-2.2-1.7-1.5L11 15z"/></svg></span><span class="game-nav-label">イベント</span></button>
+ <button type="button" class="game-nav-button" data-game-tab="shop" aria-controls="screen-shop"><span class="game-nav-icon" aria-hidden="true"><svg class="game-nav-svg" width="23" height="23" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16l-1 13H5L4 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/><path d="m10 14 2-2 2 2-2 2z"/></svg></span><span class="game-nav-label">ショップ</span></button>
+ <button type="button" class="game-nav-button" data-game-tab="options" aria-controls="screen-options"><span class="game-nav-icon" aria-hidden="true"><svg class="game-nav-svg" width="23" height="23" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="m9.2 2.5 5.6 0 .5 2.4 2.1 1.2 2.3-1 2.8 4.8-1.8 1.6v2.4l1.8 1.6-2.8 4.8-2.3-1-2.1 1.2-.5 2.5H9.2l-.5-2.5-2.1-1.2-2.3 1-2.8-4.8 1.8-1.6v-2.4l-1.8-1.6 2.8-4.8 2.3 1 2.1-1.2z"/></svg></span><span class="game-nav-label">オプション</span></button>
 </nav>
+<dialog class="coin-result-dialog" id="coinResultDialog" aria-labelledby="coinResultTitle">
+ <div class="coin-result-kicker">GACHA RESULT · HABIT QUEST</div>
+ <div id="coinResultIcon" class="coin-result-item-icon" aria-hidden="true">🎁</div>
+ <h2 id="coinResultTitle">新しいアイテムを獲得！</h2>
+ <p id="coinResultText">相棒の冒険が少し特別になりました。</p>
+ <button type="button" id="coinResultClose">ショップへ戻る</button>
+</dialog>
 <dialog class="unlock-dialog" id="gameUnlockDialog" aria-labelledby="gameUnlockTitle">
  <div class="unlock-symbol" id="gameUnlockIcon" aria-hidden="true">🌟</div>
  <div class="unlock-eyebrow" id="gameUnlockEyebrow">NEW AREA</div>
@@ -456,6 +475,7 @@
 <script src="./adventure-world.js"></script>
 <script src="./cloud-onboarding.js"></script>
 <script src="./game-shell.js"></script>
+<script src="./coin-shop.js"></script>
 <script>
 (()=>{'use strict';
 const KEY='habit-quest-v1', XP_CHECK=20, XP_WEEK=100;
