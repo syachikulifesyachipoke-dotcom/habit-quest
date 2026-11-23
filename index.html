@@ -547,8 +547,16 @@ return normalizeHabitState({habits:raw.habits.map(h=>({id:h.id.slice(0,80),name:
 function cloudSnapshot(s){return {habits:s.habits,checks:s.checks,rewardedWeeks:s.rewardedWeeks,ouraAutoEnabled:true,ouraTrackingVersion:3,ouraAutoKeys:safeOuraAutoKeys(s.ouraAutoKeys),ouraSuppressedKeys:safeOuraAutoKeys(s.ouraSuppressedKeys),ouraIgnoredTypes:safeOuraIgnoredTypes(s.ouraIgnoredTypes),avatarImages:{},ouraData:{}}}
 function choiceVisible(on,hasRemote=true){$('cloudChoice').classList.toggle('show',on);$('cloudUseRemote').hidden=!hasRemote}
 async function cloudFetch(){const {data,error}=await cloud.client.from('habit_states').select('data,revision,updated_at').eq('user_id',cloud.user.id).maybeSingle();if(error)throw error;return data}
-async function attachCloudUser(user){if(!cloud.client||cloud.user?.id===user.id&&cloud.loadPromise)return cloud.loadPromise;cloud.user=user;cloud.ready=false;cloud.blocked=true;$('cloudLogout').hidden=false;$('cloudEmail').value=user.email||'';$('cloudLogin').hidden=true;$('cloudAuthPanel').hidden=true;$('cloudPasswordPanel').hidden=false;cloudMessage(`${user.email} でログイン済み。クラウドの記録を確認しています…`);setTimeout(()=>checkOuraConnection(),100);
-cloud.loadPromise=(async()=>{try{cloud.remote=await cloudFetch();if(cloud.remote){const validated=validateIncoming(cloud.remote.data);if(stableStringify(cloudSnapshot(validated))===stableStringify(cloudSnapshot(state))){cloud.revision=cloud.remote.revision;cloud.ready=true;cloud.blocked=false;cloud.syncedSeq=cloud.seq;choiceVisible(false);cloudMessage(`☁ 同期済み：${user.email}（改訂 ${cloud.revision}）`,'good');return}}
+async function attachCloudUser(user){if(!cloud.client||cloud.user?.id===user.id&&cloud.loadPromise)return cloud.loadPromise;cloud.user=user;cloud.ready=false;cloud.blocked=true;$('cloudLogout').hidden=false;$('cloudEmail').value=user.email||'';$('cloudLogin').hidden=true;$('cloudAuthPanel').hidden=true;$('cloudPasswordPanel').hidden=false;cloudMessage(`${user.email} でログイン済み。クラウドの記録を確認しています…`);
+cloud.loadPromise=(async()=>{try{cloud.remote=await cloudFetch();if(cloud.remote){const validated=validateIncoming(cloud.remote.data);if(stableStringify(cloudSnapshot(validated))===stableStringify(cloudSnapshot(state))){cloud.revision=cloud.remote.revision;cloud.ready=true;cloud.blocked=false;cloud.syncedSeq=cloud.seq;choiceVisible(false);cloudMessage('☁ クラウドから記録を読み込みました','good');
+ if(stableStringify(cloudSnapshot(cloud.remote.data))!==stableStringify(cloudSnapshot(validated))){
+   // Write only the normalized v3 migration; the original data stays in GitHub/DB history.
+   state={...validated,avatarImages:state.avatarImages||{},ouraData:state.ouraData||{}};
+   try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){}
+   cloud.seq++;scheduleCloudSave();
+ }
+ setTimeout(()=>checkOuraConnection(),0);
+ return}}
 choiceVisible(true,!!cloud.remote);cloudMessage(cloud.remote?'クラウドに別の記録があります。どちらを使用するか選んでください（自動上書きはしません）。':'クラウドに記録がありません。この端末の記録をアップロードしてください。','warning')
 }catch(e){cloudMessage(`クラウドの読み込みに失敗：${e.message}。SupabaseのSQL・RLS・接続設定を確認してください。`,'warning')}})();return cloud.loadPromise}
 async function initCloud(){const config=getCloudConfig();$('sbUrl').value=config.url;$('sbKey').value=config.anonKey;if(!config.url&&!config.anonKey){cloudMessage('クラウド未設定。従来どおり端末内に保存しています。SupabaseのURLと公開可能なキーを入力してください。');return}if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(config.url)||!isPublicKey(config.anonKey)){cloudMessage('URLまたはキーの形式が不正です。Supabase Project URLとPublishable key（またはanon key）だけを設定してください。','warning');return}
@@ -612,8 +620,10 @@ $('cloudSetPassword').onclick=async()=>{
 $('cloudLogout').onclick=async()=>{if(!cloud.client)return;if(!confirm('クラウドからログアウトしますか？ この端末の記録は残ります。'))return;const {error}=await cloud.client.auth.signOut();if(error)cloudMessage('ログアウト失敗：'+error.message,'warning')};
 function scheduleCloudSave(){clearTimeout(cloud.timer);cloud.timer=setTimeout(()=>saveCloud(false),550)}
 async function saveCloud(force){if(!cloud.client||!cloud.user||cloud.saving||cloud.blocked)return;if(!force&&cloud.seq===cloud.syncedSeq)return;cloud.saving=true;const capturedSeq=cloud.seq,snapshot=cloudSnapshot(state);try{const {data,error}=await cloud.client.rpc('save_habit_state',{p_data:snapshot,p_expected_revision:cloud.revision});if(error)throw error;const row=Array.isArray(data)?data[0]:data;if(!row||row.is_conflict){cloud.ready=false;cloud.blocked=true;cloud.remote=await cloudFetch();choiceVisible(true,!!cloud.remote);cloudMessage('⚠ 他の端末でデータが更新されました。クラウド版か端末版を選んでください。自動上書きは停止しています。','warning');return}cloud.revision=Number(row.new_revision);cloud.syncedSeq=capturedSeq;cloudMessage(`☁ 保存完了：${new Date().toLocaleTimeString('ja-JP')}（改訂 ${cloud.revision}）`,'good');if(cloud.seq!==capturedSeq)scheduleCloudSave()}catch(e){cloudMessage('⚠ 同期できません：'+e.message+'。記録は端末内に保存されています。「今すぐ同期」で再試行できます。','warning')}finally{cloud.saving=false}}
-$('cloudUseRemote').onclick=async()=>{if(!cloud.client||!cloud.user)return;if(!confirm('この端末の現在の記録をクラウドの記録に置き換えますか？ 必要なら先に「バックアップ」を保存してください。'))return;try{cloud.remote=await cloudFetch();if(!cloud.remote)throw Error('クラウド記録が見つかりません');const safe=validateIncoming(cloud.remote.data);state={...safe,avatarImages:state.avatarImages||{},ouraData:state.ouraData||{}};localStorage.setItem(KEY,JSON.stringify(state));cloud.seq++;cloud.syncedSeq=cloud.seq;cloud.revision=Number(cloud.remote.revision);cloud.ready=true;cloud.blocked=false;choiceVisible(false);offset=0;render();cloudMessage('☁ クラウドの記録を取得しました。以降は自動同期します。','good')}catch(e){cloudMessage('取り込み失敗：'+e.message,'warning')}};
-$('cloudUseLocal').onclick=async()=>{if(!cloud.client||!cloud.user)return;const willOverwrite=!!cloud.remote;if(willOverwrite&&!confirm('⚠ クラウドの既存記録を、この端末の記録で上書きします。続けますか？（先にバックアップ推奨）'))return;cloud.revision=willOverwrite?Number(cloud.remote.revision):null;cloud.ready=true;cloud.blocked=false;choiceVisible(false);cloud.seq++;cloudMessage('クラウドへアップロードしています…');await saveCloud(true)};
+$('cloudUseRemote').onclick=async()=>{if(!cloud.client||!cloud.user)return;if(!confirm('この端末の現在の記録をクラウドの記録に置き換えますか？ 必要なら先に「バックアップ」を保存してください。'))return;try{cloud.remote=await cloudFetch();if(!cloud.remote)throw Error('クラウド記録が見つかりません');const safe=validateIncoming(cloud.remote.data);state={...safe,avatarImages:state.avatarImages||{},ouraData:state.ouraData||{}};localStorage.setItem(KEY,JSON.stringify(state));cloud.seq++;cloud.syncedSeq=cloud.seq;cloud.revision=Number(cloud.remote.revision);cloud.ready=true;cloud.blocked=false;choiceVisible(false);offset=0;render();cloudMessage('☁ クラウドの記録を取得しました。以降は自動同期します。','good');
+ if(stableStringify(cloudSnapshot(cloud.remote.data))!==stableStringify(cloudSnapshot(safe)))store();
+ setTimeout(()=>checkOuraConnection(),0)}catch(e){cloudMessage('取り込み失敗：'+e.message,'warning')}};
+$('cloudUseLocal').onclick=async()=>{if(!cloud.client||!cloud.user)return;const willOverwrite=!!cloud.remote;if(willOverwrite&&!confirm('⚠ クラウドの既存記録を、この端末の記録で上書きします。続けますか？（先にバックアップ推奨）'))return;cloud.revision=willOverwrite?Number(cloud.remote.revision):null;cloud.ready=true;cloud.blocked=false;choiceVisible(false);cloud.seq++;cloudMessage('クラウドへアップロードしています…');await saveCloud(true);if(cloud.ready)setTimeout(()=>checkOuraConnection(),0)};
 async function cloudPollLatest(){
  if(cloud.polling||!cloud.client||!cloud.user||!cloud.ready||cloud.blocked||cloud.saving||document.visibilityState!=='visible')return;
  cloud.polling=true;
@@ -636,6 +646,8 @@ async function cloudPollLatest(){
    cloud.remote=latest;
    offset=0;render();
    cloudMessage('☁ 他端末の更新を自動反映しました（改訂 '+cloud.revision+'）','good');
+ if(stableStringify(cloudSnapshot(latest.data))!==stableStringify(cloudSnapshot(incoming)))store();
+ setTimeout(()=>checkOuraConnection(),0);
  }catch(e){
    // Keep the last known state visible. Network downtime must never clear local records.
    if(!cloud.saving&&cloud.ready)cloudMessage('☁ オフラインの可能性があります。記録は端末内に保持します。','warning');
