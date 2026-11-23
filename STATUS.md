@@ -117,3 +117,12 @@
 - GitHub Actions run #37：**70テスト成功、0失敗、0スキップ**。Chromeのデスクトップ幅とスマホ相当幅で、習慣操作とJSONバックアップ→復元→XP維持を試験。
 - 本件は**実装とCI自動受入の完了**。本物のPC⇄スマホのSupabase双方向同期、iOS/Android実機、GitHub Pagesライブ画面、Oura実同期は未検証。
 - 詳細は `PHASE_A3_ACCEPTANCE.md`。個人情報・秘密値をGitHubに保存していない。
+
+## Phase A-3 本番コードへの統合と保存状況（2026-11-23）
+
+- GitHub PR #3をmainへ統合：merge commit `5511497c974daa74ae1cc0e44ba79fceb11795be`。
+- mainで `index.html`、`sync-merge.js`、`sw.js`（キャッシュv11）、`tests/two-device-sync.test.mjs` と `PHASE_A3_ACCEPTANCE.md` の存在を確認。
+- GitHub Actions run #39：**70件成功、失敗0、スキップ0**。PC相当幅・スマホ相当幅のChromeブラウザUI試験を含む。
+- 公開GitHub Pagesの実際の配信画面への外部HTTP取得は未確認。mainへの統合は確認済みだが、iOSや実スマホ・別PCの正式受入は未実施。
+- Supabase本番DBの読み取り確認：**習慣10件、revision 23、XP開始日2026-11-23、v2保存済み0アカウント**。本作業からユーザーの習慣・XPへ書き込みは実施していない。新版アプリの次回保存でv2に移行する。
+- 次の工程：本物のPCとスマートフォンで同一アカウントの双方向確認、およびPhase A-4（Ouraトークン更新・Auth/RLS・費用監査）。
