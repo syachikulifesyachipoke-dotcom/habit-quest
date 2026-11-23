@@ -824,7 +824,7 @@ for(const spec of orderedGroups){
  for(const h of list){
   const group=isOuraAutoHabit(h)?'auto':'manual';
  const count=days.filter(d=>eligibleHabitDay(h,dayKey(d))&&checked(d,h.id)).length;
- html+=`<div class="habit-row habit-row--${group}"><div class="habit-info"><div class="habit-icon">${habitIconSvg(h.icon)}</div><div class="habit-label"><button type="button" class="habit-name habit-detail-trigger" data-detail="${esc(h.id)}" title="達成分析を見る">${esc(h.name)}</button><div class="habit-goal">${window.HabitQuestLifecycle.configOn(h,isoToday()).mission?`週${h.target}回を目標`:'週ミッション対象外'}</div></div><button class="edit-habit" data-edit="${esc(h.id)}" aria-label="${esc(h.name)}を編集">⋯</button></div><div class="checks">${days.map(d=>{const key=dayKey(d),done=checked(d,h.id),future=key>today||!eligibleHabitDay(h,key);return `<div class="check-wrap"><span class="mobile-day ${key===today?'is-today':''}">${['日','月','火','水','木','金','土'][d.getDay()]}${d.getDate()}</span><button type="button" class="check ${done?'checked':''}" data-day="${key}" data-habit="${esc(h.id)}" ${future?'disabled':''} aria-label="${esc(h.name)} ${key} ${done?'達成済み':'未達成'}" aria-pressed="${done}" data-oura-auto="${done&&(state.ouraAutoKeys||[]).includes(key+'|'+h.id)}">✓</button></div>`}).join('')}</div><div class="rate ${window.HabitQuestLifecycle.configOn(h,isoToday()).mission&&count>=h.target?'done':''}">${window.HabitQuestLifecycle.configOn(h,isoToday()).mission?count+'/'+h.target:count+'日'}</div></div>`}}
+ html+=`<div class="habit-row habit-row--${group} ${h.id===window.HabitQuestOuraSteps.WALKING_ID?'habit-row--walking':''}"><div class="habit-info"><div class="habit-icon">${habitIconSvg(h.icon)}</div><div class="habit-label"><button type="button" class="habit-name habit-detail-trigger" data-detail="${esc(h.id)}" title="達成分析を見る">${esc(h.name)}</button><div class="habit-goal">${window.HabitQuestLifecycle.configOn(h,isoToday()).mission?`週${h.target}回を目標`:'週ミッション対象外'}</div></div><button class="edit-habit" data-edit="${esc(h.id)}" aria-label="${esc(h.name)}を編集">⋯</button></div><div class="checks">${days.map(d=>{const key=dayKey(d),done=checked(d,h.id),walkingLock=h.id===window.HabitQuestOuraSteps.WALKING_ID&&window.HabitQuestOuraSteps.walkingEligible(key),future=key>today||!eligibleHabitDay(h,key)||walkingLock;return `<div class="check-wrap"><span class="mobile-day ${key===today?'is-today':''}">${['日','月','火','水','木','金','土'][d.getDay()]}${d.getDate()}</span><button type="button" class="check ${done?'checked':''}" data-day="${key}" data-habit="${esc(h.id)}" ${future?'disabled':''} aria-label="${esc(h.name)} ${key} ${done?'達成済み':'未達成'}" aria-pressed="${done}" data-oura-auto="${done&&(state.ouraAutoKeys||[]).includes(key+'|'+h.id)}">✓</button></div>`}).join('')}</div><div class="rate ${window.HabitQuestLifecycle.configOn(h,isoToday()).mission&&count>=h.target?'done':''}">${window.HabitQuestLifecycle.configOn(h,isoToday()).mission?count+'/'+h.target:count+'日'}</div></div>`}}
 $('tracker').classList.toggle('auto-open',mobileAutoExpanded);$('tracker').innerHTML=html;const percentage=w.target?Math.min(100,Math.round(100*w.done/w.target)):0;$('ring').style.background=`conic-gradient(var(--mint) ${percentage}%,#323851 ${percentage}%)`;$('weekRate').textContent=percentage+'%';$('weekCount').textContent=`${w.done} / ${w.target} 回`;const earned=state.rewardedWeeks.includes(dayKey(start));$('chest').classList.toggle('unlocked',earned);$('chestEmoji').innerHTML=habitIconSvg(earned?'trophy':'gift');$('chestTitle').textContent=earned?'週間ミッションクリア！':'ウィークリー宝箱';$('chestText').textContent=earned?'+100 XP を獲得済み':'全目標達成で +100 XP';const keyMilestones=[EVO[stageNo],EVO[stageNo+1],EVO[EVO.length-1]].filter(Boolean);
 $('evoList').innerHTML=[...new Map(keyMilestones.map(e=>[e.lv,e])).values()].map(e=>`<div class="evo-item ${s.level<e.lv?'locked':''} ${e.lv===EVO[stageNo].lv?'current':''}"><div class="evo-emoji">${s.level<e.lv?'◆':e.emoji}</div><div><strong>Lv.${e.lv} ${e.name}</strong><small>${e.desc}</small></div></div>`).join('');
 $('evoAllList').innerHTML=LEVEL_ATLAS.map(item=>`<div class="evo-level ${item.lv<=s.level?'unlocked':'locked'} ${item.major?'milestone':''} ${item.lv===s.level?'current':''}"><span class="evo-level-num">Lv.${item.lv}</span><span class="evo-level-name">${item.major?(item.lv<=s.level?EVO.find(e=>e.lv===item.lv).emoji:'◆')+' '+esc(item.label):esc(item.label)}</span><span class="evo-level-state">${item.lv<=s.level?'達成':'未解放'}</span></div>`).join('');
@@ -1213,6 +1213,10 @@ $('tracker').addEventListener('click',event=>{
  const toggle=event.target.closest('[data-toggle-auto]');
  if(toggle){mobileAutoExpanded=!mobileAutoExpanded;render();return}
  const detail=event.target.closest('[data-detail]');if(detail){openHabitDetail(detail.dataset.detail);return}const edit=event.target.closest('[data-edit]');if(edit){openModal(edit.dataset.edit);return}const b=event.target.closest('[data-day][data-habit]');if(!b||b.disabled)return;const prev=stats(),date=b.dataset.day,hid=b.dataset.habit;
+ if(hid===window.HabitQuestOuraSteps.WALKING_ID&&window.HabitQuestOuraSteps.walkingEligible(date)){
+  toast('ウォーキングはOuraの日別歩数8,001歩以上でのみ自動チェックされます。');return;
+ }
+ const beforeBoss=window.HabitQuestWeeklyBoss.describe(dayKey(weekStart(parseDay(isoToday()))),weeklyFor(weekStart(parseDay(isoToday()))));
  const manualCheck=date===isoToday()&&state.habits.some(h=>h.id===hid&&!isOuraAutoHabit(h));
  const priorGame=manualCheck?gameProgress():null;
  state.checks[date]??={};const was=!!state.checks[date][hid];if(was)delete state.checks[date][hid];else state.checks[date][hid]=true;
@@ -1230,6 +1234,10 @@ $('tracker').addEventListener('click',event=>{
   if(priorGame&&updated.world.index>priorGame.world.index)showGameUnlock(updated.world.current);
   else if(priorGame&&updated.shell.completedChapters>priorGame.shell.completedChapters)
    toast('📖 冒険の第'+updated.shell.completedChapters+'話を解放しました！',true);
+ }
+ if(!was&&beforeBoss&&date>=dayKey(weekStart(parseDay(isoToday())))&&date<=isoToday()){
+  const afterBoss=window.HabitQuestWeeklyBoss.describe(dayKey(weekStart(parseDay(isoToday()))),weeklyFor(weekStart(parseDay(isoToday()))));
+  if(afterBoss&&afterBoss.damage>beforeBoss.damage)animateWeeklyBossHit(afterBoss.damage-beforeBoss.damage);
  }
  const now=stats();if(!was){particles(b);if(now.level>prev.level)toast(`🎉 LEVEL UP! Lv.${now.level}`,true);else if(now.completedWeeks>prev.completedWeeks)toast('🏆 週間宝箱を開放！ +100 XP',true);else if(date>=xpStartDate()&&validXpStartDate(state.xpStartDate))toast('✨ +20 XP  習慣クリア！',true);else toast('過去の実績を記録しました（XP対象外）',true)}else toast('チェックを取り消しました')});
 function openModal(id){editing=id||null;const h=state.habits.find(x=>x.id===id);$('habitGroup').value=h?(window.HabitQuestGroups.groupFor(h)):'investment';$('habitGroup').disabled=!!h&&['study','read','journal','wake','oura_strengthtraining','oura_cycling','oura_walking','oura_running'].includes(h.id);$('modalTitle').textContent=h?'習慣を編集':'新しい習慣';$('habitName').value=h?.name||'';$('habitIcon').value=normalizedHabitIcon(h?.icon||'sunrise');$('habitIconPreview').innerHTML=habitIconSvg($('habitIcon').value);$('habitTarget').value=h?String(h.target):'5';$('habitWeeklyMission').checked=h?window.HabitQuestLifecycle.configOn(h,isoToday()).mission:true;$('deleteHabit').hidden=!h;$('saveHabit').textContent=h?'保存する':'追加する';$('modalBackdrop').classList.add('show');setTimeout(()=>$('habitName').focus(),70)}
@@ -1337,7 +1345,7 @@ async function fetchOuraMetrics(){
  $('ouraLastSync').textContent=latest
    ?'Oura最終取得：'+new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(latest))+'（日本時間）'
    :'Oura最終取得：未取得';
- try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){}renderOura();await renderOuraCandidates(all);renderAnalytics();return all.length;
+ try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){}renderOura();renderStepsPanel();await renderOuraCandidates(all);renderAnalytics();return all.length;
 }
 
 
@@ -1394,7 +1402,7 @@ function awardCompletedOuraWeeks(days){
 }
 function updateOuraAutoStatus(){
  const info=$('ouraAutoInfo');if(!info)return;
- info.textContent='自動連携ON：5:00〜6:59に起床した日、Ouraの運動種別ごとの10分以上の記録を自動チェック。新しい記録は次の同期で反映します。';
+ info.textContent='自動連携ON：5:00〜6:59の起床、種別ごとの10分以上の運動記録を反映。ウォーキングのみ2026/11/23以降はOuraの1日8,001歩以上を条件に自動チェック。歩数は同期時点の実績です。';
 }
 function reconcileOuraHabits(daily,workouts){
  const records=[];
@@ -1405,9 +1413,14 @@ function reconcileOuraHabits(daily,workouts){
  }
  for(const w of workouts){
    const x=ouraWorkoutHabit(w);
-   if(!x)continue;
+   if(!x||x.id===window.HabitQuestOuraSteps.WALKING_ID&&window.HabitQuestOuraSteps.walkingEligible(x.day))continue;
    records.push({day:x.day,id:x.id,label:x.name});
    types.add(x.id);
+ }
+ // Walk completion is sourced only from DAILY step counts, never a 10-minute
+ // Oura walking workout. Historical dates before cutover remain untouched.
+ for(const record of window.HabitQuestOuraSteps.qualifiedRecords(daily,isoToday())){
+  records.push(record);types.add(record.id);
  }
  const unique=new Map(records.map(r=>[r.day+'|'+r.id,r]));
  ouraSyncStats={workouts:types.size,wakeups:new Set(records.filter(x=>x.id==='wake').map(x=>x.day)).size,added:0};
