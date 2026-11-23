@@ -31,7 +31,7 @@ window.supabase={
    return {data:{data:${JSON.stringify(remote)},revision:12},error:null};
   }}}}}}},
   functions:{async invoke(){return{data:{},error:null}}}
- }}}
+ }}
 };
 </script>`;
 const prelude=`<script>
