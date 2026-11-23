@@ -33,6 +33,18 @@ const injection=`<script>
  const state=()=>JSON.parse(localStorage.getItem('habit-quest-v1'));
  const xp=()=>document.getElementById('totalXp').textContent;
  const fireForm=()=>document.getElementById('habitForm').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+ const tabs=['home','character','events','shop','options'];
+ for(const tab of tabs){
+  const button=document.querySelector('#gameBottomNav [data-game-tab="'+tab+'"]');
+  requireOk(!!button,'missing nav button '+tab);
+  button.click();
+  requireOk(!document.getElementById('screen-'+tab).hidden,'nav did not open '+tab);
+  requireOk(button.getAttribute('aria-current')==='page','nav current marker missing '+tab);
+  requireOk(document.querySelectorAll('.game-screen:not([hidden])').length===1,'multiple screens visible');
+ }
+ document.getElementById('characterPat').click();
+ requireOk(document.getElementById('characterReactionText').textContent.includes('ありがとう'),'companion pet reaction failed');
+ document.querySelector('#gameBottomNav [data-game-tab="home"]').click();
  const name='A2ブラウザ試験 '+Date.now();
  window.confirm=()=>true;
  document.getElementById('addHabit').click();
@@ -51,6 +63,14 @@ const injection=`<script>
  requireOk(document.getElementById('journeyCount').textContent.includes('/ 7日'),'adventure map did not render');
  requireOk(document.getElementById('dailyQuestTitle').textContent.includes('達成'),'daily adventure did not celebrate a manual check');
  requireOk(document.getElementById('journeyBadgeTitle').textContent==='旅立ちの証','first adventure badge did not unlock');
+ document.querySelector('#gameBottomNav [data-game-tab="events"]').click();
+ requireOk(!document.querySelector('#eventChapters [data-story-day="1"]').disabled,'first chapter did not unlock');
+ document.querySelector('#eventChapters [data-story-day="1"]').click();
+ requireOk(document.getElementById('eventStoryText').textContent.includes('最初の一歩'),'chapter story did not render');
+ document.querySelector('#gameBottomNav [data-game-tab="shop"]').click();
+ requireOk(document.querySelectorAll('#shopFrames .shop-item').length===5,'free cosmetics inventory incomplete');
+ requireOk(document.querySelectorAll('#shopRelics .shop-relic').length===10,'relic collection incomplete');
+ document.querySelector('#gameBottomNav [data-game-tab="home"]').click();
  requireOk(document.querySelectorAll('#journeyDays .journey-day').length===7,'weekly adventure map must show seven days');
  requireOk(document.getElementById('worldPeekName').textContent==='旅立ちの野営地','world map start region missing');
  requireOk(document.getElementById('worldTodayText').textContent.includes('今日の出会い'),'today world scene did not unlock');
@@ -103,6 +123,7 @@ const injection=`<script>
  checkedButton.click();
  requireOk(state().checks[day]?.[h.id]!==true,'test did not create a changed check');
  requireOk(document.getElementById('journeyBadgeTitle').textContent==='冒険のはじまり','badge did not revert when the check was undone');
+ requireOk(document.querySelector('#eventChapters [data-story-day="1"]').disabled,'undo must lock first chapter');
  requireOk(!document.getElementById('worldTodayText').textContent.includes('今日の出会い'),'scene did not clear after unchecked habit');
  requireOk(document.querySelectorAll('#worldDiaryList .world-diary-entry').length===0,'unchecked habit left phantom diary entry');
  const dt=new DataTransfer();
@@ -116,6 +137,7 @@ const injection=`<script>
  requireOk(reimported.targetHistory?.length>0&&reimported.activeIntervals?.length>0,'JSON import lost lifecycle');
  requireOk(xp()===xpBefore,'JSON import changed XP');
  requireOk(document.getElementById('journeyBadgeTitle').textContent==='旅立ちの証','restored check did not restore badge');
+ requireOk(!document.querySelector('#eventChapters [data-story-day="1"]').disabled,'restored check did not restore chapter');
  requireOk(document.getElementById('worldTodayText').textContent.includes('今日の出会い'),'restored record did not restore encounter');
  requireOk(document.querySelectorAll('#worldDiaryList .world-diary-entry').length===1,'backup restore did not restore diary');
  if(new URLSearchParams(location.search).has('mobileTest')){
@@ -151,6 +173,8 @@ test('headless Chrome: lifecycle and JSON backup/import preserve checks and XP',
    ['/daily-adventure.js',fs.readFileSync(path.join(root,'daily-adventure.js'),'utf8')],
    ['/adventure-world.js',fs.readFileSync(path.join(root,'adventure-world.js'),'utf8')],
    ['/cloud-onboarding.js',fs.readFileSync(path.join(root,'cloud-onboarding.js'),'utf8')],
+   ['/game-shell.js',fs.readFileSync(path.join(root,'game-shell.js'),'utf8')],
+   ['/game-shell.css',fs.readFileSync(path.join(root,'game-shell.css'),'utf8')],
    ['/cloud-config.js','window.HABIT_QUEST_CLOUD={url:"",anonKey:""};']
  ]);
  const server=http.createServer((req,res)=>{
