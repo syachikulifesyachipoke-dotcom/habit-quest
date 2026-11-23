@@ -107,7 +107,7 @@
 <details class="extra-accord" id="ouraDetail"><summary>💍 Oura Ring・健康データ</summary><section class="section-v2 panel v2-panel" id="ouraSection">
  <div class="oura-row"><div><h3>💍 Oura × HABIT QUEST</h3><p class="subheading">睡眠・コンディション・歩数を習慣記録と一緒に確認</p></div><div class="oura-btns"><select id="ouraImportType" aria-label="Oura JSONのデータ種類" style="background:#232740;border:1px solid #3f4561;color:#f4f6ff;padding:9px;border-radius:10px"><option value="auto">種類：自動判定</option><option value="daily_sleep">睡眠</option><option value="daily_readiness">コンディション</option><option value="daily_activity">歩数</option></select><button class="btn" id="ouraConnect" disabled>Ouraアカウント連携</button><button class="btn" id="ouraDisconnect" type="button" hidden>Oura連携を停止</button><button class="btn" id="ouraSync" disabled>直近7日同期</button><button class="btn" id="ouraBackfill" disabled>過去6か月取込</button><button class="btn primary" id="ouraImport">Oura JSON読込</button><input id="ouraFile" type="file" accept=".json,application/json" hidden></div></div>
  <div id="ouraStatus" class="oura-status">Ouraを接続するには、先にクラウドへログインしてください。</div>
- <div class="oura-auto-row"><button class="btn" id="ouraAutoToggle" type="button" aria-pressed="false">Ouraの運動を習慣に自動反映</button><span class="small-note" id="ouraAutoInfo">筋トレ・自転車・ランニングなど、10分以上の運動を対象にします。歩行と早起きは本人確認式です。</span></div><div id="ouraLastSync" class="small-note">Oura最終取得：未取得</div>
+ <div class="oura-auto-row"><button class="btn" id="ouraAutoToggle" type="button" aria-pressed="false">Ouraの運動を習慣に自動反映</button><button class="btn" id="ouraBulkWake" type="button" hidden>早起き候補を一括確認</button><span class="small-note" id="ouraAutoInfo">筋トレ・自転車・ランニングなど、10分以上の運動を対象にします。歩行と早起きは本人確認式です。</span></div><div id="ouraLastSync" class="small-note">Oura最終取得：未取得</div>
  <div class="oura-metrics"><div class="oura-metric"><strong id="ouraSleep">—</strong><small>睡眠スコア（最新）</small></div><div class="oura-metric"><strong id="ouraReadiness">—</strong><small>コンディションスコア（最新）</small></div><div class="oura-metric"><strong id="ouraSteps">—</strong><small>歩数（最新）</small></div></div>
  <div class="chart-panel spaced"><div class="chart-title">Ouraから復元できる過去の習慣候補</div><p class="small-note">Ouraの睡眠終了時刻は実際の起床時刻と異なる場合があります。筋トレもワークアウト種類を確認し、実施した日だけ「記録する」を押してください。過去のXPは本人が確認した実績だけに付与します。</p><div id="ouraCandidates" class="analysis-empty">Ouraとの接続・同期後に候補を表示します。</div></div>
  <div id="ouraInsight" class="pill-note">睡眠・コンディション・歩数のデータを取り込むと、習慣の記録と同じ画面で見られます。現時点ではOuraへの認証前です。</div>
@@ -311,6 +311,9 @@ async function renderOuraCandidates(daily){
      choices.push({date:row.day,type:'train',label:'運動: '+byDay.get(row.day).join('・').slice(0,88)+'（実施内容を要確認）'});
  }
  choices.sort((a,b)=>b.date.localeCompare(a.date));
+ const wakeCount=choices.filter(c=>c.type==='wake').length;
+ $('ouraBulkWake').hidden=wakeCount===0;
+ $('ouraBulkWake').textContent='早起き候補 '+wakeCount+'日分を確認して記録';
  ouraCandidateCache=choices;
  drawOuraCandidateList();
 
@@ -323,6 +326,21 @@ function drawOuraCandidateList(){
 }
 $('ouraCandidates')?.addEventListener('click',e=>{if(!e.target.closest('#ouraMore'))return;ouraCandidateShown+=40;drawOuraCandidateList()});
 
+$('ouraBulkWake').onclick=async()=>{
+ const candidates=ouraCandidateCache.filter(c=>c.type==='wake'&&!state.checks[c.date]?.wake);
+ if(!candidates.length)return;
+ if(!confirm('Ouraの睡眠終了時刻が5:40以前の次の日付を、早起きの達成として一括記録します。\n'+candidates.map(c=>c.date).join('、')+'\n\n睡眠終了時刻と実際の起床時刻は異なる場合があります。実際に早起きできた日だけ記録してください。続けますか？'))return;
+ let added=0;
+ for(const c of candidates){
+   if(state.checks[c.date]?.wake)continue;
+   state.checks[c.date] ||= {};
+   state.checks[c.date].wake=true;added++;
+ }
+ if(!added)return;
+ store();render();
+ try{await fetchOuraMetrics()}catch(e){$('ouraStatus').textContent='早起きは記録しましたが、Oura表示の更新に失敗: '+e.message}
+ toast('早起き '+added+'日分を記録しました',true);
+};
 $('ouraCandidates')?.addEventListener('click',async e=>{const b=e.target.closest('[data-oura-confirm]');if(!b)return;const day=b.dataset.ouraDate,id=b.dataset.ouraConfirm;if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!['wake','train'].includes(id))return;if(!confirm(day+' の「'+(id==='wake'?'早起き':'運動')+'」を実施した記録として確定しますか？'))return;state.checks[day] ||= {};state.checks[day][id]=true;
  if(id==='train'){state.ouraAutoSuppressed=(state.ouraAutoSuppressed||[]).filter(x=>x!==day);state.ouraAutoDays=(state.ouraAutoDays||[]).filter(x=>x!==day)}
  store();render();await fetchOuraMetrics();toast('過去の実績に記録しました',true)});
