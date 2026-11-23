@@ -100,7 +100,7 @@ test('Chrome simulated Supabase Auth login: pristine phone auto-syncs, edited ph
  const resources=new Map([['/index.html',app],
   ['/cloud-config.js','window.HABIT_QUEST_CLOUD={url:"https://test.supabase.co",anonKey:"sb_publishable_mock"};']]);
  for(const file of ['goal-metrics.js','habit-lifecycle.js','sync-guard.js','sync-merge.js','daily-adventure.js',
-    'adventure-world.js','cloud-onboarding.js','game-shell.js','game-shell.css','coin-shop.js','coin-shop.css','resource-hud.css']){
+    'adventure-world.js','cloud-onboarding.js','game-shell.js','game-shell.css','coin-shop.js','coin-shop.css','resource-hud.css','habit-groups.js','weekly-boss.js','oura-steps.js','reminder-calendar.js','g6-gameplay.css']){
   resources.set('/'+file,fs.readFileSync(path.join(root,file),'utf8'));
  }
  const server=http.createServer((request,response)=>{
