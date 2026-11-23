@@ -272,6 +272,7 @@
 <link rel="stylesheet" href="./game-shell.css">
 <link rel="stylesheet" href="./coin-shop.css">
 <link rel="stylesheet" href="./resource-hud.css">
+<link rel="stylesheet" href="./g6-gameplay.css">
 </head>
 <body>
 <div class="wrap">
@@ -313,7 +314,12 @@
 <div class="sync-banner" id="syncBanner" role="status" hidden><span id="syncBannerText">クラウドの同期を確認してください。</span><button type="button" id="syncBannerOpen">同期を確認</button></div>
 <main id="screen-home" class="game-screen is-active" aria-label="ホーム画面">
 <section class="intro">
- <div class="hero"><div class="eyebrow">YOUR DAILY ADVENTURE</div><h2>今日の一歩で、<br><em>未来の自分を進化させる。</em></h2><p class="hero-sub">小さな習慣が経験値になる。1日ずつ積み重ねて、<br>あなただけの相棒を育てていこう。</p><div class="hero-counters"><div class="counter"><strong id="todayDone">0/0</strong><label>今日の達成（進行中の全項目）</label></div><div class="counter"><strong id="streak">0<span style="font-size:14px"> 日</span></strong><label title="手動習慣を1項目以上達成した連続日数（当日未記録なら昨日まで）">連続記録日数（手動1項目以上）ⓘ</label></div><div class="counter"><strong id="totalXp">0</strong><label>開始日以降の XP</label></div></div>
+ <div class="hero"><div class="eyebrow">YOUR DAILY ADVENTURE</div><h2>今日の一歩で、<br><em>未来の自分を進化させる。</em></h2><p class="hero-sub">小さな習慣が経験値になる。1日ずつ積み重ねて、<br>あなただけの相棒を育てていこう。</p><div class="hero-counters"><div class="counter"><strong id="todayDone">0/0</strong><label>今日の達成（進行中の全項目）</label></div><div class="counter"><strong id="totalXp">0</strong><label>開始日以降の XP</label></div>
+  <div class="group-streaks" id="groupStreaks" aria-label="グループ別連続記録">
+   <div class="group-streak" data-group="investment"><div class="group-title">自己投資</div><div class="group-amount"><span id="streakInvestment">0</span> <small>日連続</small></div><div class="group-message" id="streakInvestmentToday">今日の達成待ち</div></div>
+   <div class="group-streak" data-group="wellbeing"><div class="group-title">良習慣</div><div class="group-amount"><span id="streakWellbeing">0</span> <small>日連続</small></div><div class="group-message" id="streakWellbeingToday">今日の達成待ち</div></div>
+   <div class="group-streak" data-group="exercise"><div class="group-title">運動</div><div class="group-amount"><span id="streakExercise">0</span> <small>日連続</small></div><div class="group-message" id="streakExerciseToday">今日の達成待ち</div></div>
+  </div></div>
  <div class="daily-quest" id="dailyQuest" aria-live="polite"><div class="daily-quest-icon" aria-hidden="true">⚔️</div><div class="daily-quest-main"><strong id="dailyQuestTitle">今日の冒険</strong><small id="dailyQuestText">小さな一歩から始めましょう</small></div><button type="button" class="daily-quest-action" id="dailyQuestJump">習慣へ</button></div>
  <div class="world-peek" id="worldPeek" aria-label="相棒との探索エリア">
    <div class="world-peek-top"><span id="worldPeekIcon" class="world-peek-icon" aria-hidden="true">🏕️</span>
@@ -329,7 +335,22 @@
 <section class="content">
  <div class="panel"><div class="panel-heading"><div><h3 class="hq-section-heading"><span data-hq-icon="calendar"></span>週間トラッカー</h3><div class="subheading">今日からの達成に +20 XP <span class="mobile-grid-hint">・スマホは1行で7日をチェック</span></div></div><div class="week-nav"><span class="week-range" id="weekRange"></span><button class="btn icon-btn" id="prevWeek" aria-label="前の週">‹</button><button class="btn" id="thisWeek">今週</button><button class="btn icon-btn" id="nextWeek" aria-label="次の週">›</button></div></div><div id="tracker" class="tracker"></div><div class="tracker-footer"><div class="legend"><span><i class="dot dot-manual"></i>手動チェック</span><span><i class="dot dot-oura"></i>Oura自動</span><span><i class="dot empty"></i>未チェック</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" id="archiveJump">休止中の習慣 <span id="archiveCount">0</span></button><button class="btn primary" id="addHabit">＋ 習慣を追加</button></div></div></div>
  <aside class="side-stack">
-  <section class="panel quest-panel"><h3 class="hq-section-heading"><span data-hq-icon="trophy"></span>今週のミッション</h3><p class="subheading">週間ミッションONの習慣の目標合計（Ouraも設定可能）</p><div class="quest-row" style="margin-top:20px"><div class="ring" id="ring"><div class="ring-core"><strong id="weekRate">0%</strong><span>達成率</span></div></div><div><div class="quest-title" id="weekCount">0 / 0 回</div><div class="quest-explain">「週◯回」を合計した数字です。習慣の項目数ではありません。</div></div></div><div class="chest" id="chest"><div class="chest-emoji" id="chestEmoji">🎁</div><div><strong id="chestTitle">ウィークリー宝箱</strong><small id="chestText">全目標達成で +100 XP</small></div></div><div class="journey-panel" aria-label="冒険の足跡"><div class="journey-head"><strong>🧭 今週の冒険ルート</strong><small id="journeyCount">0 / 7日</small></div><div class="journey-days" id="journeyDays" aria-label="月曜日から日曜日までの冒険の足跡"></div><div class="journey-badge"><span id="journeyBadgeIcon" class="journey-badge-icon">🌱</span><div><strong id="journeyBadgeTitle">旅立ちの準備</strong><small id="journeyBadgeNext">手動習慣を1日達成すると称号を獲得</small></div></div><p class="journey-footnote">手動習慣を1つ達成すると、その日の足跡が残ります。連続でなくても進歩は消えません。</p></div>
+  <section class="steps-panel" id="stepsHome" aria-label="今日の歩数と歩数履歴">
+ <div class="steps-panel-top">
+  <div><h3>今日の歩数 <small>Oura日別実績</small></h3><div><strong class="steps-value" id="homeStepsValue">—</strong><small> 歩 / 判定は8,001歩以上</small></div></div>
+  <span class="steps-state" id="homeStepsStatus" data-state="unknown">未取得</span>
+ </div>
+ <div class="steps-progress"><div id="homeStepsProgress"></div></div>
+ <div class="steps-foot"><small>Ouraの最新同期値です。スマホのリアルタイム歩数ではありません。</small><button type="button" id="homeStepsOpen">履歴を見る</button></div>
+ <div id="stepsHistory" class="steps-history" hidden>
+  <div class="steps-history-nav"><button type="button" id="stepsOlder" aria-label="前の月">‹ 前月</button><h4 id="stepsHistoryMonth">月別歩数</h4><button type="button" id="stepsNewer" aria-label="次の月">翌月 ›</button></div>
+  <div id="stepsHistorySummary" class="small-note"></div>
+  <div id="stepsHistoryList" class="steps-list" aria-label="各日付の歩数・8,001歩以上の判定"></div>
+  <p class="small-note">歩数が取得できていない日は「未取得」。過去の歩数判定は閲覧用で、既存のチェックとXPを遡って変更しません。</p>
+ </div>
+</section>
+  <section class="panel quest-panel"><h3 class="hq-section-heading"><span data-hq-icon="trophy"></span>今週のミッション</h3><p class="subheading">週間ミッションONの習慣の目標合計（Ouraも設定可能）</p><div class="quest-row" style="margin-top:20px"><div class="ring" id="ring"><div class="ring-core"><strong id="weekRate">0%</strong><span>達成率</span></div></div><div><div class="quest-title" id="weekCount">0 / 0 回</div><div class="quest-explain">「週◯回」を合計した数字です。習慣の項目数ではありません。</div></div></div><div class="chest" id="chest"><div class="chest-emoji" id="chestEmoji">🎁</div><div><strong id="chestTitle">ウィークリー宝箱</strong><small id="chestText">全目標達成で +100 XP</small></div></div><div class="boss-preview"><div><strong>週間ボスバトル</strong><small id="bossHomeSummary">週間ミッションの達成が攻撃になります</small></div><button type="button" id="bossHomeOpen">バトルへ</button></div>
+ <div class="journey-panel" aria-label="冒険の足跡"><div class="journey-head"><strong>🧭 今週の冒険ルート</strong><small id="journeyCount">0 / 7日</small></div><div class="journey-days" id="journeyDays" aria-label="月曜日から日曜日までの冒険の足跡"></div><div class="journey-badge"><span id="journeyBadgeIcon" class="journey-badge-icon">🌱</span><div><strong id="journeyBadgeTitle">旅立ちの準備</strong><small id="journeyBadgeNext">手動習慣を1日達成すると称号を獲得</small></div></div><p class="journey-footnote">手動習慣を1つ達成すると、その日の足跡が残ります。連続でなくても進歩は消えません。</p></div>
  <div class="stats-grid"><div class="mini-stat"><strong id="totalChecks">0</strong><span>累計チェック数</span></div><div class="mini-stat"><strong id="clearWeeks">0</strong><span>目標達成した週</span></div></div></section>
   <section class="panel"><h3 class="hq-section-heading"><span data-hq-icon="sparkles"></span>進化図鑑</h3><p class="subheading">レベルを上げると相棒が進化</p><div class="evo-list" id="evoList"></div><details id="evoCatalog" class="evo-catalog"><summary>レベル1〜50の進化図鑑を開く</summary><div id="evoAllList" class="evo-all-list"></div></details></section>
  </aside>
@@ -387,7 +408,28 @@
 </section>
 <section id="screen-events" class="game-screen game-panel" aria-label="イベント画面" hidden>
  <div class="game-panel-heading"><h2>🎪 イベント・冒険</h2><p>最初の7つの冒険日を、物語とともに進めましょう。連続記録は必要ありません。</p></div>
- <div class="event-hero">
+ <section class="boss-battle" id="weeklyBoss" data-state="waiting" data-tone="violet" aria-label="週間ボスバトル">
+ <div class="boss-header"><div><div class="boss-kicker">WEEKLY BOSS ENCOUNTER</div><h3 id="bossName">夜霧の守護者</h3><p id="bossSubtitle">習慣の達成が相棒の攻撃になります</p></div><span class="boss-chip" id="bossWeekLabel">今週のボス</span></div>
+ <div class="boss-body"><div class="boss-creature" id="bossCreature" data-state="waiting" aria-label="結晶の守護者のイラスト">
+  <svg viewBox="0 0 210 200" role="img" aria-label="結晶の守護者"><defs><linearGradient id="hqBossStone" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9a80da"/><stop offset=".45" stop-color="#4e4f83"/><stop offset="1" stop-color="#272d54"/></linearGradient><linearGradient id="hqBossCore" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a2ffe9"/><stop offset="1" stop-color="#6297e8"/></linearGradient></defs>
+   <path d="m33 97-18-30 31 12 12 23m117-5 18-30-31 12-12 23" fill="#383b69" stroke="#7778b1" stroke-width="3"/>
+   <path d="M76 52 88 22l24 12 25-11 13 31 20 21-9 59-26 32-59-2-26-30-10-58Z" fill="url(#hqBossStone)" stroke="#a89ce4" stroke-width="3"/>
+   <path d="M70 56 93 67 109 58l24 9 22-12-8 39-29 14-36-10Z" fill="#292e59" opacity=".9"/>
+   <path d="m72 92 27 6-16 12-18-5Zm68 0-27 6 16 12 18-5Z" fill="#8af8de" stroke="#a9fff3" stroke-width="2"/>
+   <path d="M91 125 108 113l17 12-17 25Z" fill="url(#hqBossCore)" stroke="#adfff1" stroke-width="3"/>
+   <path d="m55 134-18 40 25-8 17-25Zm101 0 18 40-25-8-17-25Z" fill="#4b477d" stroke="#8c85bf" stroke-width="3"/>
+   <path d="M63 178q45 18 89 0" fill="none" stroke="#716cba" stroke-width="5" stroke-linecap="round"/>
+   <circle cx="108" cy="15" r="4" fill="#8defde" opacity=".7"/><circle cx="162" cy="44" r="3" fill="#a998fb" opacity=".6"/>
+  </svg></div>
+  <div><div class="boss-hp-label"><span>BOSS HP</span><strong id="bossHp">0 / 0</strong></div>
+   <div class="boss-hp-track" role="progressbar" aria-label="ボスの残りHP" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" id="bossHpTrack"><div class="boss-hp-fill" id="bossHpFill"></div></div>
+   <p class="boss-mission" id="bossHits">今週の達成：0 / 0 回 · 1達成＝20ダメージ</p><div id="bossOutcome" class="boss-outcome">週間ミッションを達成するとボスを攻撃します。</div>
+   <div class="boss-legend"><span>週間ミッションと同じ集計</span><span>追加のXP・コインなし</span></div>
+  </div></div>
+ <span id="bossDamage" class="boss-damage" aria-hidden="true">−20</span>
+ <p class="boss-foot">ボス討伐は今週のウィークリー宝箱と同じ達成判定です。休んでも獲得済みのXPやコインは減りません。</p>
+</section>
+<div class="event-hero">
   <h3 id="eventProgressTitle">第1章 · 最初の一歩</h3>
   <div id="eventWeekProgress" class="event-progress" role="progressbar" aria-label="最初の7日間の冒険進捗" aria-valuemin="0" aria-valuemax="7" aria-valuenow="0"><i id="eventWeekBar"></i></div>
   <p id="eventProgressDescription">手動習慣をひとつ達成すると最初の章が始まります。</p>
@@ -436,7 +478,13 @@
   <div><strong>💾 記録のバックアップ</strong><small>端末を変更する前やクラウド競合時に保存しておくと安全です。</small></div>
   <div class="event-hero-actions"><button type="button" class="char-action" id="optionsExportBtn">JSONを保存</button><button type="button" class="char-action" id="optionsImportBtn">バックアップを復元</button></div>
  </div>
- <div class="options-settings-host" id="optionsSettingsHost"></div>
+ <section class="reminder-panel">
+ <h3>定時リマインダー</h3>
+ <p>Webアプリを指定時刻に強制起動することはできません。代わりに、端末のカレンダーへ登録できる毎日の通知予定を作成します。<strong>予定の登録と通知の許可は端末側で行ってください。</strong></p>
+ <div class="reminder-controls"><label for="reminderTime">毎日の時刻</label><input id="reminderTime" type="time" value="05:40"><button type="button" id="reminderExport">カレンダー通知を作成</button></div>
+ <p id="reminderHelp" class="small-note">通知を押してアプリを開く方式です。アプリが閉じていても、カレンダーの通知が許可されていれば端末側で通知されます。</p>
+</section>
+<div class="options-settings-host" id="optionsSettingsHost"></div>
 </section>
 <nav class="game-bottom-nav" id="gameBottomNav" aria-label="ゲームのメインメニュー">
  <button type="button" class="game-nav-button" data-game-tab="home" aria-current="page" aria-controls="screen-home"><span class="game-nav-icon" aria-hidden="true"><svg class="game-nav-svg" width="23" height="23" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1z"/></svg></span><span class="game-nav-label">ホーム</span></button>
@@ -475,7 +523,7 @@
  <div class="world-diary-list" id="worldDiaryList"></div>
  <p class="world-dialog-footnote">日誌と宝物はチェック記録から表示します。追加の課金・アイテム消費・XP加算はありません。</p>
 </dialog>
-<div class="modal-backdrop" id="modalBackdrop" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><h3 id="modalTitle">習慣を追加</h3><p>週の目標回数を決めて、あなたの冒険を始めましょう。</p><form id="habitForm"><div class="field"><label for="habitName">習慣の名前</label><input id="habitName" maxlength="28" placeholder="例：朝の散歩" required></div><div class="inline-fields"><div class="field"><label for="habitIcon">アイコン</label><div class="habit-icon-select"><span id="habitIconPreview" class="habit-icon preview-icon"></span><select id="habitIcon"><option value="sunrise">日の出</option><option value="dumbbell">筋トレ</option><option value="bike">サイクリング</option><option value="footsteps">ウォーキング</option><option value="run">ランニング</option><option value="book">学習</option><option value="bookopen">読書</option><option value="pen">記録・日記</option><option value="yoga">ヨガ・瞑想</option><option value="waves">水泳</option><option value="music">ダンス</option><option value="droplets">水分補給</option><option value="utensils">食事</option><option value="laptop">制作</option><option value="sparkles">その他</option></select></div></div><div class="field"><label for="habitTarget">週の目標回数</label><select id="habitTarget"><option value="1">週1回</option><option value="2">週2回</option><option value="3">週3回</option><option value="4">週4回</option><option value="5">週5回</option><option value="6">週6回</option><option value="7">毎日（週7回）</option></select></div></div><div class="field"><label style="display:flex;align-items:center;gap:9px"><input type="checkbox" id="habitWeeklyMission" style="width:18px;height:18px;accent-color:#ab8afd">週間ミッションに含める</label><span class="small-note">OFFの場合もチェック・XP・個別分析は利用できます。Oura自動項目は初期状態でOFFです。</span></div><div class="modal-actions"><button type="button" class="btn danger" id="deleteHabit" hidden>休止する</button><div style="margin-left:auto"><button type="button" class="btn ghost" id="cancelModal">キャンセル</button><button type="submit" class="btn primary" id="saveHabit">追加する</button></div></div></form></div></div>
+<div class="modal-backdrop" id="modalBackdrop" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><h3 id="modalTitle">習慣を追加</h3><p>週の目標回数を決めて、あなたの冒険を始めましょう。</p><form id="habitForm"><div class="field"><label for="habitName">習慣の名前</label><input id="habitName" maxlength="28" placeholder="例：朝の散歩" required></div><div class="inline-fields"><div class="field"><label for="habitIcon">アイコン</label><div class="habit-icon-select"><span id="habitIconPreview" class="habit-icon preview-icon"></span><select id="habitIcon"><option value="sunrise">日の出</option><option value="dumbbell">筋トレ</option><option value="bike">サイクリング</option><option value="footsteps">ウォーキング</option><option value="run">ランニング</option><option value="book">学習</option><option value="bookopen">読書</option><option value="pen">記録・日記</option><option value="yoga">ヨガ・瞑想</option><option value="waves">水泳</option><option value="music">ダンス</option><option value="droplets">水分補給</option><option value="utensils">食事</option><option value="laptop">制作</option><option value="sparkles">その他</option></select></div></div><div class="field"><label for="habitGroup">グループ</label><select id="habitGroup"><option value="investment">自己投資</option><option value="wellbeing">良習慣</option><option value="exercise">運動</option><option value="other">その他</option></select><span class="small-note">基本の10項目は所定のグループに固定されます。追加習慣は選択できます。</span></div><div class="field"><label for="habitTarget">週の目標回数</label><select id="habitTarget"><option value="1">週1回</option><option value="2">週2回</option><option value="3">週3回</option><option value="4">週4回</option><option value="5">週5回</option><option value="6">週6回</option><option value="7">毎日（週7回）</option></select></div></div><div class="field"><label style="display:flex;align-items:center;gap:9px"><input type="checkbox" id="habitWeeklyMission" style="width:18px;height:18px;accent-color:#ab8afd">週間ミッションに含める</label><span class="small-note">OFFの場合もチェック・XP・個別分析は利用できます。Oura自動項目は初期状態でOFFです。</span></div><div class="modal-actions"><button type="button" class="btn danger" id="deleteHabit" hidden>休止する</button><div style="margin-left:auto"><button type="button" class="btn ghost" id="cancelModal">キャンセル</button><button type="submit" class="btn primary" id="saveHabit">追加する</button></div></div></form></div></div>
 <div class="toast-wrap" id="toasts" aria-live="polite"></div>
 <script src="./cloud-config.js"></script>
 <script src="./goal-metrics.js"></script>
@@ -487,6 +535,10 @@
 <script src="./cloud-onboarding.js"></script>
 <script src="./game-shell.js"></script>
 <script src="./coin-shop.js"></script>
+<script src="./habit-groups.js"></script>
+<script src="./weekly-boss.js"></script>
+<script src="./oura-steps.js"></script>
+<script src="./reminder-calendar.js"></script>
 <script>
 (()=>{'use strict';
 const KEY='habit-quest-v1', XP_CHECK=20, XP_WEEK=100;
