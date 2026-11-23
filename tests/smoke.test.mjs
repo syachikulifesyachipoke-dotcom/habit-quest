@@ -74,7 +74,8 @@ test('images and Oura controls are nested under settings', () => {
   const art=html.indexOf('id="artSection"');
   const oura=html.indexOf('id="ouraDetail"');
   assert.ok(parent>=0 && art>parent && oura>art);
-  assert.match(html, /id="settingsJump"/);
+  assert.match(html, /id="settingsDetail"/);
+  assert.match(html, /id="cloudToggle"/);
 });
 
 test('public frontend config has no server secrets', () => {
@@ -168,8 +169,9 @@ test('five fixed navigation buttons link to live character/event/shop/options pa
 });
 
 test('game expressions and direct options backup controls remain integrated',()=>{
- assert.match(html,/id="homeCompanionMood"/);
- assert.match(html,/id="characterMoodFace"/);
+ assert.doesNotMatch(html,/id="homeCompanionMood"|id="characterMoodFace"/);
+ assert.match(html,/id="characterReactionText"/);
+ assert.match(html,/data-mood/);
  assert.match(html,/id="optionsExportBtn"/);
  assert.match(html,/id="optionsImportBtn"/);
  assert.match(html,/id="appUpdateBanner"/);
@@ -190,4 +192,22 @@ test('G4 server coin shop and dark navigation assets are loaded and precached',(
  assert.match(html,/gameWalletAction\('refresh'\)/);
  assert.match(html,/HabitQuestCoinShop\.gameDayUTC/);
  assert.match(read('coin-shop.css'),/linear-gradient\(165deg,rgba\(30,35,61/);
+});
+
+test('header has only persistent XP and cloud coin counters, while account controls live in options',()=>{
+ const header=html.slice(html.indexOf('<header'),html.indexOf('</header>')+9);
+ const options=html.slice(html.indexOf('id="screen-options"'),html.indexOf('id="gameBottomNav"'));
+ for(const id of ['headerXp','headerCoins']){
+  assert.match(header,new RegExp('id="'+id+'"'));
+ }
+ for(const oldId of ['nowDate','settingsJump','cloudToggle']){
+  assert.doesNotMatch(header,new RegExp('id="'+oldId+'"'));
+ }
+ assert.match(options,/id="cloudToggle"/);
+ assert.match(html,/\$\('headerXp'\)\.textContent=s\.xp\.toLocaleString/);
+ assert.match(html,/\$\('headerCoins'\)\.textContent=w\?w\.coins\.toLocaleString/);
+ assert.doesNotMatch(html,/id="homeCompanionMood"|id="characterMoodFace"/);
+ assert.doesNotMatch(read('game-shell.css'),/companion-mood-chip|char-mood-face/);
+ assert.match(html, /<link rel="stylesheet" href="\.\/resource-hud\.css">/);
+ assert.match(sw, /\.\/resource-hud\.css/);
 });
