@@ -48,6 +48,10 @@ const injection=`<script>
  currentButton.click();
  const day=currentButton.dataset.day;
  requireOk(state().checks[day]?.[h.id]===true,'check missing');
+ requireOk(document.getElementById('journeyCount').textContent.includes('/ 7日'),'adventure map did not render');
+ requireOk(document.getElementById('dailyQuestTitle').textContent.includes('達成'),'daily adventure did not celebrate a manual check');
+ requireOk(document.getElementById('journeyBadgeTitle').textContent==='旅立ちの証','first adventure badge did not unlock');
+ requireOk(document.querySelectorAll('#journeyDays .journey-day').length===7,'weekly adventure map must show seven days');
  const xpBefore=xp();
  requireOk(Number(xpBefore.replace(/[^0-9]/g,''))===20,'XP baseline or pre-first-login exclusion failed: '+xpBefore);
  document.querySelector('[data-edit="'+h.id+'"]').click();
@@ -88,6 +92,7 @@ const injection=`<script>
  requireOk(!!checkedButton&&!checkedButton.disabled,'cannot toggle backed up check');
  checkedButton.click();
  requireOk(state().checks[day]?.[h.id]!==true,'test did not create a changed check');
+ requireOk(document.getElementById('journeyBadgeTitle').textContent==='冒険のはじまり','badge did not revert when the check was undone');
  const dt=new DataTransfer();
  dt.items.add(new File([JSON.stringify(backup)],'backup.json',{type:'application/json'}));
  const fileInput=document.getElementById('fileInput');
@@ -98,6 +103,7 @@ const injection=`<script>
  requireOk(state().checks[day]?.[h.id]===true,'JSON import failed to restore check');
  requireOk(reimported.targetHistory?.length>0&&reimported.activeIntervals?.length>0,'JSON import lost lifecycle');
  requireOk(xp()===xpBefore,'JSON import changed XP');
+ requireOk(document.getElementById('journeyBadgeTitle').textContent==='旅立ちの証','restored check did not restore badge');
  if(new URLSearchParams(location.search).has('mobileTest')){
   requireOk(window.innerWidth<=580,'mobile viewport not active: '+window.innerWidth);
   requireOk(getComputedStyle(document.querySelector('main>.intro')).order==='0','mobile RPG card not first');
@@ -128,6 +134,7 @@ test('headless Chrome: lifecycle and JSON backup/import preserve checks and XP',
    ['/habit-lifecycle.js',fs.readFileSync(path.join(root,'habit-lifecycle.js'),'utf8')],
    ['/sync-guard.js',fs.readFileSync(path.join(root,'sync-guard.js'),'utf8')],
    ['/sync-merge.js',fs.readFileSync(path.join(root,'sync-merge.js'),'utf8')],
+   ['/daily-adventure.js',fs.readFileSync(path.join(root,'daily-adventure.js'),'utf8')],
    ['/cloud-config.js','window.HABIT_QUEST_CLOUD={url:"",anonKey:""};']
  ]);
  const server=http.createServer((req,res)=>{
