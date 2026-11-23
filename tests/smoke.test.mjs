@@ -93,14 +93,14 @@ test('PWA manifest is valid JSON', () => {
 });
 
 test('goal metric module is loaded before app and in offline cache', () => {
-  assert.match(html, /<script src="\.\/goal-metrics\.js"><\/script>\s*<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script src="\.\/sync-guard\.js"><\/script>\s*<script>/);
+  assert.match(html, /<script src="\.\/goal-metrics\.js"><\/script>\s*<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script src="\.\/sync-guard\.js"><\/script>\s*<script src="\.\/sync-merge\.js"><\/script>\s*<script>/);
   assert.match(html, /id="metricGoal"/);
   assert.match(html, /window\.HabitQuestGoalMetrics\.compute/);
   assert.match(sw, /\.\/goal-metrics\.js/);
 });
 
 test('phase A-2 lifecycle module is loaded and cached offline',()=>{
- assert.match(html, /<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script src="\.\/sync-guard\.js"><\/script>\s*<script>/);
+ assert.match(html, /<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script src="\.\/sync-guard\.js"><\/script>\s*<script src="\.\/sync-merge\.js"><\/script>\s*<script>/);
  assert.match(sw, /\.\/habit-lifecycle\.js/);
  assert.match(html, /id="archiveJump"/);
  assert.match(html, /id="archiveCount"/);
@@ -116,4 +116,10 @@ test('sync safety guard is loaded and refuses downgrades before auto-replacement
  assert.match(html, /missingLifecycleFrom\(state,latest\.data\)/);
  assert.match(html, /missingLifecycleFrom\(cloud\.remote\.data,snapshot\)/);
  assert.match(sw, /\.\/sync-guard\.js/);
+});
+
+test('Phase A-3 strict sync merge is loaded for browser and PWA offline',()=>{
+ assert.match(html, /<script src="\.\/sync-merge\.js"><\/script>\s*<script>/);
+ assert.match(sw, /\.\/sync-merge\.js/);
+ assert.match(html, /reconcileIndependentChecks\(latest\)/);
 });
