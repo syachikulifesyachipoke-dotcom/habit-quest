@@ -101,6 +101,9 @@
 .legend .dot-manual{background:#ae90f7}
 .legend .dot-oura{background:#52d4c3}
 @media(max-width:760px){.habit-group-label{flex-wrap:wrap}.habit-group-label small{margin-left:0;flex-basis:100%;padding-left:14px}.habit-row--auto,.habit-row--manual{padding-left:10px}}
+
+.heat-square.missing{background:repeating-linear-gradient(135deg,#1b1f33,#1b1f33 5px,#262a42 5px,#262a42 10px)!important;border:1px dashed #414861;color:#818da9}
+.heat-square.done{background:#5b4eac;color:#fff}
 </style>
 </head>
 <body>
@@ -147,9 +150,9 @@
 
 <section class="section-v2 panel v2-panel" id="analyticsSection">
  <div class="v2-title-row"><div><h3 class="hq-section-heading"><span data-hq-icon="chart"></span>習慣分析</h3><p class="subheading">達成記録を、継続の改善につながる数字に変える</p></div><div class="v2-controls"><select id="analysisHabit" aria-label="分析する習慣"></select><select id="analysisPeriod" aria-label="集計期間"><option value="7">直近7日</option><option value="30" selected>直近30日</option><option value="90">直近90日</option></select><button class="btn" id="exportCsv">CSV出力</button></div></div>
- <div class="metric-cards"><div class="metric-card"><strong id="metricDone">0日</strong><span>チェックした日数</span></div><div class="metric-card"><strong id="metricRate">0%</strong><span>期間内の記録率</span></div><div class="metric-card"><strong id="metricStreak">0日</strong><span>期間内の最長連続日数</span></div><div class="metric-card"><strong id="metricWeeks">0週</strong><span>週目標を達成した週数（完了週）</span></div></div>
+ <div class="metric-cards"><div class="metric-card"><strong id="metricDone">0日</strong><span>チェックした日数</span></div><div class="metric-card"><strong id="metricRate">0%</strong><span id="metricRateLabel">期間内の記録率</span></div><div class="metric-card"><strong id="metricStreak">0日</strong><span>期間内の最長連続日数</span></div><div class="metric-card"><strong id="metricWeeks">0週</strong><span>週目標を達成した週数（完了週）</span></div></div>
  <div class="v2-chart-grid"><div class="chart-panel"><div class="chart-title">直近8週間の達成回数（選択した習慣）</div><div id="weekBars" class="bars"></div><p class="small-note">棒の高さは週目標に対する進捗率（上限100%）。棒の上に達成回数を表示します。今週は途中経過です。</p></div><div class="chart-panel"><div class="chart-title">曜日別のチェック率（選択した期間）</div><div id="weekdayBars" class="weekday-rows"></div><p class="small-note spaced">その曜日が期間内に登場した日数を分母としています。</p></div></div>
- <div class="chart-panel spaced"><div class="chart-title">日別の達成カレンダー <span id="heatLabel" class="muted"></span></div><div id="heatGrid" class="heat-grid"></div><p class="small-note">緑はチェック済み、灰色は未チェックです。導入前の日も未チェックとして扱います。</p></div>
+ <div class="chart-panel spaced"><div class="chart-title">日別の達成カレンダー <span id="heatLabel" class="muted"></span></div><div id="heatGrid" class="heat-grid"></div><p class="small-note">紫＝手動で達成、青緑＝Oura自動、灰色＝未チェック、斜線＝Oura未取得（欠測）。欠測日はOuraの記録率の分母に含めません。</p></div>
  <div class="chart-panel spaced"><div class="chart-title">全習慣の比較（選択した期間）</div><div id="habitRank"></div></div>
 </section>
 <details class="extra-accord"><summary>🎨 キャラクター画像の管理</summary><section class="section-v2 panel v2-panel" id="artSection">
@@ -344,9 +347,36 @@ function renderArt(){const imgs=state.avatarImages||{};$('artGrid').innerHTML=EV
 $('artGrid').addEventListener('click',e=>{const add=e.target.closest('[data-art]'),remove=e.target.closest('[data-remove-art]');if(add){artStage=Number(add.dataset.art);$('artFile').click()}else if(remove){delete state.avatarImages[Number(remove.dataset.removeArt)];store();render();toast('登録を解除しました')}});
 $('artGrid').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-art]')){e.preventDefault();e.target.click()}});
 $('artFile').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{if(!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size>12*1024*1024)throw Error('形式/容量');const uri=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file)});const img=new Image();img.src=uri;await img.decode();const side=360,canvas=document.createElement('canvas');canvas.width=side;canvas.height=side;const ctx=canvas.getContext('2d');const scale=Math.min(side/img.width,side/img.height);ctx.drawImage(img,(side-img.width*scale)/2,(side-img.height*scale)/2,img.width*scale,img.height*scale);const data=canvas.toDataURL('image/webp',.78);if(data.length>330000)throw Error('サイズ');state.avatarImages[artStage]=data;store();render();toast('進化画像を登録しました',true)}catch(err){toast('画像を保存できません。別のPNG/JPGでお試しください。')}finally{e.target.value=''}});
-function analyse(id,n){const today=atMidday(new Date()),days=Array.from({length:n},(_,i)=>addDay(today,i-n+1));let done=0,streak=0,best=0;const weekday=Array.from({length:7},()=>({n:0,hit:0}));for(const d of days){const yes=checked(d,id);if(yes){done++;streak++;best=Math.max(best,streak)}else streak=0;const w=(d.getDay()+6)%7;weekday[w].n++;if(yes)weekday[w].hit++}const current=weekStart(today);let metWeeks=0;for(let k=1;k<=Math.ceil(n/7);k++){const start=addDay(current,-k*7),end=addDay(start,6);if(start<days[0]||end>today)break;const h=state.habits.find(x=>x.id===id);if(h&&!h.ouraTrackingOnly&&weekDays(start).filter(d=>checked(d,id)).length>=h.target)metWeeks++}return{days,done,rate:Math.round(100*done/n),best,weekday,metWeeks}}
-function renderAnalytics(){const sel=$('analysisHabit'),previous=sel.value;sel.innerHTML=displayHabits().map(h=>`<option value="${esc(h.id)}">${esc(h.name)}</option>`).join('');if(state.habits.some(h=>h.id===previous))sel.value=previous;const id=sel.value,n=Number($('analysisPeriod').value)||30,h=state.habits.find(x=>x.id===id);if(!h){$('weekBars').innerHTML='<div class="analysis-empty">まず習慣を追加してください。</div>';$('weekdayBars').innerHTML='';$('heatGrid').innerHTML='';$('habitRank').innerHTML='';return}const a=analyse(id,n);$('metricDone').textContent=`${a.done}日`;$('metricRate').textContent=a.rate+'%';$('metricStreak').textContent=`${a.best}日`;$('metricWeeks').textContent=`${a.metWeeks}週`;$('heatLabel').textContent=`（直近${n}日）`;
-const mon=weekStart(new Date());const windows=Array.from({length:8},(_,i)=>addDay(mon,(i-7)*7));$('weekBars').innerHTML=windows.map((w,i)=>{const hit=weekDays(w).filter(d=>checked(d,id)).length;const pct=Math.min(100,100*hit/h.target);return `<div class="bar-item" title="${dayKey(w)}：${hit}回/目標${h.target}回"><span class="bar-value">${hit}/${h.target}</span><div class="bar-column" style="height:${Math.max(hit?5:2,pct)}%"></div><span class="bar-caption">${w.getMonth()+1}/${w.getDate()}</span></div>`}).join('');const names=['月','火','水','木','金','土','日'];$('weekdayBars').innerHTML=a.weekday.map((o,i)=>{const pct=o.n?Math.round(100*o.hit/o.n):0;return `<div class="weekday-row"><span>${names[i]}</span><div class="weekday-track"><i style="width:${pct}%"></i></div><span>${o.hit}/${o.n}</span></div>`}).join('');const blanks=(a.days[0].getDay()+6)%7;$('heatGrid').innerHTML='<div class="heat-square blank"></div>'.repeat(blanks)+a.days.map(d=>`<div class="heat-square ${checked(d,id)?'done':''}" title="${dayKey(d)} ${checked(d,id)?'達成':'未達成'}">${d.getDate()}</div>`).join('');const ranks=displayHabits().map(h=>{const t=analyse(h.id,n);return{h,...t}}).sort((x,y)=>Number(isOuraAutoHabit(x.h))-Number(isOuraAutoHabit(y.h))||y.rate-x.rate);$('habitRank').innerHTML=`<table class="habit-ranking"><thead><tr><th>習慣</th><th>実績</th><th>記録率</th><th>比較</th></tr></thead><tbody>${ranks.map(r=>`<tr><td><span class="rank-habit-icon">${habitIconSvg(r.h.icon)}</span>${esc(r.h.name)}</td><td>${r.done}/${n}日</td><td>${r.rate}%</td><td><div class="rank-track"><i style="width:${r.rate}%"></i></div></td></tr>`).join('')}</tbody></table>`}
+const ouraCoverageDays=new Set();
+function isOuraMissing(day,id){
+ if(id!=='wake'&&!id.startsWith('oura_'))return false;
+ const key=typeof day==='string'?day:dayKey(day);
+ if(state.checks[key]?.[id])return false;
+ return !ouraCoverageDays.has(key);
+}
+function analyse(id,n){
+ const today=atMidday(new Date()),days=Array.from({length:n},(_,i)=>addDay(today,i-n+1));
+ let done=0,streak=0,best=0,observed=0;
+ const weekday=Array.from({length:7},()=>({n:0,hit:0}));
+ for(const d of days){
+   const yes=checked(d,id),missing=isOuraMissing(d,id);
+   if(yes){done++;streak++;best=Math.max(best,streak)}
+   else streak=0;
+   if(missing)continue;
+   observed++;
+   const w=(d.getDay()+6)%7;weekday[w].n++;if(yes)weekday[w].hit++;
+ }
+ const current=weekStart(today);let metWeeks=0;
+ for(let k=1;k<=Math.ceil(n/7);k++){
+   const start=addDay(current,-k*7),end=addDay(start,6);
+   if(start<days[0]||end>today)break;
+   const h=state.habits.find(x=>x.id===id);
+   if(h&&!h.ouraTrackingOnly&&weekDays(start).filter(d=>checked(d,id)).length>=h.target)metWeeks++;
+ }
+ return{days,done,observed,missing:n-observed,rate:observed?Math.round(100*done/observed):0,best,weekday,metWeeks};
+}
+function renderAnalytics(){const sel=$('analysisHabit'),previous=sel.value;sel.innerHTML=displayHabits().map(h=>`<option value="${esc(h.id)}">${esc(h.name)}</option>`).join('');if(state.habits.some(h=>h.id===previous))sel.value=previous;const id=sel.value,n=Number($('analysisPeriod').value)||30,h=state.habits.find(x=>x.id===id);if(!h){$('weekBars').innerHTML='<div class="analysis-empty">まず習慣を追加してください。</div>';$('weekdayBars').innerHTML='';$('heatGrid').innerHTML='';$('habitRank').innerHTML='';return}const a=analyse(id,n);$('metricDone').textContent=`${a.done}日`;$('metricRate').textContent=a.rate+'%';$('metricRateLabel').textContent=isOuraAutoHabit(h)?'計測された'+a.observed+'日を分母に計算（欠測'+a.missing+'日）':'期間内の記録率';$('metricStreak').textContent=`${a.best}日`;$('metricWeeks').textContent=`${a.metWeeks}週`;$('heatLabel').textContent=`（直近${n}日）`;
+const mon=weekStart(new Date());const windows=Array.from({length:8},(_,i)=>addDay(mon,(i-7)*7));$('weekBars').innerHTML=windows.map((w,i)=>{const hit=weekDays(w).filter(d=>checked(d,id)).length;const pct=Math.min(100,100*hit/h.target);return `<div class="bar-item" title="${dayKey(w)}：${hit}回/目標${h.target}回"><span class="bar-value">${hit}/${h.target}</span><div class="bar-column" style="height:${Math.max(hit?5:2,pct)}%"></div><span class="bar-caption">${w.getMonth()+1}/${w.getDate()}</span></div>`}).join('');const names=['月','火','水','木','金','土','日'];$('weekdayBars').innerHTML=a.weekday.map((o,i)=>{const pct=o.n?Math.round(100*o.hit/o.n):0;return `<div class="weekday-row"><span>${names[i]}</span><div class="weekday-track"><i style="width:${pct}%"></i></div><span>${o.hit}/${o.n}</span></div>`}).join('');const blanks=(a.days[0].getDay()+6)%7;$('heatGrid').innerHTML='<div class="heat-square blank"></div>'.repeat(blanks)+a.days.map(d=>{const done=checked(d,id),missing=isOuraMissing(d,id);return `<div class="heat-square ${done?'done':missing?'missing':''}" title="${dayKey(d)} ${done?'達成':missing?'Oura未取得':'未チェック'}">${d.getDate()}</div>`}).join('');const ranks=displayHabits().map(h=>{const t=analyse(h.id,n);return{h,...t}}).sort((x,y)=>Number(isOuraAutoHabit(x.h))-Number(isOuraAutoHabit(y.h))||y.rate-x.rate);$('habitRank').innerHTML=`<table class="habit-ranking"><thead><tr><th>習慣</th><th>実績</th><th>記録率</th><th>比較</th></tr></thead><tbody>${ranks.map(r=>`<tr><td><span class="rank-habit-icon">${habitIconSvg(r.h.icon)}</span>${esc(r.h.name)}</td><td>${r.done}/${n}日</td><td>${r.rate}%</td><td><div class="rank-track"><i style="width:${r.rate}%"></i></div></td></tr>`).join('')}</tbody></table>`}
 $('analysisHabit').addEventListener('change',()=>{renderAnalytics();renderOura()});$('analysisPeriod').addEventListener('change',renderAnalytics);
 $('exportCsv').addEventListener('click',()=>{const rows=[['date',...state.habits.map(x=>x.name)]];const keys=Object.keys(state.checks).filter(dayIsoOk).sort();const first=keys[0]?parseDay(keys[0]):atMidday(new Date()),today=atMidday(new Date());for(let d=first;d<=today;d=addDay(d,1))rows.push([dayKey(d),...state.habits.map(h=>checked(d,h.id)?1:0)]);const q=s=>'"'+String(s).replace(/"/g,'""')+'"';downloadText('\ufeff'+rows.map(r=>r.map(q).join(',')).join('\r\n'),`habit-quest-records-${isoToday()}.csv`,'text/csv;charset=utf-8');toast('CSVを出力しました',true)});
 function ingestOuraPayload(obj,assumedType='auto'){const collections=[];if(Array.isArray(obj))collections.push([assumedType==='auto'?'generic':assumedType,obj]);if(obj&&typeof obj==='object'){if(Array.isArray(obj.data))collections.push([obj.type||obj.kind||(assumedType==='auto'?'generic':assumedType),obj.data]);for(const [type,val]of Object.entries(obj)){if(Array.isArray(val))collections.push([type,val]);else if(val&&Array.isArray(val.data))collections.push([type,val.data])}}let added=0;for(const [kind,items] of collections){for(const raw of items.slice(0,11000)){if(!raw||typeof raw!=='object')continue;const day=raw.day||raw.date||raw.timestamp?.slice?.(0,10);if(!dayIsoOk(day))continue;const dest=state.ouraData[day]||{};let touched=false;const score=Number(raw.score);if(Number.isFinite(score)&&score>=0&&score<=100){if(/readiness/i.test(kind)||/readiness/i.test(raw.type||'')){dest.readiness=score;touched=true}else if(/sleep/i.test(kind)||/sleep/i.test(raw.type||'')){dest.sleep=score;touched=true}}
@@ -368,13 +398,14 @@ async function ouraCall(action,params={}){
 async function fetchOuraMetrics(){
  if(!cloud.client||!cloud.user)return;
  const all=[];let from=0;while(true){const {data,error}=await cloud.client.from('oura_daily_metrics').select('day,sleep_score,readiness_score,steps,wake_time,synced_at').eq('user_id',cloud.user.id).order('day',{ascending:true}).range(from,from+499);if(error)throw error;all.push(...data);if(data.length<500)break;from+=500;}
+ ouraCoverageDays.clear();for(const r of all)ouraCoverageDays.add(r.day);
  for(const r of all){const prev=state.ouraData[r.day]||{};state.ouraData[r.day]={...prev,...(r.sleep_score===null?{}:{sleep:r.sleep_score}),...(r.readiness_score===null?{}:{readiness:r.readiness_score}),...(r.steps===null?{}:{steps:r.steps})};}
  const timestamps=all.map(x=>Date.parse(x.synced_at||'')).filter(Number.isFinite);
  const latest=timestamps.length?Math.max(...timestamps):null;
  $('ouraLastSync').textContent=latest
    ?'Oura最終取得：'+new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(latest))+'（日本時間）'
    :'Oura最終取得：未取得';
- try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){}renderOura();await renderOuraCandidates(all);return all.length;
+ try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){}renderOura();await renderOuraCandidates(all);renderAnalytics();return all.length;
 }
 
 
