@@ -18,11 +18,14 @@ const findBrowser=()=>{
 const prelude=`<script>
 (()=>{
  const today=new Date(Date.now()+9*60*60*1000).toISOString().slice(0,10);
+ const previous=new Date(today.slice(0,7)+'-01T12:00:00Z');
+ previous.setUTCDate(0);
+ const lastMonthDay=previous.toISOString().slice(0,10);
  localStorage.setItem('habit-quest-v1',JSON.stringify({
   xpStartDate:today,
   habits:[{id:'baseline',name:'既存の習慣',icon:'book',target:7,ouraTrackingOnly:false}],
   checks:{'2026-01-01':{baseline:true}},
-  rewardedWeeks:[],avatarImages:{},ouraData:{[today]:{steps:8000}},ouraTrackingVersion:3,
+  rewardedWeeks:[],avatarImages:{},ouraData:{[today]:{steps:8000},[lastMonthDay]:{steps:9000}},ouraTrackingVersion:3,
   ouraAutoEnabled:true,ouraAutoKeys:[],ouraSuppressedKeys:[]
  }));
 })();
