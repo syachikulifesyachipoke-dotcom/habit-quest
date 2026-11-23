@@ -79,11 +79,13 @@ const check=`<script>
  await pause();
  requireOk(document.querySelectorAll('#coinShopItems .coin-item').length===5,'market needs exactly five items');
  requireOk(document.getElementById('coinBalance').textContent==='255','initial wallet not loaded');
+ requireOk(document.getElementById('headerCoins').textContent==='255','header coin HUD not synchronized');
  requireOk(!document.getElementById('coinFreeGacha').disabled,'free draw not available');
  window.confirm=()=>true;
  document.querySelector('#coinShopItems [data-coin-item="cloak"]').click();
  await pause();
  requireOk(document.getElementById('coinBalance').textContent==='195','purchase price not deducted');
+ requireOk(document.getElementById('headerCoins').textContent==='195','header coin HUD did not update after purchase');
  requireOk(document.querySelector('[data-coin-item="cloak"][data-coin-action="equip"]'),'owned item not equippable');
  document.querySelector('[data-coin-item="cloak"][data-coin-action="equip"]').click();
  await pause();
@@ -94,6 +96,7 @@ const check=`<script>
  requireOk(document.getElementById('coinResultDialog').open,'draw did not show reveal');
  requireOk(document.getElementById('coinResultTitle').textContent.includes('すでに'),'duplicate conversion not surfaced');
  requireOk(document.getElementById('coinBalance').textContent==='210','duplicate refund missing');
+ requireOk(document.getElementById('headerCoins').textContent==='210','header coin HUD did not update after duplicate refund');
  requireOk(document.getElementById('coinFreeGacha').disabled,'second free draw was not prevented');
  requireOk(window.__coinTest.drawCount===1,'draw duplicated');
  document.getElementById('coinResultClose').click();
@@ -110,7 +113,7 @@ test('Chrome: wallet, purchase, equip, duplicate free draw and XP isolation',{ti
  const resources=new Map([['/index.html',app],
   ['/cloud-config.js','window.HABIT_QUEST_CLOUD={url:"https://test.supabase.co",anonKey:"sb_publishable_demo"};']]);
  for(const file of ['goal-metrics.js','habit-lifecycle.js','sync-guard.js','sync-merge.js','daily-adventure.js','adventure-world.js',
-    'cloud-onboarding.js','game-shell.js','game-shell.css','coin-shop.js','coin-shop.css'])
+    'cloud-onboarding.js','game-shell.js','game-shell.css','coin-shop.js','coin-shop.css','resource-hud.css'])
    resources.set('/'+file,fs.readFileSync(path.join(root,file),'utf8'));
  const server=http.createServer((req,res)=>{
   const pathname=new URL(req.url,'http://localhost').pathname;
