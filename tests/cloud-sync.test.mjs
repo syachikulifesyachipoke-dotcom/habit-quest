@@ -42,6 +42,8 @@ const make=(local,remote,behavior)=>{
  const ctx={
   cloud,state:clone(local),window:{},document:{visibilityState:'visible'},
   cloudSnapshot:s=>clone({...s,habitSchemaVersion:2}),
+  rememberCloudBase:(snapshot,revision)=>{cloud.baseSnapshot=clone(snapshot);cloud.baseRevision=Number(revision)},
+  reconcileIndependentChecks:()=>false,
   missingLifecycleFrom:(before,after)=>guard(before,after),
   choiceVisible:()=>choiceCalls++,
   cloudMessage:text=>messages.push(text),

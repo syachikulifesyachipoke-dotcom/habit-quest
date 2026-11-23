@@ -28,7 +28,7 @@ const prelude=`<script>
 })();
 </script>`;
 const injection=`<script>
-(()=>{try {
+(async()=>{try {
  const requireOk=(yes,label)=>{if(!yes)throw Error(label)};
  const state=()=>JSON.parse(localStorage.getItem('habit-quest-v1'));
  const xp=()=>document.getElementById('totalXp').textContent;
@@ -71,13 +71,47 @@ const injection=`<script>
  requireOk(!!document.querySelector('[data-edit="'+h.id+'"]'),'restored habit missing from tracker');
  requireOk(state().checks[day]?.[h.id]===true,'restore deleted history');
  requireOk(xp()===xpBefore,'restore changed XP');
+ // Test the actual Export button and File input Import flow, not only JSON.parse.
+ let exportedBlob=null;
+ const oldCreate=URL.createObjectURL;
+ URL.createObjectURL=function(blob){exportedBlob=blob;return oldCreate.call(URL,blob)};
+ document.getElementById('exportBtn').click();
+ URL.createObjectURL=oldCreate;
+ requireOk(exportedBlob instanceof Blob,'backup did not create a Blob');
+ const backup=JSON.parse(await exportedBlob.text());
+ const backed=backup.habits.find(x=>x.id===h.id);
+ requireOk(!!backed&&backed.missionEnabled===false,'backup lost mission flag');
+ requireOk(backed.targetHistory?.length>0&&backed.activeIntervals?.length>0,'backup lost lifecycle history');
+ requireOk(backup.checks[day]?.[h.id]===true,'backup lost check');
+ // Create a real change, then import the exported backup through the file UI.
+ const checkedButton=[...document.querySelectorAll('[data-habit="'+h.id+'"][data-day]')].find(x=>x.dataset.day===day);
+ requireOk(!!checkedButton&&!checkedButton.disabled,'cannot toggle backed up check');
+ checkedButton.click();
+ requireOk(state().checks[day]?.[h.id]!==true,'test did not create a changed check');
+ const dt=new DataTransfer();
+ dt.items.add(new File([JSON.stringify(backup)],'backup.json',{type:'application/json'}));
+ const fileInput=document.getElementById('fileInput');
+ fileInput.files=dt.files;
+ fileInput.dispatchEvent(new Event('change',{bubbles:true}));
+ await new Promise(resolve=>setTimeout(resolve,90));
+ const reimported=state().habits.find(x=>x.id===h.id);
+ requireOk(state().checks[day]?.[h.id]===true,'JSON import failed to restore check');
+ requireOk(reimported.targetHistory?.length>0&&reimported.activeIntervals?.length>0,'JSON import lost lifecycle');
+ requireOk(xp()===xpBefore,'JSON import changed XP');
+ if(new URLSearchParams(location.search).has('mobileTest')){
+  requireOk(window.innerWidth<=580,'mobile viewport not active: '+window.innerWidth);
+  requireOk(getComputedStyle(document.querySelector('main>.intro')).order==='0','mobile RPG card not first');
+  requireOk(getComputedStyle(document.querySelector('main>.content')).order==='1','mobile tracker not second');
+  requireOk(document.querySelectorAll('.habit-row').length>0,'mobile habit rows not rendered');
+  requireOk([...document.querySelectorAll('.habit-row')].some(r=>r.querySelector('[data-day]')),'mobile touch check grid missing');
+ }
  document.body.setAttribute('data-browser-flow','PASS');
 } catch(error){
  document.body.setAttribute('data-browser-flow','FAIL '+String(error.message).replace(/["<>]/g,''));
 }})();
 </script>`;
 
-test('headless Chrome: add, check, edit, archive and restore preserve XP and history',{timeout:35000},async t=>{
+test('headless Chrome: lifecycle and JSON backup/import preserve checks and XP',{timeout:35000},async t=>{
  const executable=findBrowser();
  if(!executable){
    if(process.env.CI)assert.fail('No Chrome or Chromium binary found on CI');
@@ -92,6 +126,8 @@ test('headless Chrome: add, check, edit, archive and restore preserve XP and his
    ['/index.html',app],
    ['/goal-metrics.js',fs.readFileSync(path.join(root,'goal-metrics.js'),'utf8')],
    ['/habit-lifecycle.js',fs.readFileSync(path.join(root,'habit-lifecycle.js'),'utf8')],
+   ['/sync-guard.js',fs.readFileSync(path.join(root,'sync-guard.js'),'utf8')],
+   ['/sync-merge.js',fs.readFileSync(path.join(root,'sync-merge.js'),'utf8')],
    ['/cloud-config.js','window.HABIT_QUEST_CLOUD={url:"",anonKey:""};']
  ]);
  const server=http.createServer((req,res)=>{
@@ -101,27 +137,30 @@ test('headless Chrome: add, check, edit, archive and restore preserve XP and his
    res.end(scripts.get(filename));
  });
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
- const profile=fs.mkdtempSync(path.join(os.tmpdir(),'habit-quest-a2-chrome-'));
- let stdout='',stderr='';
+ const scenarios=[{name:'desktop',size:'1280,800',suffix:''},{name:'mobile',size:'500,844',suffix:'?mobileTest=1'}];
  try{
-   const target='http://127.0.0.1:'+server.address().port+'/index.html';
-   const args=['--headless=new','--disable-gpu','--no-sandbox','--disable-dev-shm-usage',
-     '--disable-background-networking','--no-first-run','--disable-extensions',
-     '--user-data-dir='+profile,'--virtual-time-budget=2000','--dump-dom',target];
-   const p=spawn(executable,args,{stdio:['ignore','pipe','pipe']});
-   p.stdout.on('data',data=>stdout+=data.toString());
-   p.stderr.on('data',data=>stderr+=data.toString());
-   const kill=setTimeout(()=>p.kill('SIGKILL'),26000);
-   const code=await new Promise((resolve,reject)=>{
-     p.on('error',reject);p.on('exit',resolve);
-   });
-   clearTimeout(kill);
-   assert.equal(code,0,'headless Chrome exited unexpectedly: '+stderr.slice(-800));
-   const marker=stdout.match(/data-browser-flow="([^"]+)"/);
-   assert.ok(marker,'browser test did not finish: '+stdout.slice(-900)+' '+stderr.slice(-500));
-   assert.equal(marker[1],'PASS','browser flow failed');
- }finally{
-   server.close();
-   fs.rmSync(profile,{recursive:true,force:true,maxRetries:3});
+ for(const scenario of scenarios){
+   const profile=fs.mkdtempSync(path.join(os.tmpdir(),'habit-quest-a3-'+scenario.name+'-'));
+   let stdout='',stderr='';
+   try{
+     const target='http://127.0.0.1:'+server.address().port+'/index.html'+scenario.suffix;
+     const args=['--headless=new','--disable-gpu','--no-sandbox','--disable-dev-shm-usage',
+       '--disable-background-networking','--no-first-run','--disable-extensions',
+       '--window-size='+scenario.size,'--user-data-dir='+profile,
+       '--virtual-time-budget=2500','--dump-dom',target];
+     const p=spawn(executable,args,{stdio:['ignore','pipe','pipe']});
+     p.stdout.on('data',d=>stdout+=d.toString());
+     p.stderr.on('data',d=>stderr+=d.toString());
+     const kill=setTimeout(()=>p.kill('SIGKILL'),28000);
+     const code=await new Promise((resolve,reject)=>{p.on('error',reject);p.on('exit',resolve)});
+     clearTimeout(kill);
+     assert.equal(code,0,scenario.name+' Chrome failed: '+stderr.slice(-700));
+     const marker=stdout.match(/data-browser-flow="([^"]+)"/);
+     assert.ok(marker,scenario.name+' browser did not complete: '+stdout.slice(-800));
+     assert.equal(marker[1],'PASS',scenario.name+' browser flow failed');
+   }finally{
+     fs.rmSync(profile,{recursive:true,force:true,maxRetries:3});
+   }
  }
+ }finally{server.close();}
 });
