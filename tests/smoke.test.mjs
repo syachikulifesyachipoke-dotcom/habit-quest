@@ -38,9 +38,9 @@ test('weekly matrix and all automatic habit rows remain accessible', () => {
 });
 
 test('today counts every registered habit, but streak is explicitly manual', () => {
-  assert.match(html, /state\.habits\.filter\(h=>checked\(t,h\.id\)\)\.length/);
-  assert.match(html, /連続記録日数（手動1項目以上）/);
-  assert.match(html, /手動習慣の週目標合計/);
+  assert.match(html, /displayHabits\(\)\.filter\(h=>checked\(t,h\.id\)\)\.length/);
+  assert.match(html, /連続記録日数（週ミッション対象1項目以上）/);
+  assert.match(html, /週間ミッションONの習慣の目標合計/);
 });
 
 test('individual habit drill-down and all five analysis periods exist', () => {
@@ -61,7 +61,7 @@ test('Oura missing days are not counted as observed', () => {
 
 test('XP excludes pre-first-login check marks and has level 50 cap', () => {
   assert.match(html, /if\(begin&&day>=begin\)xpChecks\+\+/);
-  assert.match(html, /const planned=state\.habits\.filter\(h=>!h\.ouraTrackingOnly\)/);
+  assert.match(html, /HabitQuestLifecycle\.weekProgress/);
   assert.match(html, /MAX_LEVEL=50/);
 });
 
@@ -97,4 +97,11 @@ test('goal metric module is loaded before app and in offline cache', () => {
   assert.match(html, /id="metricGoal"/);
   assert.match(html, /window\.HabitQuestGoalMetrics\.compute/);
   assert.match(sw, /\.\/goal-metrics\.js/);
+});
+
+test('phase A-2 lifecycle module is loaded and cached offline',()=>{
+ assert.match(html, /<script src="\.\/habit-lifecycle\.js"><\/script>\s*<script>/);
+ assert.match(sw, /\.\/habit-lifecycle\.js/);
+ assert.match(html, /id="archiveJump"/);
+ assert.match(html, /id="archiveCount"/);
 });
