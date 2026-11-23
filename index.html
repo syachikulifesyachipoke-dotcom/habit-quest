@@ -470,6 +470,21 @@ $('tracker').classList.toggle('auto-open',mobileAutoExpanded);$('tracker').inner
 $('evoList').innerHTML=[...new Map(keyMilestones.map(e=>[e.lv,e])).values()].map(e=>`<div class="evo-item ${s.level<e.lv?'locked':''} ${e.lv===EVO[stageNo].lv?'current':''}"><div class="evo-emoji">${s.level<e.lv?'◆':e.emoji}</div><div><strong>Lv.${e.lv} ${e.name}</strong><small>${e.desc}</small></div></div>`).join('');
 $('evoAllList').innerHTML=LEVEL_ATLAS.map(item=>`<div class="evo-level ${item.lv<=s.level?'unlocked':'locked'} ${item.major?'milestone':''} ${item.lv===s.level?'current':''}"><span class="evo-level-num">Lv.${item.lv}</span><span class="evo-level-name">${item.major?(item.lv<=s.level?EVO.find(e=>e.lv===item.lv).emoji:'◆')+' '+esc(item.label):esc(item.label)}</span><span class="evo-level-state">${item.lv<=s.level?'達成':'未解放'}</span></div>`).join('');
 renderAnalytics();renderArchivedHabits();renderArt();renderOura();updateOuraAutoStatus();}
+function renderArchivedHabits(){
+ const archived=state.habits.filter(h=>window.HabitQuestLifecycle.archived(h));
+ $('archiveCount').textContent=String(archived.length);
+ $('archivedHabitList').innerHTML=archived.length?archived.map(h=>
+   `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;padding:10px 0;border-bottom:1px solid rgba(180,190,220,.17)"><span>${habitIconSvg(h.icon)} <strong>${esc(h.name)}</strong><small style="display:block">以前のチェック・XPは保存済み</small></span><button type="button" class="btn" data-restore="${esc(h.id)}">再開する</button></div>`
+ ).join(''):'<p class="small-note">休止中の習慣はありません。</p>';
+}
+$('archiveJump').onclick=()=>{$('settingsDetail').open=true;$('archiveSection').open=true;$('archiveSection').scrollIntoView({behavior:'smooth',block:'start'})};
+$('archivedHabitList').addEventListener('click',e=>{
+ const button=e.target.closest('[data-restore]');if(!button)return;
+ const h=state.habits.find(x=>x.id===button.dataset.restore);
+ if(!h||!window.HabitQuestLifecycle.archived(h))return;
+ Object.assign(h,window.HabitQuestLifecycle.restore(h,isoToday()));
+ store();render();toast('習慣を再開しました。過去の履歴も保持しています',true);
+});
 function toast(message,up=false){const node=document.createElement('div');node.className='toast'+(up?' up':'');node.textContent=message;$('toasts').appendChild(node);setTimeout(()=>node.remove(),2400)}
 function particles(el){const rect=el.getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top+rect.height/2;for(let i=0;i<17;i++){const p=document.createElement('span');p.className='burst';p.style.left=x+'px';p.style.top=y+'px';p.style.background=['#a78bfa','#5eead4','#f9c66a','#fff'][i%4];p.style.setProperty('--x',((Math.random()-.5)*160)+'px');p.style.setProperty('--y',((Math.random()-.7)*150)+'px');document.body.append(p);setTimeout(()=>p.remove(),900)}}
 $('tracker').addEventListener('click',event=>{
@@ -486,12 +501,17 @@ function openModal(id){editing=id||null;const h=state.habits.find(x=>x.id===id);
 function closeModal(){$('modalBackdrop').classList.remove('show');editing=null}
 $('addHabit').onclick=()=>openModal();$('cancelModal').onclick=closeModal;$('modalBackdrop').addEventListener('click',e=>{if(e.target===$('modalBackdrop'))closeModal()});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 $('habitIcon').onchange=()=>{$('habitIconPreview').innerHTML=habitIconSvg($('habitIcon').value)};
-$('habitForm').addEventListener('submit',e=>{e.preventDefault();const name=$('habitName').value.trim(),icon=$('habitIcon').value,target=Number($('habitTarget').value);if(!name||!Number.isInteger(target)||target<1||target>7)return;const h=state.habits.find(x=>x.id===editing);const ouraTrackingOnly=!$('habitWeeklyMission').checked;if(h){Object.assign(h,{name,icon,target,ouraTrackingOnly});toast('習慣を更新しました')}else{state.habits.push({id:'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,icon,target,createdOn:isoToday(),ouraTrackingOnly});toast('新しい習慣が追加されました',true)}store();closeModal();render()});
-$('deleteHabit').onclick=()=>{if(!editing)return;const h=state.habits.find(x=>x.id===editing);if(!confirm(`「${h?.name||'この習慣'}」を削除しますか？\n過去のチェック記録と獲得したXPは残ります。`))return;if(editing.startsWith('oura_')){
-  state.ouraIgnoredTypes=state.ouraIgnoredTypes||[];
-  if(!state.ouraIgnoredTypes.includes(editing))state.ouraIgnoredTypes.push(editing);
- }
- state.habits=state.habits.filter(x=>x.id!==editing);store();closeModal();render();toast('習慣を削除しました')};
+$('habitForm').addEventListener('submit',e=>{e.preventDefault();const name=$('habitName').value.trim(),icon=$('habitIcon').value,target=Number($('habitTarget').value);if(!name||!Number.isInteger(target)||target<1||target>7)return;const h=state.habits.find(x=>x.id===editing),mission=$('habitWeeklyMission').checked;
+if(h){Object.assign(h,window.HabitQuestLifecycle.edit(h,isoToday(),target,mission),{name,icon});toast('習慣を更新しました')}
+else {const id='h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+state.habits.push(window.HabitQuestLifecycle.create({id,name,icon,target,ouraTrackingOnly:!mission},isoToday()));toast('新しい習慣が追加されました',true)}
+store();closeModal();render()});
+$('deleteHabit').onclick=()=>{if(!editing)return;const h=state.habits.find(x=>x.id===editing);
+ if(!h||!confirm(`「${h.name}」を休止しますか？\n一覧と今後の目標から外します。過去の記録・XPは保持され、設定から再開できます。`))return;
+ const today=isoToday(),preserveToday=state.checks[today]?.[h.id]===true;
+ Object.assign(h,window.HabitQuestLifecycle.archive(h,today,preserveToday));
+ store();closeModal();render();toast('習慣を休止しました。設定から再開できます',true)
+};
 $('prevWeek').onclick=()=>{offset--;render()};$('nextWeek').onclick=()=>{offset++;render()};$('thisWeek').onclick=()=>{offset=0;render()};
 $('exportBtn').onclick=()=>{const blob=new Blob([JSON.stringify({version:3,exportedAt:new Date().toISOString(),...state},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`habit-quest-${isoToday()}.json`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);toast('バックアップを保存しました',true)};
 $('importBtn').onclick=()=>$('fileInput').click();$('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const parsed=JSON.parse(await file.text());if(!Array.isArray(parsed.habits)||parsed.habits.some(h=>!validHabit(h))||!parsed.checks||typeof parsed.checks!=='object'||Array.isArray(parsed.checks))throw Error('形式が違います');const safeChecks={};for(const[k,v]of Object.entries(parsed.checks)){if(!/^\d{4}-\d{2}-\d{2}$/.test(k)||!v||typeof v!=='object'||Array.isArray(v))continue;safeChecks[k]={};for(const[id,ok]of Object.entries(v))if(typeof ok==='boolean'&&ok)safeChecks[k][id]=true}if(!confirm('現在の記録をバックアップの内容で置き換えますか？'))return;const restored=validateIncoming({...parsed,checks:safeChecks});restored.xpStartDate=validXpStartDate(state.xpStartDate)||validXpStartDate(restored.xpStartDate);state=restored;store();offset=0;render();toast('記録を復元しました',true)}catch(err){toast('読み込めませんでした。JSONファイルを確認してください。')}finally{e.target.value=''}});
@@ -665,13 +685,17 @@ function reconcileOuraHabits(daily,workouts){
  for(const id of types){
    if(ignored.has(id)||state.habits.some(h=>h.id===id))continue;
    const definition=Object.values(OURA_ACTIVITY_HABITS).find(h=>h.id===id);
-   if(definition){state.habits.push({...definition,ouraTrackingOnly:true});modified=true}
+   if(definition){
+     const first=[...unique.values()].filter(r=>r.id===id).map(r=>r.day).sort()[0]||isoToday();
+     state.habits.push(window.HabitQuestLifecycle.create({...definition,ouraTrackingOnly:true},first));
+     modified=true;
+   }
  }
- const activeIds=new Set(state.habits.map(h=>h.id));
+ const activeIds=new Map(state.habits.map(h=>[h.id,h]));
  const days=new Set();
  let added=0;
  for(const [key,record] of unique){
-   if(!activeIds.has(record.id)||suppressed.has(key)||state.checks[record.day]?.[record.id])continue;
+   if(!activeIds.has(record.id)||!window.HabitQuestLifecycle.activeOn(activeIds.get(record.id),record.day)||suppressed.has(key)||state.checks[record.day]?.[record.id])continue;
    state.checks[record.day] ||= {};
    state.checks[record.day][record.id]=true;
    if(!state.ouraAutoKeys.includes(key))state.ouraAutoKeys.push(key);
