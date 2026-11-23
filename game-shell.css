@@ -100,10 +100,12 @@
  .event-progress>i,.game-nav-button{transition:none!important}
 }
 
-/* Distinct expressive mood indicators: replace without editing user avatar assets. */
+/* Natural companion reactions use the actual character portrait and dialogue.
+ * No generated emoji-face stickers are overlaid on the artwork. */
 .companion-card{position:relative}
-.companion-mood-chip,.char-mood-face{position:absolute;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;border:2px solid rgba(255,247,201,.66);background:linear-gradient(150deg,#fff6d0,#f5c8dc);font-size:27px;line-height:1;box-shadow:0 8px 19px rgba(0,0,0,.25);pointer-events:none}
-.companion-mood-chip{right:18px;top:75px}
-.char-mood-face{top:88px;right:27px;width:49px;height:49px;font-size:30px;z-index:2}
+.char-avatar[data-mood="celebrate"]{border-color:rgba(94,234,212,.48)}
+.char-avatar[data-mood="happy"]{border-color:rgba(167,139,250,.48)}
+.char-avatar[data-mood="rest"]{border-color:rgba(145,158,192,.24)}
+.char-avatar[data-mood="petted"]{border-color:rgba(245,202,105,.58)}
 .game-nav-button[data-sync-attention="true"]::after{content:'';position:absolute;top:3px;right:calc(50% - 24px);width:9px;height:9px;border-radius:50%;background:#e64d67;box-shadow:0 0 0 2px #fff8bd}
-@media(max-width:760px){.companion-mood-chip{top:60px;right:11px;width:38px;height:38px;font-size:24px}.char-mood-face{top:80px;right:15px;width:40px;height:40px;font-size:24px}}
+
