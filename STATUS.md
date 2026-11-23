@@ -211,3 +211,12 @@
 - Supabase、XP・コイン報酬ルール、Oura、認証、習慣履歴・保存フォーマットは**変更しない**。
 - PC幅・スマホ相当幅のChrome、購入／ガチャとリソース表示、オプションからのログイン、表情バッジの不存在をテスト。最新の合否件数は最終CIで確定する。
 - 実際のスマホでの視認性・公開GitHub Pagesのライブ受入は現段階で未検証。
+
+## G5：上部のXP/COIN表示・表情絵文字撤去のmain統合（2026-11-23）
+
+- GitHub PR #8を`main`へ統合：merge commit `ed85bc6e276ad53e076cd80025d669a8f026bc48`。
+- `index.html`でヘッダーの日付 `nowDate` と設定 `settingsJump`、丸い表情絵文字 `homeCompanionMood`/`characterMoodFace` を除去したことを確認。リソース `headerXp`／`headerCoins` を追加し、クラウドのログイン・同期ボタンをオプションに配置。
+- 新CSS `resource-hud.css` とキャッシュv17が `main`に存在することを確認。色味は既存のネイビー・紫・金と統一。相棒の既存画像・ジャンプ演出・日本語セリフは維持。
+- GitHub Actions run #91：**133件成功、失敗0、スキップ0**。ChromeのPC／スマホ相当幅、同期、XP、購入・無料ガチャと残高HUD、習慣バックアップ復元等を確認。非同期JSONインポートテストは固定90ms待ちから復元完了を判定する方式へ改善。
+- Supabase／コイン付与・ガチャ／XP／習慣／Oura／認証に対するDB・保存形式の変更なし。
+- **未受入**：実PC・実スマホでの最終デザイン、GitHub Pages公開URLのHTTP取得（外部ツールがキャッシュミス）、継続率への効果。ゲーム改善案は `ROADMAP.md` に未確定事項として管理。
