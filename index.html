@@ -341,7 +341,7 @@
   <span class="steps-state" id="homeStepsStatus" data-state="unknown">未取得</span>
  </div>
  <div class="steps-progress"><div id="homeStepsProgress"></div></div>
- <div class="steps-foot"><small>Ouraの最新同期値です。スマホのリアルタイム歩数ではありません。</small><button type="button" id="homeStepsOpen">履歴を見る</button></div>
+ <div class="steps-foot"><small>スマホのリアルタイム歩数ではありません。<span id="homeStepsLastSync">Ouraの前回取得データ</span></small><div class="steps-actions"><button type="button" id="homeStepsSync">Oura更新</button><button type="button" id="homeStepsOpen">履歴を見る</button></div></div>
  <div id="stepsHistory" class="steps-history" hidden>
   <div class="steps-history-nav"><button type="button" id="stepsOlder" aria-label="前の月">‹ 前月</button><h4 id="stepsHistoryMonth">月別歩数</h4><button type="button" id="stepsNewer" aria-label="次の月">翌月 ›</button></div>
   <div id="stepsHistorySummary" class="small-note"></div>
@@ -1060,6 +1060,11 @@ function initGameShell(){
  };
  $('bossHomeOpen').onclick=()=>{setGameScreen('events');$('weeklyBoss').scrollIntoView({behavior:'smooth',block:'start'})};
  $('homeStepsOpen').onclick=openStepsHistory;
+ $('homeStepsSync').onclick=()=>{
+  if(!cloud.user){setGameScreen('options');$('settingsDetail').open=true;$('ouraDetail').open=true;toast('歩数更新にはOura連携が必要です');return}
+  if(ouraBusy){toast('Ouraを更新しています');return}
+  void syncOura(true,false);
+ };
  $('stepsOlder').onclick=()=>{stepsHistoryOffset--;renderStepsHistory()};
  $('stepsNewer').onclick=()=>{if(stepsHistoryOffset<0)stepsHistoryOffset++;renderStepsHistory()};
  try{
@@ -1355,6 +1360,8 @@ async function fetchOuraMetrics(){
  $('ouraLastSync').textContent=latest
    ?'Oura最終取得：'+new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(latest))+'（日本時間）'
    :'Oura最終取得：未取得';
+ $('homeStepsLastSync').textContent=latest?
+  '最終同期 '+new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',month:'numeric',day:'numeric'}).format(new Date(latest)):'Oura未同期';
  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){}renderOura();renderStepsPanel();await renderOuraCandidates(all);renderAnalytics();return all.length;
 }
 
