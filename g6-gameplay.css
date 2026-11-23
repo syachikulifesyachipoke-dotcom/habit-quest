@@ -90,3 +90,8 @@
 }
 @media(max-width:420px){.boss-body{grid-template-columns:1fr}.boss-creature{min-height:124px}.boss-creature svg{max-width:140px}.steps-list{grid-template-columns:1fr}.group-streak .group-amount{font-size:20px}.steps-panel .steps-value{font-size:28px}}
 @media(prefers-reduced-motion:reduce){.boss-battle.is-attacking .boss-creature,.boss-battle.is-attacking .boss-damage{animation:none!important}.boss-hp-fill,.steps-progress div{transition:none!important}}
+
+.steps-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.steps-actions button{white-space:nowrap}
+.steps-foot>small{min-width:0}
+@media(max-width:430px){.steps-foot{align-items:flex-start;gap:8px;flex-wrap:wrap}.steps-actions{margin-left:auto}}
