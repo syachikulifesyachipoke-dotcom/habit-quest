@@ -512,6 +512,10 @@ function renderDailyAdventure(today){
   title.textContent='今日の冒険を準備しよう';
   description.textContent='手動習慣を1つ追加すると、冒険の足跡が始まります。';
   jump.textContent='習慣を追加';
+ }else if(data.manualToday===0){
+  title.textContent='冒険は休憩中';
+  description.textContent='手動習慣がすべて休止中です。再開すると、今日の冒険が始まります。';
+  jump.textContent='休止中の習慣へ';
  }else if(data.allTodayDone){
   title.textContent='今日の冒険、すべて達成！';
   description.textContent='自分で記録する習慣をすべてクリア。相棒と一緒に前進しました。';
@@ -536,6 +540,9 @@ function renderDailyAdventure(today){
 }
 $('dailyQuestJump').onclick=()=>{
  if(!state.habits.some(h=>!isOuraAutoHabit(h))){openModal();return}
+ if(!state.habits.some(h=>!isOuraAutoHabit(h)&&!window.HabitQuestLifecycle.archived(h)&&window.HabitQuestLifecycle.activeOn(h,isoToday()))){
+  $('archiveJump').click();return
+ }
  offset=0;render();
  let target=null;
  if(adventureFocusId)target=document.querySelector('#tracker [data-habit="'+adventureFocusId+'"][data-day="'+isoToday()+'"]');
