@@ -400,7 +400,9 @@
  <div class="coin-system-note"><span>🎁 ログイン：1日 <strong>+10 C</strong></span><span>✅ 前日のチェック：1件 <strong>+5 C</strong></span><span>⏰ 日本時間 <strong>5:40</strong> 更新</span></div>
  <section class="coin-gacha-panel">
   <div class="coin-gacha-glow" aria-hidden="true">✧</div>
-  <div class="coin-gacha-copy"><small>DAILY FREE GACHA</small><h3>✨ 今日の運試し</h3><p>1日1回、無料でアイテムが手に入るガチャ。すでに持っているアイテムなら15コインに交換されます。</p><button type="button" id="coinFreeGacha" disabled>無料ガチャを引く</button><small id="coinGachaHint">ログインすると利用できます</small></div>
+  <div class="coin-gacha-copy"><small>DAILY FREE GACHA</small><h3>✨ 今日の運試し</h3><p>1日1回、無料でアイテムが手に入るガチャ。すでに持っているアイテムなら15コインに交換されます。</p>
+  <details class="coin-gacha-rates"><summary>提供割合を確認する</summary><p>旅人のマント 35% ／ 星灯りのランタン 30% ／ 月光の王冠 20% ／ 蒼天のオーラ 10% ／ 天翔ける翼 5%</p></details>
+  <button type="button" id="coinFreeGacha" disabled>無料ガチャを引く</button><small id="coinGachaHint">ログインすると利用できます</small></div>
   <div class="coin-gacha-chest" aria-hidden="true">🎁</div>
  </section>
  <section class="shop-panel coin-market-panel"><div class="coin-market-heading"><div><h3>⚔️ 冒険アイテム</h3><p class="small-note">所持コインで購入。購入した装備はPC・スマホで共有できます。</p></div><small>全5種類</small></div><div id="coinShopItems" class="coin-item-grid"></div></section>
@@ -786,7 +788,8 @@ async function gameWalletAction(action='refresh',itemId=null){
   else if(action==='buy'){const item=window.HabitQuestCoinShop.itemById(itemId);
    coinNotice('「'+(item?.name||'アイテム')+'」を購入しました。キャラ画面で使えます。','success')}
   else if(action==='equip'){coinNotice('相棒の装備を変更しました。','success')}
-  else if(incoming.earnedNow>0){coinNotice('🪙 本日の報酬 '+incoming.earnedNow+' C を受け取りました！','success')}
+  else if(incoming.earnedNow>0){coinNotice('🪙 本日の報酬 '+incoming.earnedNow+' C を受け取りました！','success');
+   toast('🪙 ログイン・習慣ボーナス +'+incoming.earnedNow+' C',true)}
   else coinNotice('クラウドの最新残高を確認しました。');
   return incoming;
  }catch(e){
@@ -1453,7 +1456,9 @@ function reconcileIndependentChecks(latest){
 }
 function choiceVisible(on,hasRemote=true){$('cloudChoice').classList.toggle('show',on);$('cloudUseRemote').hidden=!hasRemote}
 async function cloudFetch(){const {data,error}=await cloud.client.from('habit_states').select('data,revision,updated_at').eq('user_id',cloud.user.id).maybeSingle();if(error)throw error;return data}
-async function attachCloudUser(user){if(!cloud.client||cloud.user?.id===user.id&&cloud.loadPromise)return cloud.loadPromise;cloud.user=user;cloud.ready=false;cloud.blocked=true;$('cloudLogout').hidden=false;$('cloudEmail').value=user.email||'';$('cloudLogin').hidden=true;$('cloudAuthPanel').hidden=true;$('cloudPasswordPanel').hidden=false;cloudMessage(`${user.email} でログイン済み。クラウドの記録を確認しています…`);
+async function attachCloudUser(user){if(!cloud.client||cloud.user?.id===user.id&&cloud.loadPromise)return cloud.loadPromise;
+if(cloud.user&&cloud.user.id!==user.id)resetCoinWallet();
+cloud.user=user;cloud.ready=false;cloud.blocked=true;$('cloudLogout').hidden=false;$('cloudEmail').value=user.email||'';$('cloudLogin').hidden=true;$('cloudAuthPanel').hidden=true;$('cloudPasswordPanel').hidden=false;cloudMessage(`${user.email} でログイン済み。クラウドの記録を確認しています…`);
 cloud.baseSnapshot=restoreCloudBase(user.id)?.data||null;
 cloud.baseRevision=restoreCloudBase(user.id)?.revision??null;
 const freshLocal=window.HabitQuestCloudOnboard.canAdopt(
