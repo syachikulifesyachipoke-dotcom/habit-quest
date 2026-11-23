@@ -48,9 +48,19 @@
   }
   return result;
  }
+ function rank(h){
+  const id=String(h?.id||''),n=cleanName(h);
+  const byId={study:1,read:2,journal:3,wake:3,
+   oura_strengthtraining:1,oura_cycling:2,oura_walking:3,oura_running:4};
+  if(byId[id]!==undefined)return byId[id];
+  if(/ビオフェルミン|biofermin/.test(n))return 1;
+  if(/no酒|禁酒|断酒|飲酒しない/.test(n))return 2;
+  return 10;
+ }
  function groupHabits(habits){
   const result={investment:[],wellbeing:[],exercise:[],other:[]};
   for(const h of Array.isArray(habits)?habits:[])result[groupFor(h)].push(h);
+  for(const arr of Object.values(result))arr.sort((a,b)=>rank(a)-rank(b));
   return result;
  }
  root.HabitQuestGroups=Object.freeze({GROUPS,groupFor,groupHabits,streak});
