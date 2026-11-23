@@ -171,7 +171,7 @@ test('five fixed navigation buttons link to live character/event/shop/options pa
 test('game expressions and direct options backup controls remain integrated',()=>{
  assert.doesNotMatch(html,/id="homeCompanionMood"|id="characterMoodFace"/);
  assert.match(html,/id="characterReactionText"/);
- assert.match(html,/data-mood/);
+ assert.match(html,/dataset\.mood/);
  assert.match(html,/id="optionsExportBtn"/);
  assert.match(html,/id="optionsImportBtn"/);
  assert.match(html,/id="appUpdateBanner"/);
