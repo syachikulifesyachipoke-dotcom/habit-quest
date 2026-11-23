@@ -33,7 +33,8 @@
    // If input intervals are malformed/overlapping, ignore them rather than truncating history.
    const validIntervals=activeIntervals.every((x,i)=>i===0||activeIntervals[i-1].until!==null&&
      (x.from===null||activeIntervals[i-1].until<=x.from));
-   return {...h,createdOn,targetHistory,activeIntervals:validIntervals?activeIntervals:[]};
+   return {...h,createdOn,missionEnabled:typeof h.missionEnabled==='boolean'?h.missionEnabled:!h.ouraTrackingOnly,
+     targetHistory,activeIntervals:validIntervals?activeIntervals:[]};
  }
  function archived(h) {
    const a=h?.activeIntervals;
@@ -47,7 +48,7 @@
    return !dayValid(h?.createdOn)||key>=h.createdOn;
  }
  function configOn(h,key){
-   let config={target:Number(h.target),mission:!h.ouraTrackingOnly};
+   let config={target:Number(h.target),mission:typeof h.missionEnabled==='boolean'?h.missionEnabled:!h.ouraTrackingOnly};
    const history=h.targetHistory||[];
    for(const x of history)if(x.effectiveOn===null||x.effectiveOn<=key)
      config={target:Number(x.target),mission:x.mission};
@@ -56,18 +57,18 @@
  function create(h,date){
    if(!dayValid(date))throw Error('Invalid habit creation date');
    return normalize({...h,createdOn:date,activeIntervals:[{from:date,until:null}],
-     targetHistory:[{effectiveOn:date,target:Number(h.target),mission:!h.ouraTrackingOnly}]});
+     targetHistory:[{effectiveOn:date,target:Number(h.target),mission:typeof h.missionEnabled==='boolean'?h.missionEnabled:!h.ouraTrackingOnly}]});
  }
  function edit(h,date,target,mission){
    if(!dayValid(date)||!weekTargetValid(target)||typeof mission!=='boolean')throw Error('Invalid habit change');
    const old=normalize(h);
-   if(Number(old.target)===Number(target)&&!old.ouraTrackingOnly===mission)return old;
+   if(Number(old.target)===Number(target)&&old.missionEnabled===mission)return old;
    const hist=[...old.targetHistory];
-   if(!hist.length)hist.push({effectiveOn:old.createdOn,target:Number(old.target),mission:!old.ouraTrackingOnly});
+   if(!hist.length)hist.push({effectiveOn:old.createdOn,target:Number(old.target),mission:old.missionEnabled});
    if(hist.length&&hist[hist.length-1].effectiveOn===date)
      hist[hist.length-1]={effectiveOn:date,target:Number(target),mission};
    else hist.push({effectiveOn:date,target:Number(target),mission});
-   return normalize({...old,target:Number(target),ouraTrackingOnly:!mission,targetHistory:hist});
+   return normalize({...old,target:Number(target),missionEnabled:mission,targetHistory:hist});
  }
  function dayAfter(date){const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10)}
  function archive(h,date,preserveToday=false){
