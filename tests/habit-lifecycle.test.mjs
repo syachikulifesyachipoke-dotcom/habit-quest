@@ -71,8 +71,8 @@ test('mission toggle changes future days only, including Oura automatic item',()
  assert.equal(L.configOn(edited,'2026-11-23').mission,true);
  assert.equal(edited.ouraTrackingOnly,true); // auto record source never changes
  assert.equal(edited.missionEnabled,true);
- assert.equal(again.missionEnabled,false);
  const again=L.edit(edited,'2026-11-23',3,false);
+ assert.equal(again.missionEnabled,false);
  assert.equal(again.targetHistory.length,2);
  assert.equal(L.configOn(again,'2026-11-22').mission,false);
  assert.equal(L.configOn(again,'2026-11-23').target,3);
