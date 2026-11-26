@@ -256,7 +256,9 @@ test('headless Chrome: lifecycle and JSON backup/import preserve checks and XP',
      assert.ok(marker,scenario.name+' browser did not complete: '+stdout.slice(-800));
      assert.equal(marker[1],'PASS',scenario.name+' browser flow failed');
    }finally{
-     fs.rmSync(profile,{recursive:true,force:true,maxRetries:3});
+     // Chrome subprocesses can finish writing after the parent exits.
+     // Retry transient ENOTEMPTY/EBUSY without suppressing cleanup failures.
+     await fs.promises.rm(profile,{recursive:true,force:true,maxRetries:10,retryDelay:250});
    }
  }
  }finally{server.close();}
