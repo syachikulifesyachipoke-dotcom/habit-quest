@@ -20,7 +20,7 @@ const prelude=`<script>
  for(let i=1;i<=count;i++)checks[shift(date,-i)]={read:true};
  localStorage.setItem('habit-quest-v1',JSON.stringify({
   xpStartDate:shift(date,-count),
-  habits:[{id:'read',name:'読書',icon:'book',target:5,ouraTrackingOnly:false}],
+  habits:[{id:'read',name:'読書',icon:'book',target:5,ouraTrackingOnly:false,missionEnabled:false}],
   checks,rewardedWeeks:[],avatarImages:{},ouraData:{},ouraTrackingVersion:3,
   ouraAutoEnabled:true,ouraAutoKeys:[],ouraSuppressedKeys:[]
  }));
@@ -32,12 +32,16 @@ const injection=`<script>
  const seven=new URLSearchParams(location.search).has('sevenDayTest');
  const today=new Date(Date.now()+9*60*60*1000).toISOString().slice(0,10);
  const getXP=()=>Number(document.getElementById('totalXp').textContent.replace(/[^0-9]/g,''));
+ // This scenario tests adventure progression independently of weekly mission bonuses.
  const previousXP=getXP();
+ const before=JSON.parse(localStorage.getItem('habit-quest-v1'));
+ verify(before.habits.find(h=>h.id==='read').missionEnabled===false,'journey fixture must exclude weekly mission');
  const check=document.querySelector('#tracker [data-habit="read"][data-day="'+today+'"]');
  verify(check&&!check.disabled,'manual checkbox missing');
  const initialArea=document.getElementById('worldPeekName').textContent;
  check.click();
- verify(getXP()===previousXP+20,'game feature altered established XP gain');
+ verify(getXP()===previousXP+20,'game feature altered established XP gain: '+previousXP+' -> '+getXP());
+ verify(JSON.stringify(JSON.parse(localStorage.getItem('habit-quest-v1')).rewardedWeeks)===JSON.stringify(before.rewardedWeeks),'journey unexpectedly awarded weekly bonus');
  verify(JSON.parse(localStorage.getItem('habit-quest-v1')).checks[today].read===true,'check lost in localStorage');
  if(seven){
   verify(!document.getElementById('gameUnlockDialog').open,'no region unlock should occur on 7th day');
